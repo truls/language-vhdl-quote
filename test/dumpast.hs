@@ -5,38 +5,76 @@ module Main where
 import System.Environment
 import System.Exit
 import System.Directory
+import System.Console.GetOpt
 
 import Control.Monad
 
-import Data.String.Here
 import Text.PrettyPrint
 import Text.Show.Pretty
 
 import Language.VHDL.Parser
 import Language.VHDL.Pretty
 import Language.VHDL.Syntax
-import Text.Parsec
 
+data ArgFlag = PrintAst
+             | PrintPretty
+             | Verbose
+             | Help
+  deriving (Eq, Ord, Show)
+
+options :: [OptDescr ArgFlag]
+options = [ Option ['a'] ["print-ast"] (NoArg PrintAst)
+             "Print AST"
+          , Option ['p'] ["print-pretty"] (NoArg PrintPretty)
+            "Print pretty printed code"
+          , Option ['v'] ["verbose"] (NoArg Verbose)
+            "Be verbose"
+          , Option ['h'] ["help"] (NoArg Help)
+            "Prints this message"
+          ]
+
+parseOptions :: [String] -> IO (([ArgFlag], [String]))
+parseOptions argv = case getOpt Permute options argv of
+  (o, n, []) -> return $ (o, n)
+  (_,_,errs) -> ioError $ argFail errs
+
+usage :: String
+usage = usageInfo header options
+  where header = "Usage: dumpast [-apvh] FILE"
+
+argFail :: [String] -> IOError
+argFail errs = userError (concat errs ++ usage)
 
 doParse :: FilePath -> IO (DesignFile, String)
 doParse f = do
-  res <- parseFile f
-  ast <- case res of
-          Right ast -> pure ast
-          Left e -> print e >> exitFailure
+  ast <- parseFile f >>= \case
+    Right ast -> pure ast
+    Left e -> print e >> exitFailure
   return (ast, render $ pp ast)
+
+printHelp :: IO ()
+printHelp = putStrLn usage
 
 main :: IO ()
 main = do
-  arg <- getArgs >>= \case
-    [a] -> pure a
-    _ -> putStrLn "Usage: dumpast <VHDL file>" >> exitFailure
-  doesFileExist arg >>= flip unless (fail $ "File not found " ++ arg)
+  (args, files) <- getArgs >>= parseOptions
+  when (Help `elem` args) (printHelp >> exitFailure)
 
-  (res, str) <- doParse arg
+  [file] <- if (length files /= 1)
+            then ioError $ argFail ["FILE argument missing\n\n"]
+            else pure files
 
-  putStrLn "AST tree dump"
-  putStrLn $ ppShow res
-  putStrLn ""
-  putStrLn "Pretty printed source"
-  putStrLn str
+  doesFileExist file >>= flip unless (fail $ "File not found " ++ file)
+
+  (res, str) <- doParse file
+
+  let verbose = Verbose `elem` args
+
+  when (PrintAst `elem` args) $ do
+    when verbose $ putStrLn "AST tree dump"
+    putStrLn $ ppShow res
+    when verbose $ putStrLn ""
+
+  when (PrintPretty `elem` args) $ do
+    when verbose $ putStrLn "Pretty printed source"
+    putStrLn str
