@@ -113,7 +113,7 @@ instance Pretty AttributeDeclaration where
 --instance Pretty AttributeDesignator where pp = undefined
 
 instance Pretty AttributeName where
-  pp (AttributeName p s d e) = pp p <+> cond id s <+> char '\'' <+> pp d <+> cond parens e
+  pp (AttributeName p s d e) = pp p <+> cond id s <> char '\'' <> pp d <+> cond parens e
 
 instance Pretty AttributeSpecification where
   pp (AttributeSpecification d s e) =
@@ -934,8 +934,8 @@ instance Pretty ProcessStatement where
 --instance Pretty ProcessStatementPart where pp = undefined
 
 instance Pretty QualifiedExpression where
-  pp (QualExp t e) = pp t <+> char '\'' <+> parens (pp e)
-  pp (QualAgg t a) = pp t <+> char '\'' <+> pp a
+  pp (QualExp t e) = pp t <> char '\'' <> parens (pp e)
+  pp (QualAgg t a) = pp t <> char '\'' <> pp a
 
 instance Pretty Range where
   pp (RAttr a)       = pp a
