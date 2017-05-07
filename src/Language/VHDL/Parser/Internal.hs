@@ -1482,8 +1482,8 @@ nameNonterm = trace "nameNonterm" $ choice [ NSelect <$> try selectedName
 
 nameTerm :: Parser Name
 nameTerm = choice [ NOp <$> operatorSymbol
-                   , NSimple <$> simpleName
-                   ]
+                  , NSimple <$> simpleName
+                  ]
 
 prefix :: Parser Prefix
 -- FIXME: Is using simpleName instead of name for Prefix a problem
@@ -1921,7 +1921,7 @@ numericLiteral = choice [ NLitAbstract <$> abstractLiteral
 -}
 
 aggregate :: Parser Aggregate
-aggregate = trace "aggreg/ate" $ Aggregate <$> parens (commaSep1 elementAssociation)
+aggregate = trace "aggregate" $ Aggregate <$> parens (commaSep1 elementAssociation)
 
 -- FIXME: we mayu have a problem here
 elementAssociation :: Parser ElementAssociation
