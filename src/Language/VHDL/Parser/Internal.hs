@@ -1616,7 +1616,7 @@ expression :: Parser Expression
 expression = buildExpressionParser table primary
 
 primary :: Parser Expression
-primary = choice [ PrimQual <$> qualifiedExpression
+primary = choice [ PrimQual <$> try qualifiedExpression
                  , PrimName <$> name
                  , PrimLit <$> literal
                  , PrimAgg <$> aggregate
