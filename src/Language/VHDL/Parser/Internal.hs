@@ -11,7 +11,7 @@ import Data.Maybe (isJust)
 import qualified Data.Functor.Identity
 import Control.Monad (when, void)
 
-import Debug.Trace
+--import Debug.Trace
 
 import Language.VHDL.Lexer
 import Language.VHDL.Syntax
@@ -22,8 +22,8 @@ import Language.VHDL.Pretty
 -- Util functions
 ---------------------------------------------------------------------------------
 
--- trace :: t -> a -> a
--- trace _ = id
+trace :: t -> a -> a
+trace _ = id
 
 isReserved :: String -> Parser Bool
 isReserved a = isJust <$> optionMaybe (reserved a)

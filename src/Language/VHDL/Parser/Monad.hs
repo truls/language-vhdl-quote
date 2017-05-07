@@ -12,7 +12,7 @@ where
 
 import Text.Parsec
 
-import Debug.Trace
+--import Debug.Trace
 
 import qualified Control.Monad.State as CM
 import Control.Monad.Identity
@@ -23,6 +23,9 @@ import Language.VHDL.Syntax
 --   deriving ( Functor, Applicative, Monad
 --            , CM.MonadState ParseState
 --            )
+
+trace :: t -> a -> a
+trace _ = id
 
 type Parser = Parsec String ParseState
 
