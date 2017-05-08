@@ -750,8 +750,8 @@ rangeConstraint =  reserved "range" >> RangeConstraint <$> range
 --                ]
 -- FIMXE: Replacing simpleExpression by expression
 range :: Parser Range
-range = choice [ RAttr <$> attributeName
-               , RSimple <$> expression <*> direction <*> expression
+range = choice [ RSimple <$> expression <*> direction <*> expression
+               , RAttr <$> attributeName
                ]
 
 direction :: Parser Direction
