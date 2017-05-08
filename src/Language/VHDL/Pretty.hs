@@ -700,7 +700,7 @@ instance Pretty InterfaceConstantDeclaration where
 
 instance Pretty InterfaceSignalDeclaration where
   pp (InterfaceSignalDeclaration is m s b e) =
-    commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> when b (text "bus") <+> condL (text ":=") e
+    text "signal" <+> commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> when b (text "bus") <+> condL (text ":=") e
 
 instance Pretty InterfaceVariableDeclaration where
   pp (InterfaceVariableDeclaration is m s e) =
