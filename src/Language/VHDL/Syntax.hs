@@ -6,6 +6,8 @@ module Language.VHDL.Syntax where
 import Data.Typeable (Typeable)
 import Data.Data (Data)
 
+{-# ANN module "HLint: ignore Use camelCase" #-}
+
 --------------------------------------------------------------------------------
 --
 --                                   -- 1 --
@@ -777,8 +779,8 @@ data ArrayTypeDefinition =
 
 data UnconstrainedArrayDefinition = UnconstrainedArrayDefinition {
     arru_index_subtype_definition   :: [IndexSubtypeDefinition]
-  , arru_element_subtype_indication :: (SubtypeIndication)
-  }
+  , arru_element_subtype_indication :: SubtypeIndication
+}
   deriving (Eq, Show, Typeable, Data)
 
 data ConstrainedArrayDefinition = ConstrainedArrayDefinition {
@@ -2724,7 +2726,7 @@ data InstantiatedUnit =
 data GenerateStatement = GenerateStatement {
     gens_label                  :: Label
   , gens_generation_scheme      :: GenerationScheme
-  , gens_block_declarative_item :: Maybe (BlockDeclarativeItem)
+  , gens_block_declarative_item :: Maybe BlockDeclarativeItem
   , gens_concurrent_statement   :: [ConcurrentStatement]
   }
   deriving (Eq, Show, Typeable, Data)
