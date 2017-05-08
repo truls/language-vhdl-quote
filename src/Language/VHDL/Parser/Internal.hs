@@ -885,7 +885,7 @@ compositeTypeDefinition = CTDArray <$> arrayTypeDefinition
 
 arrayTypeDefinition :: Parser ArrayTypeDefinition
 arrayTypeDefinition = try $ reserved "array"
-                      >> choice [ ArrU <$> unconstrainedArrayDefinition
+                      >> choice [ ArrU <$> try unconstrainedArrayDefinition
                                 , ArrC <$> constrainedArrayDefinition
                                 ]
 
