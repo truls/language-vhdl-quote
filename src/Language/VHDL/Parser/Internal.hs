@@ -891,7 +891,7 @@ arrayTypeDefinition = try $ reserved "array"
 
 unconstrainedArrayDefinition :: Parser UnconstrainedArrayDefinition
 unconstrainedArrayDefinition = UnconstrainedArrayDefinition
-                               <$> parens (commaSep indexSubtypeDefinition)
+                               <$> parens (commaSep1 indexSubtypeDefinition)
                                <*> (reserved "of" *> elementSubtypeDefinition)
 
 constrainedArrayDefinition :: Parser ConstrainedArrayDefinition
