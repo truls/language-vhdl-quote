@@ -38,6 +38,7 @@ optionEndNameLabel l = do
     Nothing ->
       return ()
 
+-- TODO: Is having e.g. package foo ... end foo instead of end package foo valid?
 optionEndName :: String -> Parser ()
 optionEndName s = do
       expected <- popBlockName
