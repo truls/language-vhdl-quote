@@ -688,25 +688,35 @@ instance Pretty Integer where pp = integer
 
 --instance Pretty IntegerTypeDefinition where pp = undefined
 
+-- instance Pretty InterfaceDeclaration where
+--   pp (ICDecl d) = pp d
+--   pp (ISDecl d) = pp d
+--   pp (IVDecl d) = pp d
+--   pp (IFDecl d) = pp d
+
+-- instance Pretty InterfaceConstantDeclaration where
+--   pp (InterfaceConstantDeclaration is s e) =
+--     text "constant" <+> commaSep (fmap pp is) <> colon <+> text "in" <+> pp s <+> condL (text ":=") e
+
+-- instance Pretty InterfaceSignalDeclaration where
+--   pp (InterfaceSignalDeclaration is m s b e) =
+--     text "signal" <+> commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> when b (text "bus") <+> condL (text ":=") e
+
+-- instance Pretty InterfaceVariableDeclaration where
+--   pp (InterfaceVariableDeclaration is m s e) =
+--     text "variable" <+> commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> condL (text ":=") e
+
+-- instance Pretty InterfaceFileDeclaration where
+--   pp (InterfaceFileDeclaration is s) =
+--     text "file" <+> commaSep (fmap pp is) <> colon <+> pp s
+
 instance Pretty InterfaceDeclaration where
-  pp (ICDecl d) = pp d
-  pp (ISDecl d) = pp d
-  pp (IVDecl d) = pp d
-  pp (IFDecl d) = pp d
-
-instance Pretty InterfaceConstantDeclaration where
-  pp (InterfaceConstantDeclaration is s e) =
-    text "constant" <+> commaSep (fmap pp is) <> colon <+> text "in" <+> pp s <+> condL (text ":=") e
-
-instance Pretty InterfaceSignalDeclaration where
-  pp (InterfaceSignalDeclaration is m s b e) =
-    text "signal" <+> commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> when b (text "bus") <+> condL (text ":=") e
-
-instance Pretty InterfaceVariableDeclaration where
   pp (InterfaceVariableDeclaration is m s e) =
     text "variable" <+> commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> condL (text ":=") e
-
-instance Pretty InterfaceFileDeclaration where
+  pp (InterfaceSignalDeclaration is m s b e) =
+    text "signal" <+> commaSep (fmap pp is) <> colon <+> cond id m <+> pp s <+> when b (text "bus") <+> condL (text ":=") e
+  pp (InterfaceConstantDeclaration is s e) =
+    text "constant" <+> commaSep (fmap pp is) <> colon <+> text "in" <+> pp s <+> condL (text ":=") e
   pp (InterfaceFileDeclaration is s) =
     text "file" <+> commaSep (fmap pp is) <> colon <+> pp s
 

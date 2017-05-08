@@ -1134,21 +1134,14 @@ fileLogicalName = expression
 -- TODO: Error messages. Give useful error when e.g. a signal is attempted
 -- defined in a generic clause
 
-interfaceDeclaration :: Parser InterfaceDeclaration
-interfaceDeclaration = choice [ ICDecl <$> interfaceConstantDeclaration
-                              , ISDecl <$> interfaceSignalDeclaration
-                              , IVDecl <$> interfaceVariableDeclaration
-                              , IFDecl <$> interfaceFileDeclaration
-                              ]
-
-interfaceConstantDeclaration :: Parser InterfaceConstantDeclaration
+interfaceConstantDeclaration :: Parser InterfaceDeclaration
 interfaceConstantDeclaration = try $ optional (reserved "constant")
                                 >>  InterfaceConstantDeclaration
                                 <$> (identifierList <* colon <* optional (reserved "in"))
                                 <*> subtypeIndication
                                 <*> optionMaybe expression
 
-interfaceSignalDeclaration :: Parser InterfaceSignalDeclaration
+interfaceSignalDeclaration :: Parser InterfaceDeclaration
 interfaceSignalDeclaration = try $ optional (reserved "signal")
                              >> InterfaceSignalDeclaration
                              <$> (identifierList <* colon)
@@ -1163,14 +1156,14 @@ interfaceSignalDeclaration = try $ optional (reserved "signal")
 
                              <*> optionMaybe expression
 
-interfaceVariableDeclaration :: Parser InterfaceVariableDeclaration
+interfaceVariableDeclaration :: Parser InterfaceDeclaration
 interfaceVariableDeclaration = try $ optional (reserved "variable")
                                 >> InterfaceVariableDeclaration
                                 <$> (identifierList <* colon)
                                 <*> optionMaybe interfaceMode
                                 <*> subtypeIndication
                                 <*> optionMaybe expression
-interfaceFileDeclaration :: Parser InterfaceFileDeclaration
+interfaceFileDeclaration :: Parser InterfaceDeclaration
 interfaceFileDeclaration = reserved "file"
                                 >> InterfaceFileDeclaration
                                 <$> (identifierList <* colon)
@@ -1197,13 +1190,17 @@ interfaceList = InterfaceList <$> semiSep1 interfaceElement
 
 -- These were added to disambiguate the many occurences of interface_list int he grammer
 genericInterfaceList :: Parser InterfaceList
-genericInterfaceList = InterfaceList <$> semiSep1 (ICDecl <$> interfaceConstantDeclaration)
+genericInterfaceList = InterfaceList <$> semiSep1 (interfaceConstantDeclaration)
 
 portInterfaceList :: Parser InterfaceList
-portInterfaceList = InterfaceList <$> semiSep1 (ISDecl <$> interfaceSignalDeclaration)
+portInterfaceList = InterfaceList <$> semiSep1 (interfaceSignalDeclaration)
 
 interfaceElement :: Parser InterfaceDeclaration
-interfaceElement = interfaceDeclaration
+interfaceElement = choice [ interfaceConstantDeclaration
+                          , interfaceSignalDeclaration
+                          , interfaceVariableDeclaration
+                          , interfaceFileDeclaration
+                          ]
 
 --------------------------------------------------------------------------------
 -- *** 4.3.2.2 Association lists

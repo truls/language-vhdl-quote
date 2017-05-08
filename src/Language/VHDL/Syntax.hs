@@ -1114,68 +1114,68 @@ type FileLogicalName = Expression
     mode ::= IN | OUT | INOUT | BUFFER | LINKAGE
 -}
 
-data InterfaceDeclaration =
-    ICDecl InterfaceConstantDeclaration
-  | ISDecl InterfaceSignalDeclaration
-  | IVDecl InterfaceVariableDeclaration
-  | IFDecl InterfaceFileDeclaration
-  deriving (Eq, Show)
+-- data InterfaceDeclaration =
+--     ICDecl InterfaceConstantDeclaration
+--   | ISDecl InterfaceSignalDeclaration
+--   | IVDecl InterfaceVariableDeclaration
+--   | IFDecl InterfaceFileDeclaration
+--   deriving (Eq, Show, Typeable, Data)
 
-data InterfaceConstantDeclaration = InterfaceConstantDeclaration {
-        identifier_list     :: IdentifierList
-      , subtype_indication :: SubtypeIndication
-      , static_expression  :: Maybe Expression
+-- data InterfaceConstantDeclaration = InterfaceConstantDeclaration {
+--         identifier_list     :: IdentifierList
+--       , subtype_indication :: SubtypeIndication
+--       , static_expression  :: Maybe Expression
+--     }
+--   deriving (Eq, Show, Typeable, Data)
+
+-- data InterfaceSignalDeclaration = InterfaceSignalDeclaration {
+--         identifier_list     :: IdentifierList
+--       , mode                 :: Maybe Mode
+--       , subtype_indication   :: SubtypeIndication
+--       , bus                  :: Bool
+--       , static_expression    :: Maybe Expression
+--     }
+--   deriving (Eq, Show, Typeable, Data)
+
+-- data InterfaceVariableDeclaration = InterfaceVariableDeclaration {
+--         identifier_list     :: IdentifierList
+--       , mode                 :: Maybe Mode
+--       , subtype_indication   :: SubtypeIndication
+--       , static_expression    :: Maybe Expression
+--     }
+--   deriving (Eq, Show, Typeable, Data)
+
+-- data InterfaceFileDeclaration = InterfaceFileDeclaration {
+--         identifier_list     :: IdentifierList
+--       , subtype_indication  :: SubtypeIndication
+--     }
+--   deriving (Eq, Show, Typeable, Data)
+
+
+data InterfaceDeclaration
+  = InterfaceConstantDeclaration {
+        idecl_identifier_list     :: IdentifierList
+      , iconst_subtype_indication :: SubtypeIndication
+      , iconst_static_expression  :: Maybe Expression
+    }
+  | InterfaceSignalDeclaration {
+        idecl_identifier_list     :: IdentifierList
+      , isig_mode                 :: Maybe Mode
+      , isig_subtype_indication   :: SubtypeIndication
+      , isig_bus                  :: Bool
+      , isig_static_expression    :: Maybe Expression
+    }
+  | InterfaceVariableDeclaration {
+        idecl_identifier_list     :: IdentifierList
+      , ivar_mode                 :: Maybe Mode
+      , ivar_subtype_indication   :: SubtypeIndication
+      , ivar_static_expression    :: Maybe Expression
+    }
+  | InterfaceFileDeclaration {
+        idecl_identifier_list     :: IdentifierList
+      , ifile_subtype_indication  :: SubtypeIndication
     }
   deriving (Eq, Show)
-
-data InterfaceSignalDeclaration = InterfaceSignalDeclaration {
-        identifier_list     :: IdentifierList
-      , mode                 :: Maybe Mode
-      , subtype_indication   :: SubtypeIndication
-      , bus                  :: Bool
-      , static_expression    :: Maybe Expression
-    }
-  deriving (Eq, Show)
-
-data InterfaceVariableDeclaration = InterfaceVariableDeclaration {
-        identifier_list     :: IdentifierList
-      , mode                 :: Maybe Mode
-      , subtype_indication   :: SubtypeIndication
-      , static_expression    :: Maybe Expression
-    }
-  deriving (Eq, Show)
-
-data InterfaceFileDeclaration = InterfaceFileDeclaration {
-        identifier_list     :: IdentifierList
-      , subtype_indication  :: SubtypeIndication
-    }
-  deriving (Eq, Show)
-
-
--- data InterfaceDeclaration
---   = InterfaceConstantDeclaration {
---         idecl_identifier_list     :: IdentifierList
---       , iconst_subtype_indication :: SubtypeIndication
---       , iconst_static_expression  :: Maybe Expression
---     }
---   | InterfaceSignalDeclaration {
---         idecl_identifier_list     :: IdentifierList
---       , isig_mode                 :: Maybe Mode
---       , isig_subtype_indication   :: SubtypeIndication
---       , isig_bus                  :: Bool
---       , isig_static_expression    :: Maybe Expression
---     }
---   | InterfaceVariableDeclaration {
---         idecl_identifier_list     :: IdentifierList
---       , ivar_mode                 :: Maybe Mode
---       , ivar_subtype_indication   :: SubtypeIndication
---       , ivar_static_expression    :: Maybe Expression
---     }
---   | InterfaceFileDeclaration {
---         idecl_identifier_list     :: IdentifierList
---       , ifile_subtype_indication  :: SubtypeIndication
---     }
---   deriving (Eq, Show)
 
 data Mode = In | Out | InOut | Buffer | Linkage
   deriving (Eq, Show)
