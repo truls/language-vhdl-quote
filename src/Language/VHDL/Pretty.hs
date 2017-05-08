@@ -818,7 +818,7 @@ instance Pretty Options where
 instance Pretty PackageBody where
   pp (PackageBody n d) =
     vcat [ text "package body" <+> pp n <+> text "is"
-         , indent $ pp d
+         , indent $ block d
          , text "end package body" <+> pp n <> semi
          ]
 
@@ -840,7 +840,7 @@ instance Pretty PackageBodyDeclarativeItem where
 instance Pretty PackageDeclaration where
   pp (PackageDeclaration i d) =
     vcat [ text "package" <+> pp i <+> text "is"
-         , indent $ pp d
+         , indent $ blockCat semi d
          , text "end package" <+> pp i <> semi
          ]
 
@@ -1096,9 +1096,9 @@ instance Pretty StringLiteral where
 instance Pretty SubprogramBody where
   pp (SubprogramBody s d st k de) =
     vcat [ pp s <+> text "is"
-         , indent $ pp d
+         , indent $ block d
          , text "begin"
-         , indent $ pp st
+         , indent $ block st
          , text "end" <+> pp' k <+> pp' de <> semi
          ]
 
@@ -1240,6 +1240,12 @@ hangs d1 d2 = d1 $+$ indent d2
 labels  :: Pretty a => Maybe a -> Doc -> Doc
 labels (Nothing) doc = doc
 labels (Just a)  doc = (pp a <> colon) `hangs` doc
+
+block :: Pretty a => [a] -> Doc
+block = vcat . map pp
+
+blockCat :: Pretty a => Doc -> [a] -> Doc
+blockCat d = vcat . map (\s -> pp s <> d)
 
 --------------------------------------------------------------------------------
 -- conditional print
