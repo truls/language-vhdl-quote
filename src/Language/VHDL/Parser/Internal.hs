@@ -2689,8 +2689,8 @@ designUnit :: Parser DesignUnit
 designUnit = DesignUnit <$> contextClause <*> libraryUnit
 
 libraryUnit :: Parser LibraryUnit
-libraryUnit = choice [ LibraryPrimary <$> primaryUnit
-                     , LibrarySecondary <$> secondaryUnit
+libraryUnit = choice [ LibrarySecondary <$> secondaryUnit
+                     , LibraryPrimary <$> primaryUnit
                      ]
 
 primaryUnit :: Parser PrimaryUnit
@@ -2700,8 +2700,9 @@ primaryUnit =  choice [ PrimaryEntity <$> entityDeclaration
                       ]
 
 secondaryUnit :: Parser SecondaryUnit
-secondaryUnit = choice [ SecondaryArchitecture <$> architectureBody
--- TODO                       , SecondaryPackage <$> packageBody
+secondaryUnit = choice [ (try $ lookAhead (reserved "package" >> reserved "body")) >>
+                                          SecondaryPackage <$> packageBody
+                       , SecondaryArchitecture <$> architectureBody
                        ]
 
 --------------------------------------------------------------------------------
