@@ -8,6 +8,7 @@ import Text.Parsec hiding (label)
 import Text.Parsec.Expr
 --import Text.Parsec.String
 import Data.Maybe (isJust)
+import Data.List (intercalate)
 import qualified Data.Functor.Identity
 import Control.Monad (when, void)
 
@@ -52,6 +53,12 @@ optionEndName s = do
 block :: String -> Parser a -> Parser a
 block s p = reserved s >> p <* (reserved "end" *> optional (reserved s))
             <* optionEndName s <* semi
+
+blockN :: [String] -> Parser a -> Parser a
+blockN s p = mapM_ reserved s >> p <* (reserved "end" *> optional (mapM_ reserved s))
+            <* optionEndName (intercalate " " s) <* semi
+
+
 stmLabelPush :: (Parser (Maybe Label) -> Parser a) -> Parser a
 stmLabelPush = stmLabel' (\s -> trace ("PUUUUUUUU " ++ show s) $ case s of
                                   Just a -> void $ pushBlockName a
@@ -587,6 +594,116 @@ signature = cleanupNothing . Signature
     cleanupNothing (Signature (Just (Just [],Nothing))) = Signature Nothing
     cleanupNothing a = a
 
+--------------------------------------------------------------------------------
+-- * 2.5 Package declarations
+{-
+    package_declaration ::=
+      PACKAGE identifier IS
+        package_declarative_part
+      END [ PACKAGE ] [ package_simple_name ] ;
+
+    package_declarative_part ::=
+      { package_declarative_item }
+
+    package_declarative_item ::=
+        subprogram_declaration
+      | type_declaration
+      | subtype_declaration
+      | constant_declaration
+      | signal_declaration
+      | shared_variable_declaration
+      | file_declaration
+      | alias_declaration
+      | component_declaration
+      | attribute_declaration
+      | attribute_specification
+      | disconnection_specification
+      | use_clause
+      | group_template_declaration
+      | group_declaration
+-}
+
+-- TODO: Match package identifier/end name
+packageDeclaration :: Parser PackageDeclaration
+packageDeclaration = block "package" $
+                     PackageDeclaration <$>
+                     (blockName <* reserved "is") <*>
+                     packageDeclarativePart
+
+packageDeclarativePart :: Parser [PackageDeclarativeItem]
+packageDeclarativePart = many packageDeclarativeItem
+
+packageDeclarativeItem :: Parser PackageDeclarativeItem
+packageDeclarativeItem = choice [ PHDISubprogDecl <$> subprogramDeclaration
+                                , PHDISubprogBody <$> subprogramBody
+                                , PHDIType <$> typeDeclaration
+                                , PHDISubtype <$> subtypeDeclaration
+                                , PHDIConstant <$> constantDeclaration
+                                , PHDISignal <$> signalDeclaration
+                                , PHDIShared <$> variableDeclaration
+                                , PHDIFile <$> fileDeclaration
+                                -- TODO
+                                --, PHDfIAlias <$> aliasDeclaration
+                                , PHDIComp <$> componentDeclaration
+                                -- TODO
+                                --, PHDIAttrDecl <$> attributeDeclaration
+                                --, PHDIAttrSpec <$> attributeSpecification
+                                --, PHDIDiscSpec <$> disconnectionSpecification
+                                , PHDIUseClause <$> useClause
+                                -- TODO
+                                -- , PHDIGroupTemp <$> groupTemplateDeclaration
+                                -- , PHDIGroup <$> groupDeclaraiton
+                                ]
+
+
+-- * 2.6 Package bodies
+{-
+    package_body ::=
+      PACKAGE  package_simple_name IS
+        package_body_declarative_part
+      END [ PACKAGE BODY ] [ package_simple_name ] ;
+
+    package_body_declarative_part ::=
+      { package_body_declarative_item }
+
+    package_body_declarative_item ::=
+        subprogram_declaration
+      | subprogram_body
+      | type_declaration
+      | subtype_declaration
+      | constant_declaration
+      | shared_variable_declaration
+      | file_declaration
+      | alias_declaration
+      | use_clause
+      | group_template_declaration
+      | group_declaration
+-}
+
+packageBody :: Parser PackageBody
+packageBody = blockN ["package", "body"] $
+              PackageBody <$> (blockName <* reserved "is") <*> packageBodyDeclarativePart
+
+
+packageBodyDeclarativePart :: Parser PackageBodyDeclarativePart
+packageBodyDeclarativePart = many packageBodyDeclarativeItem
+
+packageBodyDeclarativeItem :: Parser PackageBodyDeclarativeItem
+packageBodyDeclarativeItem = choice [ (try $ lookAhead (subprogramSpecification >> reserved "is")) >>
+                                      PBDISubprogBody <$> subprogramBody
+                                    , PBDISubprogDecl <$> subprogramDeclaration
+                                    , PBDIType <$> typeDeclaration
+                                    , PBDISubtype <$> subtypeDeclaration
+                                    , PBDIConstant <$> constantDeclaration
+                                    , PBDIShared <$> variableDeclaration
+                                    , PBDIFile <$> fileDeclaration
+                                    -- TODO
+                                    -- , PBDIAlias aliasDeclaration
+                                    , PBDIUseClause <$> useClause
+                                    -- TODO
+                                    -- , PBDIGroupTemp groupTemplateDeclaration
+                                    -- , PBDIGroup groupDeclaration
+                                    ]
 
 --------------------------------------------------------------------------------
 --
@@ -915,7 +1032,7 @@ declaration = choice [ DType <$> typeDeclaration
                      , DEntity <$> entityDeclaration
                      , DConfiguration <$> configurationDeclaration
                      , DSubprogram <$> subprogramDeclaration
-                     -- , DPackage <$> packageDeclaration
+                     , DPackage <$> packageDeclaration
                      -- TODO
                      ]
 
@@ -2568,7 +2685,7 @@ libraryUnit = choice [ LibraryPrimary <$> primaryUnit
 primaryUnit :: Parser PrimaryUnit
 primaryUnit =  choice [ PrimaryEntity <$> entityDeclaration
                       , PrimaryConfig <$> configurationDeclaration
--- TODO                      , PrimaryPackage <$> packageDeclaration
+                      , PrimaryPackage <$> packageDeclaration
                       ]
 
 secondaryUnit :: Parser SecondaryUnit
