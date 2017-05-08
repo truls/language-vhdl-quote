@@ -35,7 +35,7 @@ transformFile f = do
   pwd <- getCurrentDirectory
   let fp = pwd </> f
   exists <- doesFileExist $ fp
-  unless exists $ fail $ "file jnot found " ++ fp
+  unless exists $ fail $ "file not found " ++ fp
   let basename = takeBaseName fp
   res <- parseFile $ fp
 
