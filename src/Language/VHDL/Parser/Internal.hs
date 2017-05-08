@@ -450,14 +450,14 @@ componentConfiguration = reserved "for" >> ComponentConfiguration
 -}
 
 subprogramDeclaration :: Parser SubprogramDeclaration
-subprogramDeclaration = trace "subprogramDeclaration" $ subprogramSpecification
+subprogramDeclaration = trace "subprogramDeclaration" $ subprogramSpecification <* semi
 
-subprogramSpecification :: Parser SubprogramDeclaration
-subprogramSpecification = subprogramProcedure <|> subprogramFunction <* semi
+subprogramSpecification :: Parser SubprogramSpecification
+subprogramSpecification = subprogramProcedure <|> subprogramFunction
 
-subprogramProcedure :: Parser SubprogramDeclaration
+subprogramProcedure :: Parser SubprogramSpecification
 subprogramProcedure = reserved "procedure" >> SubprogramProcedure <$> designator
-                      <*> optionMaybe formalParameterList
+                      <*> (parens $ optionMaybe formalParameterList)
 
 data Purity = Pure | Impure
   deriving Eq
@@ -471,10 +471,10 @@ purity = pure' <|> impure
 ispure :: Parser Bool
 ispure = flip (==) Pure <$> purity
 
-subprogramFunction :: Parser SubprogramDeclaration
+subprogramFunction :: Parser SubprogramSpecification
 subprogramFunction = SubprogramFunction <$> optionMaybe ispure
                      <*> (reserved "function" >> designator)
-                     <*> optionMaybe formalParameterList
+                     <*> optionMaybe (parens formalParameterList)
                      <*> (reserved "return" >> typeMark)
 
 designator :: Parser Designator
