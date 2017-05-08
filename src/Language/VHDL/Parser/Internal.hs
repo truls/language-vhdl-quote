@@ -8,7 +8,6 @@ import Text.Parsec hiding (label)
 import Text.Parsec.Expr
 --import Text.Parsec.String
 import Data.Maybe (isJust)
-import Data.List (intercalate)
 import qualified Data.Functor.Identity
 import Control.Monad (when, void)
 
@@ -31,12 +30,10 @@ isReserved a = isJust <$> optionMaybe (reserved a)
 
 -- Match block statements with optional label
 optionEndNameLabel :: Maybe Label -> Parser ()
-optionEndNameLabel l = do
-  case l of
-    Just (Ident s) ->
-      optionEndName s
-    Nothing ->
-      return ()
+optionEndNameLabel l = case l of
+                         Just (Ident s) ->
+                           optionEndName s
+                         Nothing -> return ()
 
 -- TODO: Is having e.g. package foo ... end foo instead of end package foo valid?
 optionEndName :: String -> Parser ()
@@ -57,7 +54,7 @@ block s p = reserved s >> p <* (reserved "end" *> optional (reserved s))
 
 blockN :: [String] -> Parser a -> Parser a
 blockN s p = mapM_ reserved s >> p <* (reserved "end" *> optional (mapM_ reserved s))
-            <* optionEndName (intercalate " " s) <* semi
+            <* optionEndName (unwords s) <* semi
 
 
 stmLabelPush :: (Parser (Maybe Label) -> Parser a) -> Parser a
@@ -78,7 +75,7 @@ stmLabel' f g = do
   g (trace ("Label: " ++ show lab) pure lab)
 
 lookaheadLabel :: String -> Parser a -> Parser a
-lookaheadLabel s p = try $ lookAhead ((optional (label <* reservedOp ":"))
+lookaheadLabel s p = try $ lookAhead (optional (label <* reservedOp ":")
                                       >> reserved s)
                      >> p
 
@@ -457,7 +454,7 @@ subprogramSpecification = subprogramProcedure <|> subprogramFunction
 
 subprogramProcedure :: Parser SubprogramSpecification
 subprogramProcedure = reserved "procedure" >> SubprogramProcedure <$> designator
-                      <*> (parens $ optionMaybe formalParameterList)
+                      <*> parens (optionMaybe formalParameterList)
 
 data Purity = Pure | Impure
   deriving Eq
@@ -690,7 +687,7 @@ packageBodyDeclarativePart :: Parser PackageBodyDeclarativePart
 packageBodyDeclarativePart = many packageBodyDeclarativeItem
 
 packageBodyDeclarativeItem :: Parser PackageBodyDeclarativeItem
-packageBodyDeclarativeItem = choice [ (try $ lookAhead (subprogramSpecification >> reserved "is")) >>
+packageBodyDeclarativeItem = choice [ try $ lookAhead (subprogramSpecification >> reserved "is") >>
                                       PBDISubprogBody <$> subprogramBody
                                     , PBDISubprogDecl <$> subprogramDeclaration
                                     , PBDIType <$> typeDeclaration
@@ -1308,10 +1305,10 @@ interfaceList = InterfaceList <$> semiSep1 interfaceElement
 
 -- These were added to disambiguate the many occurences of interface_list int he grammer
 genericInterfaceList :: Parser InterfaceList
-genericInterfaceList = InterfaceList <$> semiSep1 (interfaceConstantDeclaration)
+genericInterfaceList = InterfaceList <$> semiSep1 interfaceConstantDeclaration
 
 portInterfaceList :: Parser InterfaceList
-portInterfaceList = InterfaceList <$> semiSep1 (interfaceSignalDeclaration)
+portInterfaceList = InterfaceList <$> semiSep1 interfaceSignalDeclaration
 
 interfaceElement :: Parser InterfaceDeclaration
 interfaceElement = choice [ interfaceConstantDeclaration
@@ -1613,7 +1610,7 @@ prefix = trace "prefix" $ choice [ PName . NSimple <$> simpleName
 -}
 
 simpleName :: Parser SimpleName
-simpleName = trace "simpleName" $ identifier
+simpleName = trace "simpleName" identifier
 
 --------------------------------------------------------------------------------
 -- * 6.3 Selected names
@@ -2377,9 +2374,9 @@ ifStatement :: Parser IfStatement
 ifStatement = trace "ifStatement" $ stmLabelPush (\l -> IfStatement
                                   <$> l
                                   <*> ((,) <$> (reserved "if" *> condition <* reserved "then")
-                                       <*> (sequenceOfStatements))
-                                  <*> many (((,) <$> (reserved "elseif" *> condition <* reserved "then")
-                                             <*> sequenceOfStatements))
+                                       <*> sequenceOfStatements)
+                                  <*> many ((,) <$> (reserved "elseif" *> condition <* reserved "then")
+                                             <*> sequenceOfStatements)
                                   <*> optionMaybe (reserved "else" *> sequenceOfStatements)
                                   <* (reserved "end" >> reserved "if" >> (optionEndNameLabel <$> l) >> semi))
 
@@ -2700,7 +2697,7 @@ primaryUnit =  choice [ PrimaryEntity <$> entityDeclaration
                       ]
 
 secondaryUnit :: Parser SecondaryUnit
-secondaryUnit = choice [ (try $ lookAhead (reserved "package" >> reserved "body")) >>
+secondaryUnit = choice [ try $ lookAhead (reserved "package" >> reserved "body") >>
                                           SecondaryPackage <$> packageBody
                        , SecondaryArchitecture <$> architectureBody
                        ]

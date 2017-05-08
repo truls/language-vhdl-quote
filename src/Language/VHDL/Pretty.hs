@@ -1,4 +1,3 @@
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances  #-}
 
 module Language.VHDL.Pretty (Pretty (..), ppr) where
@@ -188,7 +187,7 @@ instance Pretty BlockStatement where
       pp l <> colon `hangs` vcat [header, body, footer]
     where
       header = text "block" <+> cond parens g <+> text "is" `hangs` (pp h $$ pp d)
-      body   = text "begin" `hangs` (pp s)
+      body   = text "begin" `hangs` pp s
       footer = text "end block" <+> pp l
 
 --instance Pretty BlockStatementPart where pp = undefined
@@ -652,11 +651,11 @@ instance Pretty IfStatement where
       ]
     where
       elseIf' :: [(Condition, SequenceOfStatements)] -> Doc
-      elseIf' = vcat . fmap (\(c, ss) -> (text "elsif" <+> pp c <+> text "then") `hangs` (vpp ss))
+      elseIf' = vcat . fmap (\(c, ss) -> (text "elsif" <+> pp c <+> text "then") `hangs` vpp ss)
 
       else'   :: Maybe SequenceOfStatements -> Doc
       else' (Nothing) = empty
-      else' (Just ss) = text "else" `hangs` (vpp ss)
+      else' (Just ss) = text "else" `hangs` vpp ss
 
 instance Pretty IncompleteTypeDeclaration where
   pp (IncompleteTypeDeclaration i) = text "type" <+> pp i <> semi
@@ -975,7 +974,7 @@ instance Pretty RecordTypeDefinition where
 
 instance Pretty ReportStatement where
   pp (ReportStatement l e s) =
-    labels l $ (text "report" <+> pp e `hangs` condL (text "severity") s)
+    labels l (text "report" <+> pp e `hangs` condL (text "severity") s)
 
 instance Pretty ReturnStatement where
   pp (ReturnStatement l e) = label l <+> text "return" <+> condR semi e
@@ -1003,7 +1002,7 @@ instance Pretty SelectedSignalAssignment where
     pp t <+> text "<=" <+> pp o <+> pp w <> semi
 
 instance Pretty SelectedWaveforms where
-  pp (SelectedWaveforms ws) = vcat $ sws
+  pp (SelectedWaveforms ws) = vcat sws
     where
       sws = map f ws
       f (w, c) = pp w <+> text "when" <+> pp c <+> comma
@@ -1058,8 +1057,9 @@ instance Pretty SignalAssignmentStatement where
         label l <+> pp t <+> text "<="
     <+> cond  id    d <+> pp w <> semi
 
+-- FIXME: k param unused
 instance Pretty SignalDeclaration where
-  pp (SignalDeclaration is s k e) =
+  pp (SignalDeclaration is s _k e) =
         text "signal"
     <+> commaSep (fmap pp is)
     <> colon <+> pp s {-<+> cond id k-}
@@ -1075,7 +1075,7 @@ instance Pretty SignalList where
   pp (SLAll)     = text "all"
 
 instance Pretty Signature where
-  pp (Signature (Nothing))      = empty
+  pp (Signature Nothing)      = empty
   pp (Signature (Just (ts, t))) = initial <+> condL (text "return") t
     where
       initial = commaSep $ maybe [] (map pp) ts
@@ -1219,14 +1219,14 @@ instance Pretty WaveformElement where
 commaSep  :: [Doc] -> Doc
 commaSep  = hsep . punctuate comma
 
-semiSep   :: [Doc] -> Doc
-semiSep   = hsep . punctuate semi
+-- semiSep   :: [Doc] -> Doc
+-- semiSep   = hsep . punctuate semi
 
 pipeSep   :: [Doc] -> Doc
 pipeSep   = hsep . punctuate (char '|')
 
-textSep   :: String -> [Doc] -> Doc
-textSep s = hsep . punctuate (space <> text s)
+-- textSep   :: String -> [Doc] -> Doc
+-- textSep s = hsep . punctuate (space <> text s)
 
 --------------------------------------------------------------------------------
 -- indentation
@@ -1265,8 +1265,8 @@ label = cond (<> colon)
 pp' :: Pretty a => Maybe a -> Doc
 pp' = cond id
 
-parens' :: Pretty a => Maybe a -> Doc
-parens' = cond parens
+-- parens' :: Pretty a => Maybe a -> Doc
+-- parens' = cond parens
 
 when :: Bool -> Doc -> Doc
 when b a = if b then a else empty
@@ -1275,7 +1275,7 @@ when b a = if b then a else empty
 -- some common things
 
 vpp :: Pretty a => [a] -> Doc
-vpp = foldr ($+$) empty . map pp
+vpp = foldr (($+$) . pp) empty
 
 postponed :: Pretty a => Maybe Label -> Bool -> a -> Doc
 postponed l b a = label l <+> when b (text "postponed") <+> pp a
