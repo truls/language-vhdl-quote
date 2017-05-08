@@ -2181,7 +2181,7 @@ sequentialStatement = stmLabel (\l -> choice [ SWait <$> waitStatement l
                                              -- , SCase <$> caseStatement
                                              -- , SLoop <$> loopStatement
                                              -- , SNext <$> nextStatement
-                                             -- , SReturn <$> returnStatement
+                                             , SReturn <$> returnStatement
                                              -- , SNull <$> nullStatement
                                              , SSignalAss <$> signalAssignmentStatement l
                                              , SVarAss <$> variableAssignmentStatement l
@@ -2383,6 +2383,16 @@ ifStatement = trace "ifStatement" $ stmLabelPush (\l -> IfStatement
                                   <*> optionMaybe (reserved "else" *> sequenceOfStatements)
                                   <* (reserved "end" >> reserved "if" >> (optionEndNameLabel <$> l) >> semi))
 
+
+-- * 8.12 Return statement
+{-
+    return_statement ::=
+      [ label : ] RETURN [ expression ] ;
+-}
+
+returnStatement :: Parser ReturnStatement
+returnStatement = stmLabel (\l -> reserved "return" >>
+                                  ReturnStatement <$> l <*> optionMaybe expression <* semi)
 
 --------------------------------------------------------------------------------
 -- ** 9.6.1 Instantiation of a component
