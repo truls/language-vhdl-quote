@@ -1,23 +1,35 @@
 module Language.VHDL.Parser.Util
-where
+  ( antiQ'
+  , toQQString
+  ) where
 
-import Text.Parsec
-import Text.Parsec.String
-import Text.Parsec.Expr
-import Data.Maybe (isJust)
+import           Control.Monad              (unless)
+import           Data.Char                  (toLower)
+import           Data.Data                  (Data, toConstr)
+import           Data.List                  (stripPrefix)
+import           Data.Maybe                 (fromJust)
+import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
+import           Language.VHDL.Syntax
+import           Text.Parsec
 
-import Language.VHDL.Syntax
-import Language.VHDL.Lexer
+toQQString
+  :: (Data a)
+  => a -> String
+toQQString s = fromJust $ stripPrefix "anti" $ map toLower $ show . toConstr $ s
 
-isReserved :: String -> Parser Bool
-isReserved a = isJust <$> optionMaybe (reserved a)
-
-block :: String -> Parser a -> Parser a
-block s p = reserved s >> p <* (reserved "end" *> optional (reserved s))
-            <* optional simpleName <* semi
-
-
-stmLabel :: (Maybe Label -> Parser a) -> Parser a
-stmLabel f = do
-  label <- optionMaybe (label <* colon)
-  f label
+antiQ'
+  :: (Data a)
+  => Parser Identifier -> (String -> a) -> Parser a -> Parser a
+antiQ' a q p = try parseQ <|> p
+  where
+    parseQ = do
+      _ <- char '$'
+      let qn = toQQString $ q ""
+      qs <- string qn
+      _ <- char ':'
+      (Ident i) <- a
+      qe <- quotesEnabled
+      unless qe $ unexpected "QuasiQuotation syntax not emabled"
+      unless (qs == qn) $
+        unexpected $ "Wrong QuasiQuoter " ++ qn ++ " used in context"
+      return $ q i

@@ -1,12 +1,14 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Language.VHDL.Syntax where
 
-import Data.Typeable (Typeable)
-import Data.Data (Data)
+import           Data.Data     (Data)
+import           Data.Typeable (Typeable)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
+
+ --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 --
@@ -14,8 +16,6 @@ import Data.Data (Data)
 --
 --                      Design entities and configurations
 --
- --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- * 1.1 Entiity Declarations
 --------------------------------------------------------------------------------
@@ -28,15 +28,12 @@ import Data.Data (Data)
         entity_statement_part ]
       END [ ENTITY ] [ entity_simple_name ] ;
 -}
-
-data EntityDeclaration = EntityDeclaration {
-    entity_identifier         :: Identifier
-  , entity_header             :: EntityHeader
-  , entity_declarative_part   :: EntityDeclarativePart
-  , entity_statement_part     :: Maybe EntityStatementPart
-  --, pos :: Integer
-  }
-  deriving (Eq, Show, Typeable, Data)
+data EntityDeclaration = EntityDeclaration
+  { entity_identifier       :: Identifier
+  , entity_header           :: EntityHeader
+  , entity_declarative_part :: EntityDeclarativePart
+  , entity_statement_part   :: Maybe EntityStatementPart
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 1.1.1 Entity haeder
@@ -48,18 +45,18 @@ data EntityDeclaration = EntityDeclaration {
     generic_clause ::= GENERIC ( generic_list ) ;
     port_clause    ::= PORT ( port_list ) ;
 -}
+data EntityHeader = EntityHeader
+  { formal_generic_clause :: Maybe GenericClause
+  , formal_port_clause    :: Maybe PortClause
+  , pos                   :: Position
+  } deriving (Eq, Show, Typeable, Data)
 
-data EntityHeader = EntityHeader {
-    formal_generic_clause     :: Maybe GenericClause
-  , formal_port_clause        :: Maybe PortClause
-  --, pos :: Integer
-  }
+data GenericClause =
+  GenericClause GenericList
   deriving (Eq, Show, Typeable, Data)
 
-data GenericClause = GenericClause GenericList
-  deriving (Eq, Show, Typeable, Data)
-
-data PortClause    = PortClause    PortList
+data PortClause =
+  PortClause PortList
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -67,7 +64,6 @@ data PortClause    = PortClause    PortList
 {-
     generic_list ::= generic_interface_list
 -}
-
 type GenericList = InterfaceList
 
 --------------------------------------------------------------------------------
@@ -75,7 +71,6 @@ type GenericList = InterfaceList
 {-
     port_list ::= port_interface_list
 -}
-
 type PortList = InterfaceList
 
 --------------------------------------------------------------------------------
@@ -101,25 +96,24 @@ type PortList = InterfaceList
       | group_template_declaration
       | group_declaration
 -}
-
 type EntityDeclarativePart = [EntityDeclarativeItem]
 
-data EntityDeclarativeItem =
-    EDISubprogDecl  SubprogramDeclaration
-  | EDISubprogBody  SubprogramBody
-  | EDIType         TypeDeclaration
-  | EDISubtype      SubtypeDeclaration
-  | EDIConstant     ConstantDeclaration
-  | EDISignal       SignalDeclaration
-  | EDIShared       VariableDeclaration
-  | EDIFile         FileDeclaration
-  | EDIAlias        AliasDeclaration
-  | EDIAttrDecl     AttributeDeclaration
-  | EDIAttrSpec     AttributeSpecification
-  | EDIDiscSpec     DisconnectionSpecification
-  | EDIUseClause    UseClause
-  | EDIGroupTemp    GroupTemplateDeclaration
-  | EDIGroup        GroupDeclaration
+data EntityDeclarativeItem
+  = EDISubprogDecl SubprogramDeclaration
+  | EDISubprogBody SubprogramBody
+  | EDIType TypeDeclaration
+  | EDISubtype SubtypeDeclaration
+  | EDIConstant ConstantDeclaration
+  | EDISignal SignalDeclaration
+  | EDIShared VariableDeclaration
+  | EDIFile FileDeclaration
+  | EDIAlias AliasDeclaration
+  | EDIAttrDecl AttributeDeclaration
+  | EDIAttrSpec AttributeSpecification
+  | EDIDiscSpec DisconnectionSpecification
+  | EDIUseClause UseClause
+  | EDIGroupTemp GroupTemplateDeclaration
+  | EDIGroup GroupDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -133,13 +127,12 @@ data EntityDeclarativeItem =
       | passive_concurrent_procedure_call_statement
       | passive_process_statement
 -}
-
 type EntityStatementPart = [EntityStatement]
 
-data EntityStatement =
-    ESConcAssert   ConcurrentAssertionStatement
-  | ESPassiveConc  ConcurrentProcedureCallStatement
-  | ESPassiveProc  ProcessStatement
+data EntityStatement
+  = ESConcAssert ConcurrentAssertionStatement
+  | ESPassiveConc ConcurrentProcedureCallStatement
+  | ESPassiveProc ProcessStatement
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -153,14 +146,12 @@ data EntityStatement =
       architecture_statement_part
       END [ ARCHITECTURE ] [ architecture_simple_name ] ;
 -}
-
-data ArchitectureBody = ArchitectureBody {
-    archi_identifier       :: Identifier
+data ArchitectureBody = ArchitectureBody
+  { archi_identifier       :: Identifier
   , archi_entity_name      :: Name
   , archi_declarative_part :: ArchitectureDeclarativePart
   , archi_statement_part   :: ArchitectureStatementPart
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 1.2.1 Architecture declarative part
@@ -187,27 +178,26 @@ data ArchitectureBody = ArchitectureBody {
       | group_template_declaration
       | group_declaration
 -}
-
 type ArchitectureDeclarativePart = [BlockDeclarativeItem]
 
-data BlockDeclarativeItem =
-    BDISubprogDecl  SubprogramDeclaration
-  | BDISubprogBody  SubprogramBody
-  | BDIType         TypeDeclaration
-  | BDISubtype      SubtypeDeclaration
-  | BDIConstant     ConstantDeclaration
-  | BDISignal       SignalDeclaration
-  | BDIShared       VariableDeclaration
-  | BDIFile         FileDeclaration
-  | BDIAlias        AliasDeclaration
-  | BDIComp         ComponentDeclaration
-  | BDIAttrDecl     AttributeDeclaration
-  | BDIAttrSepc     AttributeSpecification
-  | BDIConfigSepc   ConfigurationSpecification
-  | BDIDisconSpec   DisconnectionSpecification
-  | BDIUseClause    UseClause
-  | BDIGroupTemp    GroupTemplateDeclaration
-  | BDIGroup        GroupDeclaration
+data BlockDeclarativeItem
+  = BDISubprogDecl SubprogramDeclaration
+  | BDISubprogBody SubprogramBody
+  | BDIType TypeDeclaration
+  | BDISubtype SubtypeDeclaration
+  | BDIConstant ConstantDeclaration
+  | BDISignal SignalDeclaration
+  | BDIShared VariableDeclaration
+  | BDIFile FileDeclaration
+  | BDIAlias AliasDeclaration
+  | BDIComp ComponentDeclaration
+  | BDIAttrDecl AttributeDeclaration
+  | BDIAttrSepc AttributeSpecification
+  | BDIConfigSepc ConfigurationSpecification
+  | BDIDisconSpec DisconnectionSpecification
+  | BDIUseClause UseClause
+  | BDIGroupTemp GroupTemplateDeclaration
+  | BDIGroup GroupDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -216,7 +206,6 @@ data BlockDeclarativeItem =
     architecture_statement_part ::=
       { concurrent_statement }
 -}
-
 type ArchitectureStatementPart = [ConcurrentStatement]
 
 --------------------------------------------------------------------------------
@@ -237,21 +226,19 @@ type ArchitectureStatementPart = [ConcurrentStatement]
       | attribute_specification
       | group_declaration
 -}
-
-data ConfigurationDeclaration = ConfigurationDeclaration {
-    config_identifier          :: Identifier
+data ConfigurationDeclaration = ConfigurationDeclaration
+  { config_identifier          :: Identifier
   , config_entity_name         :: Name
   , config_declarative_part    :: ConfigurationDeclarativePart
   , config_block_configuration :: BlockConfiguration
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type ConfigurationDeclarativePart = [ConfigurationDeclarativeItem]
 
-data ConfigurationDeclarativeItem =
-    CDIUse       UseClause
-  | CDIAttrSpec  AttributeSpecification
-  | CDIGroup     GroupDeclaration
+data ConfigurationDeclarativeItem
+  = CDIUse UseClause
+  | CDIAttrSpec AttributeSpecification
+  | CDIGroup GroupDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -276,33 +263,31 @@ data ConfigurationDeclarativeItem =
         block_configuration
       | component_configuration
 -}
-
-data BlockConfiguration = BlockConfiguration {
-    block_specification      :: BlockSpecification
+data BlockConfiguration = BlockConfiguration
+  { block_specification      :: BlockSpecification
   , block_use_clause         :: [UseClause]
   , block_configuration_item :: [ConfigurationItem]
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data BlockSpecification =
-    BSArch  Name
+data BlockSpecification
+  = BSArch Name
   | BSBlock Label
-  | BSGen   Label (Maybe IndexSpecification)
+  | BSGen Label
+          (Maybe IndexSpecification)
   deriving (Eq, Show, Typeable, Data)
 
-data IndexSpecification =
-    ISRange DiscreteRange
-  | ISExp   Expression
+data IndexSpecification
+  = ISRange DiscreteRange
+  | ISExp Expression
   deriving (Eq, Show, Typeable, Data)
 
-data ConfigurationItem  =
-    CIBlock BlockConfiguration
-  | CIComp  ComponentConfiguration
+data ConfigurationItem
+  = CIBlock BlockConfiguration
+  | CIComp ComponentConfiguration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 1.3.2 Component configuration
-
 {-
     component_configuration ::=
       FOR component_specification
@@ -310,13 +295,11 @@ data ConfigurationItem  =
         [ block_configuration ]
       END FOR ;
 -}
-
-data ComponentConfiguration = ComponentConfiguration {
-    comp_specification       :: ComponentSpecification
+data ComponentConfiguration = ComponentConfiguration
+  { comp_specification       :: ComponentSpecification
   , comp_binding_indication  :: Maybe BindingIndication
   , comp_block_configuration :: Maybe BlockConfiguration
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 --
@@ -325,7 +308,6 @@ data ComponentConfiguration = ComponentConfiguration {
 --                           Subprograms and packages
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- * 2.1 Subprogram declarations
 --------------------------------------------------------------------------------
@@ -342,24 +324,19 @@ data ComponentConfiguration = ComponentConfiguration {
 
     operator_symbol ::= string_literal
 -}
+type SubprogramDeclaration = SubprogramSpecification
 
-type SubprogramDeclaration   = SubprogramSpecification
-
-data SubprogramSpecification =
-    SubprogramProcedure {
-      subproc_designator            :: Designator
-    , subproc_formal_parameter_list :: Maybe FormalParameterList
-    }
-  | SubprogramFunction {
-      subfun_purity                 :: Maybe Bool
-    , subfun_designator             :: Designator
-    , subfun_formal_parameter_list  :: Maybe FormalParameterList
-    , subfun_type_mark              :: TypeMark
-    }
+data SubprogramSpecification
+  = SubprogramProcedure { subproc_designator :: Designator
+                       ,  subproc_formal_parameter_list :: Maybe FormalParameterList}
+  | SubprogramFunction { subfun_purity :: Maybe Bool
+                      ,  subfun_designator :: Designator
+                      ,  subfun_formal_parameter_list :: Maybe FormalParameterList
+                      ,  subfun_type_mark :: TypeMark}
   deriving (Eq, Show, Typeable, Data)
 
-data Designator =
-    DId Identifier
+data Designator
+  = DId Identifier
   | DOp OperatorSymbol
   deriving (Eq, Show, Typeable, Data)
 
@@ -370,24 +347,17 @@ type OperatorSymbol = StringLiteral
 {-
     formal_parameter_list ::= parameter_interface_list
 -}
-
 type FormalParameterList = InterfaceList
 
 --------------------------------------------------------------------------------
 -- *** 2.1.1.1 Constant and variable parameters
-
 -- properties ... todo
-
 --------------------------------------------------------------------------------
 -- *** 2.1.1.2 Signal parameter
-
 -- properties ... todo
-
 --------------------------------------------------------------------------------
 -- *** 2.1.1.3 File parameter
-
 -- properties ... todo
-
 --------------------------------------------------------------------------------
 -- * 2.2 Subprogram bodies
 --------------------------------------------------------------------------------
@@ -423,63 +393,57 @@ type FormalParameterList = InterfaceList
 
     subprogram_kind ::= PROCEDURE | FUNCTION
 -}
-
-data SubprogramBody = SubprogramBody {
-    subprog_specification    :: SubprogramSpecification
+data SubprogramBody = SubprogramBody
+  { subprog_specification    :: SubprogramSpecification
   , subprog_declarative_part :: SubprogramDeclarativePart
   , subprog_statement_part   :: SubprogramStatementPart
   , subprog_kind             :: Maybe SubprogramKind
   , subprog_designator       :: Maybe Designator
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type SubprogramDeclarativePart = [SubprogramDeclarativeItem]
 
-data SubprogramDeclarativeItem =
-    SDISubprogDecl  SubprogramDeclaration
-  | SDISubprogBody  SubprogramBody
-  | SDIType         TypeDeclaration
-  | SDISubtype      SubtypeDeclaration
-  | SDIConstant     ConstantDeclaration
-  | SDIVariable     VariableDeclaration
-  | SDIFile         FileDeclaration
-  | SDIAlias        AliasDeclaration
-  | SDIAttrDecl     AttributeDeclaration
-  | SDIAttrSpec     AttributeSpecification
-  | SDIUseClause    UseClause
-  | SDIGroupTemp    GroupTemplateDeclaration
-  | SDIGroup        GroupDeclaration
+data SubprogramDeclarativeItem
+  = SDISubprogDecl SubprogramDeclaration
+  | SDISubprogBody SubprogramBody
+  | SDIType TypeDeclaration
+  | SDISubtype SubtypeDeclaration
+  | SDIConstant ConstantDeclaration
+  | SDIVariable VariableDeclaration
+  | SDIFile FileDeclaration
+  | SDIAlias AliasDeclaration
+  | SDIAttrDecl AttributeDeclaration
+  | SDIAttrSpec AttributeSpecification
+  | SDIUseClause UseClause
+  | SDIGroupTemp GroupTemplateDeclaration
+  | SDIGroup GroupDeclaration
   deriving (Eq, Show, Typeable, Data)
 
-type SubprogramStatementPart   = [SequentialStatement]
+type SubprogramStatementPart = [SequentialStatement]
 
-data SubprogramKind            = Procedure | Function
+data SubprogramKind
+  = Procedure
+  | Function
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 2.3 Subprogram overloading
-
 -- properties ... todo
-
 --------------------------------------------------------------------------------
 -- ** 2.3.1 Operator overloading
-
 -- properties ... todo
-
 --------------------------------------------------------------------------------
 -- ** 2.3.2 Signatures
 {-
     signature ::= [ [ type_mark { , type_mark } ] [ RETURN type_mark ] ]
 -}
-
-data Signature = Signature (Maybe (Maybe [TypeMark], Maybe TypeMark))
+data Signature =
+  Signature (Maybe (Maybe [TypeMark], Maybe TypeMark))
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 2.4 Resolution functions
-
 -- properties ... todo
-
 --------------------------------------------------------------------------------
 -- * 2.5 Package declarations
 {-
@@ -508,32 +472,30 @@ data Signature = Signature (Maybe (Maybe [TypeMark], Maybe TypeMark))
       | group_template_declaration
       | group_declaration
 -}
-
-data PackageDeclaration = PackageDeclaration {
-    packd_identifier       :: Identifier
+data PackageDeclaration = PackageDeclaration
+  { packd_identifier       :: Identifier
   , packd_declarative_part :: PackageDeclarativePart
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type PackageDeclarativePart = [PackageDeclarativeItem]
 
-data PackageDeclarativeItem =
-    PHDISubprogDecl  SubprogramDeclaration
-  | PHDISubprogBody  SubprogramBody
-  | PHDIType         TypeDeclaration
-  | PHDISubtype      SubtypeDeclaration
-  | PHDIConstant     ConstantDeclaration
-  | PHDISignal       SignalDeclaration
-  | PHDIShared       VariableDeclaration
-  | PHDIFile         FileDeclaration
-  | PHDIAlias        AliasDeclaration
-  | PHDIComp         ComponentDeclaration
-  | PHDIAttrDecl     AttributeDeclaration
-  | PHDIAttrSpec     AttributeSpecification
-  | PHDIDiscSpec     DisconnectionSpecification
-  | PHDIUseClause    UseClause
-  | PHDIGroupTemp    GroupTemplateDeclaration
-  | PHDIGroup        GroupDeclaration
+data PackageDeclarativeItem
+  = PHDISubprogDecl SubprogramDeclaration
+  | PHDISubprogBody SubprogramBody
+  | PHDIType TypeDeclaration
+  | PHDISubtype SubtypeDeclaration
+  | PHDIConstant ConstantDeclaration
+  | PHDISignal SignalDeclaration
+  | PHDIShared VariableDeclaration
+  | PHDIFile FileDeclaration
+  | PHDIAlias AliasDeclaration
+  | PHDIComp ComponentDeclaration
+  | PHDIAttrDecl AttributeDeclaration
+  | PHDIAttrSpec AttributeSpecification
+  | PHDIDiscSpec DisconnectionSpecification
+  | PHDIUseClause UseClause
+  | PHDIGroupTemp GroupTemplateDeclaration
+  | PHDIGroup GroupDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -560,35 +522,30 @@ data PackageDeclarativeItem =
       | group_template_declaration
       | group_declaration
 -}
-
-data PackageBody = PackageBody {
-    packb_simple_name           :: SimpleName
+data PackageBody = PackageBody
+  { packb_simple_name           :: SimpleName
   , packb_body_declarative_part :: PackageBodyDeclarativePart
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type PackageBodyDeclarativePart = [PackageBodyDeclarativeItem]
 
-data PackageBodyDeclarativeItem = 
-    PBDISubprogDecl  SubprogramDeclaration
-  | PBDISubprogBody  SubprogramBody
-  | PBDIType         TypeDeclaration
-  | PBDISubtype      SubtypeDeclaration
-  | PBDIConstant     ConstantDeclaration
-  | PBDIShared       VariableDeclaration
-  | PBDIFile         FileDeclaration
-  | PBDIAlias        AliasDeclaration
-  | PBDIUseClause    UseClause
-  | PBDIGroupTemp    GroupTemplateDeclaration
-  | PBDIGroup        GroupDeclaration
+data PackageBodyDeclarativeItem
+  = PBDISubprogDecl SubprogramDeclaration
+  | PBDISubprogBody SubprogramBody
+  | PBDIType TypeDeclaration
+  | PBDISubtype SubtypeDeclaration
+  | PBDIConstant ConstantDeclaration
+  | PBDIShared VariableDeclaration
+  | PBDIFile FileDeclaration
+  | PBDIAlias AliasDeclaration
+  | PBDIUseClause UseClause
+  | PBDIGroupTemp GroupTemplateDeclaration
+  | PBDIGroup GroupDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 2.7 Conformance rules
-
 -- properties ... todo
-
-
 --------------------------------------------------------------------------------
 --
 --                                   -- 3 --
@@ -596,7 +553,6 @@ data PackageBodyDeclarativeItem =
 --                                    Types
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- * 3.1 Scalar types
 {-
@@ -614,15 +570,15 @@ data PackageBodyDeclarativeItem =
 
     direction ::= TO | DOWNTO
 -}
-
-data ScalarTypeDefinition =
-    ScalarEnum  EnumerationTypeDefinition
-  | ScalarInt   IntegerTypeDefinition
+data ScalarTypeDefinition
+  = ScalarEnum EnumerationTypeDefinition
+  | ScalarInt IntegerTypeDefinition
   | ScalarFloat FloatingTypeDefinition
-  | ScalarPhys  PhysicalTypeDefinition
+  | ScalarPhys PhysicalTypeDefinition
   deriving (Eq, Show, Typeable, Data)
 
-data RangeConstraint = RangeConstraint Range
+data RangeConstraint =
+  RangeConstraint Range
   deriving (Eq, Show, Typeable, Data)
 
 -- data Range =
@@ -633,19 +589,17 @@ data RangeConstraint = RangeConstraint Range
 --     , range_upper :: SimpleExpression
 --     }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- FIXME: Replaced SimpleExpression with expression here
-
-data Range =
-    RAttr   AttributeName
-  | RSimple {
-      range_lower :: Expression
-    , range_dir   :: Direction
-    , range_upper :: Expression
-    }
+data Range
+  = RAttr AttributeName
+  | RSimple { range_lower :: Expression
+           ,  range_dir   :: Direction
+           ,  range_upper :: Expression}
   deriving (Eq, Show, Typeable, Data)
 
-data Direction = To | DownTo
+data Direction
+  = To
+  | DownTo
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -656,33 +610,28 @@ data Direction = To | DownTo
 
     enumeration_literal ::= identifier | character_literal
 -}
-
-data EnumerationTypeDefinition = EnumerationTypeDefinition [EnumerationLiteral]
+data EnumerationTypeDefinition =
+  EnumerationTypeDefinition [EnumerationLiteral]
   deriving (Eq, Show, Typeable, Data)
 
-data EnumerationLiteral =
-    EId   Identifier
+data EnumerationLiteral
+  = EId Identifier
   | EChar CharacterLiteral
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 3.1.1.1 Predefined enumeration types
-
 -- predefined ... todo
-
 --------------------------------------------------------------------------------
 -- ** 3.1.2 Integer types
 {-
     integer_type_definition ::= range_constraint
 -}
-
 type IntegerTypeDefinition = RangeConstraint
 
 --------------------------------------------------------------------------------
 -- *** 3.1.2.1 Predefined integer types
-
 -- predefined ... todo
-
 --------------------------------------------------------------------------------
 -- ** 3.1.3 Physical types
 {-
@@ -699,45 +648,39 @@ type IntegerTypeDefinition = RangeConstraint
 
     physical_literal ::= [ abstract_literal ] unit_name
 -}
-
-data PhysicalTypeDefinition = PhysicalTypeDefinition {
-    physd_range_constraint           :: RangeConstraint
+data PhysicalTypeDefinition = PhysicalTypeDefinition
+  { physd_range_constraint           :: RangeConstraint
   , physd_primary_unit_declaration   :: PrimaryUnitDeclaration
   , physd_secondary_unit_declaration :: [SecondaryUnitDeclaration]
   , physd_simple_name                :: Maybe SimpleName
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+type PrimaryUnitDeclaration = Identifier
+
+data SecondaryUnitDeclaration =
+  SecondaryUnitDeclaration Identifier
+                           PhysicalLiteral
   deriving (Eq, Show, Typeable, Data)
 
-type PrimaryUnitDeclaration   = Identifier
-
-data SecondaryUnitDeclaration = SecondaryUnitDeclaration Identifier PhysicalLiteral
-  deriving (Eq, Show, Typeable, Data)
-
-data PhysicalLiteral = PhysicalLiteral {
+data PhysicalLiteral = PhysicalLiteral
   -- Why was this just Literal instead of AbstractLiteral?
-    physl_abstract_literal :: Maybe AbstractLiteral
+  { physl_abstract_literal :: Maybe AbstractLiteral
   , physl_unit_name        :: Name
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 3.1.3.1 Predefined physical types
-
 -- predefined ... todo
-
 --------------------------------------------------------------------------------
 -- ** 3.1.4 Floating point types
 {-
     floating_type_definition ::= range_constraint
 -}
-
 type FloatingTypeDefinition = RangeConstraint
 
 --------------------------------------------------------------------------------
 -- *** 3.1.4.1 Predefined floating point types
-
 -- predefined ... todo
-
 --------------------------------------------------------------------------------
 -- * 3.2 Composite types
 {-
@@ -745,9 +688,8 @@ type FloatingTypeDefinition = RangeConstraint
         array_type_definition
       | record_type_definition
 -}
-
-data CompositeTypeDefinition =
-    CTDArray  ArrayTypeDefinition
+data CompositeTypeDefinition
+  = CTDArray ArrayTypeDefinition
   | CTDRecord RecordTypeDefinition
   deriving (Eq, Show, Typeable, Data)
 
@@ -771,45 +713,40 @@ data CompositeTypeDefinition =
 
     discrete_range ::= discrete_subtype_indication | range
 -}
-
-data ArrayTypeDefinition =
-    ArrU UnconstrainedArrayDefinition
+data ArrayTypeDefinition
+  = ArrU UnconstrainedArrayDefinition
   | ArrC ConstrainedArrayDefinition
   deriving (Eq, Show, Typeable, Data)
 
-data UnconstrainedArrayDefinition = UnconstrainedArrayDefinition {
-    arru_index_subtype_definition   :: [IndexSubtypeDefinition]
+data UnconstrainedArrayDefinition = UnconstrainedArrayDefinition
+  { arru_index_subtype_definition   :: [IndexSubtypeDefinition]
   , arru_element_subtype_indication :: SubtypeIndication
-}
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data ConstrainedArrayDefinition = ConstrainedArrayDefinition {
-    arrc_index_constraint   :: IndexConstraint
+data ConstrainedArrayDefinition = ConstrainedArrayDefinition
+  { arrc_index_constraint   :: IndexConstraint
   , arrc_subtype_indication :: SubtypeIndication
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+data IndexSubtypeDefinition =
+  IndexSubtypeDefinition TypeMark
   deriving (Eq, Show, Typeable, Data)
 
-data IndexSubtypeDefinition = IndexSubtypeDefinition TypeMark
+data IndexConstraint =
+  IndexConstraint [DiscreteRange]
   deriving (Eq, Show, Typeable, Data)
 
-data IndexConstraint = IndexConstraint [DiscreteRange]
-  deriving (Eq, Show, Typeable, Data)
-
-data DiscreteRange =
-    DRSub   SubtypeIndication
+data DiscreteRange
+  = DRSub SubtypeIndication
   | DRRange Range
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 3.2.1.1 Index constraints and discrete ranges
-
 -- constraints ... todo
-
 --------------------------------------------------------------------------------
 -- *** 3.2.1.2 Predefined array types
-
 -- predefined ... todo
-
 --------------------------------------------------------------------------------
 -- ** 3.2.2 Record types
 {-
@@ -826,20 +763,17 @@ data DiscreteRange =
 
     element_subtype_definition ::= subtype_indication
 -}
-
-data RecordTypeDefinition = RecordTypeDefinition {
-    rectd_element_declaration :: [ElementDeclaration]
+data RecordTypeDefinition = RecordTypeDefinition
+  { rectd_element_declaration :: [ElementDeclaration]
   , rectd_type_simple_name    :: Maybe SimpleName
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data ElementDeclaration = ElementDeclaration {
-    elemd_identifier_list    :: IdentifierList
+data ElementDeclaration = ElementDeclaration
+  { elemd_identifier_list    :: IdentifierList
   , elemd_subtype_definition :: ElementSubtypeDefinition
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-type IdentifierList           = [Identifier]
+type IdentifierList = [Identifier]
 
 type ElementSubtypeDefinition = SubtypeIndication
 
@@ -848,8 +782,8 @@ type ElementSubtypeDefinition = SubtypeIndication
 {-
     access_type_definition ::= ACCESS subtype_indication
 -}
-
-data AccessTypeDefinition = AccessTypeDefinition SubtypeIndication
+data AccessTypeDefinition =
+  AccessTypeDefinition SubtypeIndication
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -857,34 +791,28 @@ data AccessTypeDefinition = AccessTypeDefinition SubtypeIndication
 {-
     incomplete_type_declaration ::= TYPE identifier ;
 -}
-
-data IncompleteTypeDeclaration = IncompleteTypeDeclaration Identifier
+data IncompleteTypeDeclaration =
+  IncompleteTypeDeclaration Identifier
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 3.3.2 Allocation and deallocation of objects
-
 -- ?
-
 --------------------------------------------------------------------------------
 -- * 3.4 File types
 {-
     file_type_definition ::= FILE OF type_mark
 -}
-
-data FileTypeDefinition = FileTypeDefinition TypeMark
+data FileTypeDefinition =
+  FileTypeDefinition TypeMark
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 3.4.1 File operations
-
 -- ?
-
 --------------------------------------------------------------------------------
 -- * 3.5 Protected types
-
 -- I'll skip these for now..
-
 --------------------------------------------------------------------------------
 --
 --                                   -- 4 --
@@ -908,20 +836,19 @@ data FileTypeDefinition = FileTypeDefinition TypeMark
       | subprogram_declaration
       | package_declaration
 -}
-
-data Declaration =
-    DType          TypeDeclaration
-  | DSubtype       SubtypeDeclaration
-  | DObject        ObjectDeclaration
-  | DAlias         AliasDeclaration
-  | DComponent     ComponentDeclaration
-  | DAttribute     AttributeDeclaration
+data Declaration
+  = DType TypeDeclaration
+  | DSubtype SubtypeDeclaration
+  | DObject ObjectDeclaration
+  | DAlias AliasDeclaration
+  | DComponent ComponentDeclaration
+  | DAttribute AttributeDeclaration
   | DGroupTemplate GroupTemplateDeclaration
-  | DGroup         GroupDeclaration
-  | DEntity        EntityDeclaration
+  | DGroup GroupDeclaration
+  | DEntity EntityDeclaration
   | DConfiguration ConfigurationDeclaration
-  | DSubprogram    SubprogramDeclaration
-  | DPackage       PackageDeclaration
+  | DSubprogram SubprogramDeclaration
+  | DPackage PackageDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -941,24 +868,24 @@ data Declaration =
       | file_type_definition
       | protected_type_definition  -- missing from ref. manual
 -}
-
-data TypeDeclaration = TDFull FullTypeDeclaration | TDPartial IncompleteTypeDeclaration
+data TypeDeclaration
+  = TDFull FullTypeDeclaration
+  | TDPartial IncompleteTypeDeclaration
   deriving (Eq, Show, Typeable, Data)
 
-data FullTypeDeclaration = FullTypeDeclaration {
-    ftd_identifier      :: Identifier
+data FullTypeDeclaration = FullTypeDeclaration
+  { ftd_identifier      :: Identifier
   , ftd_type_definition :: TypeDefinition
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data TypeDefinition =
-    TDScalar       ScalarTypeDefinition
+data TypeDefinition
+  = TDScalar ScalarTypeDefinition
   | TDComposite CompositeTypeDefinition
-  | TDAccess       AccessTypeDefinition
-  | TDFile           FileTypeDefinition
---  | TDProt      ProtectedTypeDefinition
+  | TDAccess AccessTypeDefinition
+  | TDFile FileTypeDefinition
   deriving (Eq, Show, Typeable, Data)
 
+--  | TDProt      ProtectedTypeDefinition
 --------------------------------------------------------------------------------
 -- * 4.2 Subtype declarations
 {-
@@ -976,29 +903,29 @@ data TypeDefinition =
         range_constraint
       | index_constraint
 -}
+data SubtypeDeclaration = SubtypeDeclaration
+  { sd_identifier :: Identifier
+  , sd_indication :: SubtypeIndication
+  } deriving (Eq, Show, Typeable, Data)
 
-data SubtypeDeclaration = SubtypeDeclaration {
-    sd_identifier               :: Identifier
-  , sd_indication               :: SubtypeIndication
-  }
-  deriving (Eq, Show, Typeable, Data)
-
-data SubtypeIndication = SubtypeIndication {
-    si_resolution_function_name :: Maybe Name
+data SubtypeIndication = SubtypeIndication
+  { si_resolution_function_name :: Maybe Name
   , si_type_mark                :: TypeMark
   , si_constraint               :: Maybe Constraint
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+data TypeMark
+  = TMType Name
+  | TMSubtype Name
   deriving (Eq, Show, Typeable, Data)
 
-data TypeMark   = TMType Name | TMSubtype Name
-  deriving (Eq, Show, Typeable, Data)
-
-data Constraint = CRange RangeConstraint | CIndex IndexConstraint
+data Constraint
+  = CRange RangeConstraint
+  | CIndex IndexConstraint
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 4.3 Objects
-
 --------------------------------------------------------------------------------
 -- ** 4.3.1 Object declarations
 {-
@@ -1008,12 +935,11 @@ data Constraint = CRange RangeConstraint | CIndex IndexConstraint
       | variable_declaration
       | file_declaration
 -}
-
-data ObjectDeclaration =
-    ObjConst ConstantDeclaration
-  | ObjSig     SignalDeclaration
-  | ObjVar   VariableDeclaration
-  | ObjFile      FileDeclaration
+data ObjectDeclaration
+  = ObjConst ConstantDeclaration
+  | ObjSig SignalDeclaration
+  | ObjVar VariableDeclaration
+  | ObjFile FileDeclaration
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1022,13 +948,11 @@ data ObjectDeclaration =
     constant_declaration ::=
       CONSTANT identifier_list : subtype_indication [ := expression ] ;
 -}
-
-data ConstantDeclaration = ConstantDeclaration {
-    const_identifier_list    :: IdentifierList
+data ConstantDeclaration = ConstantDeclaration
+  { const_identifier_list    :: IdentifierList
   , const_subtype_indication :: SubtypeIndication
   , const_expression         :: Maybe Expression
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 4.3.1.2 Signal declarations
@@ -1038,16 +962,16 @@ data ConstantDeclaration = ConstantDeclaration {
 
     signal_kind ::= REGISTER | BUS
 -}
-
-data SignalDeclaration = SignalDeclaration {
-    signal_identifier_list    :: IdentifierList
+data SignalDeclaration = SignalDeclaration
+  { signal_identifier_list    :: IdentifierList
   , signal_subtype_indication :: SubtypeIndication
   , signal_kind               :: Maybe SignalKind
   , signal_expression         :: Maybe Expression
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data SignalKind = Register | Bus
+data SignalKind
+  = Register
+  | Bus
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1056,14 +980,12 @@ data SignalKind = Register | Bus
     variable_declaration ::=
       [ SHARED ] VARIABLE identifier_list : subtype_indication [ := expression ] ;
 -}
-
-data VariableDeclaration = VariableDeclaration {
-    var_shared             :: Bool
+data VariableDeclaration = VariableDeclaration
+  { var_shared             :: Bool
   , var_identifier_list    :: IdentifierList
   , var_subtype_indication :: SubtypeIndication
   , var_expression         :: Maybe Expression
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 4.3.1.4 File declarations
@@ -1076,19 +998,16 @@ data VariableDeclaration = VariableDeclaration {
 
     file_logical_name ::= string_expression
 -}
+data FileDeclaration = FileDeclaration
+  { fd_identifier_list    :: IdentifierList
+  , fd_subtype_indication :: SubtypeIndication
+  , fd_open_information   :: Maybe FileOpenInformation
+  } deriving (Eq, Show, Typeable, Data)
 
-data FileDeclaration = FileDeclaration {
-    fd_identifier_list      :: IdentifierList
-  , fd_subtype_indication   :: SubtypeIndication
-  , fd_open_information     :: Maybe FileOpenInformation
-  }
-  deriving (Eq, Show, Typeable, Data)
-
-data FileOpenInformation = FileOpenInformation {
-    foi_open_kind_expression :: Maybe Expression
+data FileOpenInformation = FileOpenInformation
+  { foi_open_kind_expression :: Maybe Expression
   , foi_logical_name         :: FileLogicalName
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type FileLogicalName = Expression
 
@@ -1115,21 +1034,18 @@ type FileLogicalName = Expression
 
     mode ::= IN | OUT | INOUT | BUFFER | LINKAGE
 -}
-
 -- data InterfaceDeclaration =
 --     ICDecl InterfaceConstantDeclaration
 --   | ISDecl InterfaceSignalDeclaration
 --   | IVDecl InterfaceVariableDeclaration
 --   | IFDecl InterfaceFileDeclaration
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data InterfaceConstantDeclaration = InterfaceConstantDeclaration {
 --         identifier_list     :: IdentifierList
 --       , subtype_indication :: SubtypeIndication
 --       , static_expression  :: Maybe Expression
 --     }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data InterfaceSignalDeclaration = InterfaceSignalDeclaration {
 --         identifier_list     :: IdentifierList
 --       , mode                 :: Maybe Mode
@@ -1138,7 +1054,6 @@ type FileLogicalName = Expression
 --       , static_expression    :: Maybe Expression
 --     }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data InterfaceVariableDeclaration = InterfaceVariableDeclaration {
 --         identifier_list     :: IdentifierList
 --       , mode                 :: Maybe Mode
@@ -1146,40 +1061,34 @@ type FileLogicalName = Expression
 --       , static_expression    :: Maybe Expression
 --     }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data InterfaceFileDeclaration = InterfaceFileDeclaration {
 --         identifier_list     :: IdentifierList
 --       , subtype_indication  :: SubtypeIndication
 --     }
 --   deriving (Eq, Show, Typeable, Data)
-
-
 data InterfaceDeclaration
-  = InterfaceConstantDeclaration {
-        idecl_identifier_list     :: IdentifierList
-      , iconst_subtype_indication :: SubtypeIndication
-      , iconst_static_expression  :: Maybe Expression
-    }
-  | InterfaceSignalDeclaration {
-        idecl_identifier_list     :: IdentifierList
-      , isig_mode                 :: Maybe Mode
-      , isig_subtype_indication   :: SubtypeIndication
-      , isig_bus                  :: Bool
-      , isig_static_expression    :: Maybe Expression
-    }
-  | InterfaceVariableDeclaration {
-        idecl_identifier_list     :: IdentifierList
-      , ivar_mode                 :: Maybe Mode
-      , ivar_subtype_indication   :: SubtypeIndication
-      , ivar_static_expression    :: Maybe Expression
-    }
-  | InterfaceFileDeclaration {
-        idecl_identifier_list     :: IdentifierList
-      , ifile_subtype_indication  :: SubtypeIndication
-    }
+  = InterfaceConstantDeclaration { idecl_identifier_list :: IdentifierList
+                                ,  iconst_subtype_indication :: SubtypeIndication
+                                ,  iconst_static_expression :: Maybe Expression}
+  | InterfaceSignalDeclaration { idecl_identifier_list   :: IdentifierList
+                              ,  isig_mode               :: Maybe Mode
+                              ,  isig_subtype_indication :: SubtypeIndication
+                              ,  isig_bus                :: Bool
+                              ,  isig_static_expression  :: Maybe Expression}
+  | InterfaceVariableDeclaration { idecl_identifier_list   :: IdentifierList
+                                ,  ivar_mode               :: Maybe Mode
+                                ,  ivar_subtype_indication :: SubtypeIndication
+                                ,  ivar_static_expression  :: Maybe Expression}
+  | InterfaceFileDeclaration { idecl_identifier_list    :: IdentifierList
+                            ,  ifile_subtype_indication :: SubtypeIndication}
   deriving (Eq, Show, Typeable, Data)
 
-data Mode = In | Out | InOut | Buffer | Linkage
+data Mode
+  = In
+  | Out
+  | InOut
+  | Buffer
+  | Linkage
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1189,8 +1098,8 @@ data Mode = In | Out | InOut | Buffer | Linkage
 
     interface_element ::= interface_declaration
 -}
-
-data InterfaceList    = InterfaceList [InterfaceElement]
+data InterfaceList =
+  InterfaceList [InterfaceElement]
   deriving (Eq, Show, Typeable, Data)
 
 type InterfaceElement = InterfaceDeclaration
@@ -1226,40 +1135,43 @@ type InterfaceElement = InterfaceDeclaration
       | function_name ( actual_designator )
       | type_mark ( actual_designator )
 -}
-
-data AssociationElement = AssociationElement {
-    assoc_formal_part :: Maybe FormalPart
+data AssociationElement = AssociationElement
+  { assoc_formal_part :: Maybe FormalPart
   , assoc_actual_part :: ActualPart
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+data AssociationList =
+  AssociationList [AssociationElement]
   deriving (Eq, Show, Typeable, Data)
 
-data AssociationList = AssociationList [AssociationElement]
-  deriving (Eq, Show, Typeable, Data)
-
-data FormalDesignator =
-    FDGeneric   Name
-  | FDPort      Name
+data FormalDesignator
+  = FDGeneric Name
+  | FDPort Name
   | FDParameter Name
   deriving (Eq, Show, Typeable, Data)
 
-data FormalPart =
-    FPDesignator          FormalDesignator
-  | FPFunction   Name     FormalDesignator
-  | FPType       TypeMark FormalDesignator
+data FormalPart
+  = FPDesignator FormalDesignator
+  | FPFunction Name
+               FormalDesignator
+  | FPType TypeMark
+           FormalDesignator
   deriving (Eq, Show, Typeable, Data)
 
-data ActualDesignator =
-    ADExpression  Expression
-  | ADSignal      Name
-  | ADVariable    Name
-  | ADFile        Name
+data ActualDesignator
+  = ADExpression Expression
+  | ADSignal Name
+  | ADVariable Name
+  | ADFile Name
   | ADOpen
   deriving (Eq, Show, Typeable, Data)
 
-data ActualPart =
-    APDesignator          ActualDesignator
-  | APFunction   Name     ActualDesignator
-  | APType       TypeMark ActualDesignator
+data ActualPart
+  = APDesignator ActualDesignator
+  | APFunction Name
+               ActualDesignator
+  | APType TypeMark
+           ActualDesignator
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1270,39 +1182,33 @@ data ActualPart =
 
     alias_designator ::= identifier | character_literal | operator_symbol
 -}
-
-data AliasDeclaration = AliasDeclaration {
-    alias_designator         :: AliasDesignator
+data AliasDeclaration = AliasDeclaration
+  { alias_designator         :: AliasDesignator
   , alias_subtype_indication :: Maybe SubtypeIndication
   , alias_name               :: Name
   , alias_signature          :: Maybe Signature
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data AliasDesignator =
-    ADIdentifier Identifier
-  | ADCharacter  CharacterLiteral
-  | ADOperator   OperatorSymbol
+data AliasDesignator
+  = ADIdentifier Identifier
+  | ADCharacter CharacterLiteral
+  | ADOperator OperatorSymbol
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 4.3.3.1 Object aliases
-
 --------------------------------------------------------------------------------
 -- *** 4.3.3.2 Nonobject aliases
-
 --------------------------------------------------------------------------------
 -- * 4.4 Attribute declarations
 {-
     attribute_declaration ::=
       ATTRIBUTE identifier : type_mark ;
 -}
-
-data AttributeDeclaration = AttributeDeclaration {
-    attr_identifier :: Identifier
+data AttributeDeclaration = AttributeDeclaration
+  { attr_identifier :: Identifier
   , attr_type_marke :: TypeMark
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 4.5 Component declarations
@@ -1313,16 +1219,13 @@ data AttributeDeclaration = AttributeDeclaration {
         [ local_port_clause ]
       END COMPONENT [ component_simple_name ] ;
 -}
-
 -- component_simple_name should, if present, repeat the identifier of the
 -- component declaration and therefore it is not a part of the AST
-
-data ComponentDeclaration = ComponentDeclaration {
-    comp_identifier           :: Identifier
+data ComponentDeclaration = ComponentDeclaration
+  { comp_identifier           :: Identifier
   , comp_local_generic_clause :: Maybe GenericClause
   , comp_local_port_clause    :: Maybe PortClause
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 4.6 Group template declarations
@@ -1335,20 +1238,17 @@ data ComponentDeclaration = ComponentDeclaration {
 
     entity_class_entry ::= entity_class [ <> ]
 -}
-
-data GroupTemplateDeclaration = GroupTemplateDeclaration {
-    gtd_identifier              :: Identifier
+data GroupTemplateDeclaration = GroupTemplateDeclaration
+  { gtd_identifier              :: Identifier
   , gtd_entity_class_entry_list :: EntityClassEntryList
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type EntityClassEntryList = [EntityClassEntry]
 
-data EntityClassEntry = EntityClassEntry {
-    entc_entity_class :: EntityClass
+data EntityClassEntry = EntityClassEntry
+  { entc_entity_class :: EntityClass
   , entc_multiple     :: Bool
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 4.7 Group declarations
@@ -1360,18 +1260,16 @@ data EntityClassEntry = EntityClassEntry {
 
     group_constituent ::= name | character_literal
 -}
-
-data GroupDeclaration = GroupDeclaration {
-    group_identifier       :: Identifier
+data GroupDeclaration = GroupDeclaration
+  { group_identifier       :: Identifier
   , group_template_name    :: Name
   , group_constituent_list :: GroupConstituentList
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type GroupConstituentList = [GroupConstituent]
 
-data GroupConstituent =
-    GCName Name
+data GroupConstituent
+  = GCName Name
   | GCChar CharacterLiteral
   deriving (Eq, Show, Typeable, Data)
 
@@ -1382,7 +1280,6 @@ data GroupConstituent =
 --                               Specifications
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- * 5.1 Attribute specification
 {-
@@ -1409,51 +1306,70 @@ data GroupConstituent =
 
     entity_tag ::= simple_name | character_literal | operator_symbol
 -}
-
-data AttributeSpecification = AttributeSpecification {
-    as_attribute_designator :: AttributeDesignator
+data AttributeSpecification = AttributeSpecification
+  { as_attribute_designator :: AttributeDesignator
   , as_entity_specification :: EntitySpecification
   , as_expression           :: Expression
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+data EntitySpecification = EntitySpecification
+  { es_entity_name_list :: EntityNameList
+  , es_entity_class     :: EntityClass
+  } deriving (Eq, Show, Typeable, Data)
+
+data EntityClass
+  = ENTITY
+  | ARCHITECTURE
+  | CONFIGURATION
+  | PROCEDURE
+  | FUNCTION
+  | PACKAGE
+  | TYPE
+  | SUBTYPE
+  | CONSTANT
+  | SIGNAL
+  | VARIABLE
+  | COMPONENT
+  | LABEL
+  | LITERAL
+  | UNITS
+  | GROUP
+  | FILE
+  | Entity
+  | Architecture
+  | Configuration
+  | Procedure'
+  | Function'
+  | Package
+  | Type
+  | Subtype
+  | Constant
+  | Signal
+  | Variable
+  | Constant'
+  | Label
+  | Literal
+  | Units
+  | Group
+  | File
+  | Component
   deriving (Eq, Show, Typeable, Data)
 
-data EntitySpecification = EntitySpecification {
-    es_entity_name_list     :: EntityNameList
-  , es_entity_class         :: EntityClass
-  }
-  deriving (Eq, Show, Typeable, Data)
-
-data EntityClass =
-    ENTITY     | ARCHITECTURE  | CONFIGURATION
-  | PROCEDURE  | FUNCTION      | PACKAGE
-  | TYPE       | SUBTYPE       | CONSTANT
-  | SIGNAL     | VARIABLE      | COMPONENT
-  | LABEL      | LITERAL       | UNITS
-  | GROUP      | FILE
-  | Entity | Architecture | Configuration
-  | Procedure' | Function' | Package
-  | Type | Subtype | Constant
-  | Signal | Variable | Constant'
-  | Label | Literal | Units
-  | Group | File | Component
-  deriving (Eq, Show, Typeable, Data)
-
-data EntityNameList =
-    ENLDesignators [EntityDesignator]
+data EntityNameList
+  = ENLDesignators [EntityDesignator]
   | ENLOthers
   | ENLAll
   deriving (Eq, Show, Typeable, Data)
 
-data EntityDesignator = EntityDesignator {
-    ed_entity_tag :: EntityTag
+data EntityDesignator = EntityDesignator
+  { ed_entity_tag :: EntityTag
   , ed_signature  :: Maybe Signature
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data EntityTag =
-    ETName SimpleName
+data EntityTag
+  = ETName SimpleName
   | ETChar CharacterLiteral
-  | ETOp   OperatorSymbol
+  | ETOp OperatorSymbol
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1471,21 +1387,18 @@ data EntityTag =
       | ALL
 
 -}
-
-data ConfigurationSpecification = ConfigurationSpecification {
-    cs_component_specification :: ComponentSpecification
+data ConfigurationSpecification = ConfigurationSpecification
+  { cs_component_specification :: ComponentSpecification
   , cs_binding_indication      :: BindingIndication
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data ComponentSpecification = ComponentSpecification {
-    cs_instantiation_list      :: InstantiationList
-  , cs_component_name          :: Name
-  }
-  deriving (Eq, Show, Typeable, Data)
+data ComponentSpecification = ComponentSpecification
+  { cs_instantiation_list :: InstantiationList
+  , cs_component_name     :: Name
+  } deriving (Eq, Show, Typeable, Data)
 
-data InstantiationList =
-    ILLabels [Label]
+data InstantiationList
+  = ILLabels [Label]
   | ILOthers
   | ILAll
   deriving (Eq, Show, Typeable, Data)
@@ -1498,13 +1411,11 @@ data InstantiationList =
       [ generic_map_aspect ]
       [ port_map_aspect ]
 -}
-
-data BindingIndication = BindingIndication {
-    bi_entity_aspect      :: Maybe EntityAspect
+data BindingIndication = BindingIndication
+  { bi_entity_aspect      :: Maybe EntityAspect
   , bi_generic_map_aspect :: Maybe GenericMapAspect
   , bi_port_map_aspect    :: Maybe PortMapAspect
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 5.2.1.1 Entity aspect
@@ -1514,9 +1425,9 @@ data BindingIndication = BindingIndication {
       | CONFIGURATION configuration_name
       | OPEN
 -}
-
-data EntityAspect =
-    EAEntity Name (Maybe Identifier)
+data EntityAspect
+  = EAEntity Name
+             (Maybe Identifier)
   | EAConfig Name
   | EAOpen
   deriving (Eq, Show, Typeable, Data)
@@ -1530,22 +1441,20 @@ data EntityAspect =
     port_map_aspect ::=
       PORT MAP ( port_association_list )
 -}
-
-data GenericMapAspect = GenericMapAspect AssociationList
+data GenericMapAspect =
+  GenericMapAspect AssociationList
   deriving (Eq, Show, Typeable, Data)
 
-data PortMapAspect    = PortMapAspect    AssociationList
+data PortMapAspect =
+  PortMapAspect AssociationList
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 5.2.2 Default binding indication
-
 -- defaults ... todo?
-
 --------------------------------------------------------------------------------
 -- * 5.2.4 Physical types
 -- * 5.2.4.1 General
-
 {-
 physical_type_definition ::=
    range_constraint
@@ -1557,19 +1466,15 @@ primary_unit_declaration ::= identifier ;
 secondary_unit_declaration ::= identifier = physical_literal ;
 physical_literal ::= [ abstract_literal ] unit_name
 -}
-
 -- TODO
-
 -- data PhyscalLiteral = PhysicalLiteral {
 --     pl_abstract_literal :: Maybe AbstractLiteral
 --   , pl_unit_name        :: UnitName
 --   }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- FIXME: It's probably wrong to statically define acceptable units like this
 --data UnitName = Fs | Ps | Ns | Us | Ms | Sec
 --  deriving (Eq, Show, Typeable, Data)
-
 --------------------------------------------------------------------------------
 -- * 5.3 Disconnection specification
 {-
@@ -1584,26 +1489,21 @@ physical_literal ::= [ abstract_literal ] unit_name
       | OTHERS
       | ALL
 -}
-
-data DisconnectionSpecification = DisconnectionSpecification {
-    ds_guarded_signal_specification :: GuardedSignalSpecification
+data DisconnectionSpecification = DisconnectionSpecification
+  { ds_guarded_signal_specification :: GuardedSignalSpecification
   , ds_time_expression              :: TimeExpression
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data GuardedSignalSpecification = GuardedSignalSpecification {
-    gs_guarded_signal_list          :: SignalList
-  , gs_type_mark                    :: TypeMark
-  }
-  deriving (Eq, Show, Typeable, Data)
+data GuardedSignalSpecification = GuardedSignalSpecification
+  { gs_guarded_signal_list :: SignalList
+  , gs_type_mark           :: TypeMark
+  } deriving (Eq, Show, Typeable, Data)
 
-data SignalList =
-    SLName   [Name]
+data SignalList
+  = SLName [Name]
   | SLOthers
   | SLAll
   deriving (Eq, Show, Typeable, Data)
-
-
 
 --------------------------------------------------------------------------------
 --
@@ -1612,7 +1512,6 @@ data SignalList =
 --                                    Names
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- * 6.1 Names
 {-
@@ -1628,19 +1527,19 @@ data SignalList =
         name
       | function_call
 -}
-
-data Name =
-    NSimple SimpleName
-  | NOp     OperatorSymbol
+data Name
+  = NSimple SimpleName
+  | NOp OperatorSymbol
   | NSelect SelectedName
-  | NIndex  IndexedName
-  | NSlice  SliceName
-  | NAttr   AttributeName
+  | NIndex IndexedName
+  | NSlice SliceName
+  | NAttr AttributeName
+  | AntiName String
   deriving (Eq, Show, Typeable, Data)
 
-data Prefix =
-    PName Name
-  | PFun  FunctionCall
+data Prefix
+  = PName Name
+  | PFun FunctionCall
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1648,7 +1547,6 @@ data Prefix =
 {-
     simple_name ::= identifier
 -}
-
 type SimpleName = Identifier
 
 --------------------------------------------------------------------------------
@@ -1662,17 +1560,16 @@ type SimpleName = Identifier
       | operator_symbol
       | ALL
 -}
-
-data SelectedName = SelectedName {
-    sname_prefix :: Prefix
-  , sname_suffix :: Suffix
-  }
+data SelectedName
+  = SelectedName { sname_prefix :: Prefix
+                ,  sname_suffix :: Suffix}
+  | AntiSelname
   deriving (Eq, Show, Typeable, Data)
 
-data Suffix =
-    SSimple SimpleName
-  | SChar   CharacterLiteral
-  | SOp     OperatorSymbol
+data Suffix
+  = SSimple SimpleName
+  | SChar CharacterLiteral
+  | SOp OperatorSymbol
   | SAll
   deriving (Eq, Show, Typeable, Data)
 
@@ -1681,24 +1578,20 @@ data Suffix =
 {-
     indexed_name ::= prefix ( expression { , expression } )
 -}
-
-data IndexedName = IndexedName {
-    iname_prefix     :: Prefix
+data IndexedName = IndexedName
+  { iname_prefix     :: Prefix
   , iname_expression :: [Expression]
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 6.5 Slice names
 {-
     slice_name ::= prefix ( discrete_range )
 -}
-
-data SliceName = SliceName {
-    slice_prefix         :: Prefix
+data SliceName = SliceName
+  { slice_prefix         :: Prefix
   , slice_discrete_range :: DiscreteRange
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 6.6 Attribute names
@@ -1708,14 +1601,12 @@ data SliceName = SliceName {
 
     attribute_designator ::= attribute_simple_name
 -}
-
-data AttributeName = AttributeName {
-    aname_prefix               :: Prefix
+data AttributeName = AttributeName
+  { aname_prefix               :: Prefix
   , aname_signature            :: Maybe Signature
   , aname_attribute_designator :: AttributeDesignator
   , aname_expression           :: Maybe Expression
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type AttributeDesignator = SimpleName
 
@@ -1726,7 +1617,6 @@ type AttributeDesignator = SimpleName
 --                                 Expression
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- * 7.1 Rules for expressions
 {-
@@ -1775,12 +1665,10 @@ condition_operator primary
       | allocator
       | ( expression )
 -}
-
 -- data Expression =
 --     ECondExpr Primary
 --   | ELogicExpr LogicalExpression
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data LogicalExpression =
 --     EAnd  [Relation]
 --   | EOr   [Relation]
@@ -1789,57 +1677,55 @@ condition_operator primary
 --   | ENor  (Relation) (Maybe Relation)
 --   | EXnor [Relation]
 --   deriving (Eq, Show, Typeable, Data)
-
-data TimeExpression = TimeExpression PhysicalLiteral
+data TimeExpression =
+  TimeExpression PhysicalLiteral
   deriving (Eq, Show, Typeable, Data)
 
-data Expression = Unary UnOp Expression
-  | Binary BinOp Expression Expression
+data Expression
+  = Unary UnOp
+          Expression
+  | Binary BinOp
+           Expression
+           Expression
   | PrimName Name
-  | PrimLit   Literal
-  | PrimAgg   Aggregate
-  | PrimFun   FunctionCall
-  | PrimQual  QualifiedExpression
-  | PrimTCon  TypeConversion
+  | PrimLit Literal
+  | PrimAgg Aggregate
+  | PrimFun FunctionCall
+  | PrimQual QualifiedExpression
+  | PrimTCon TypeConversion
   | PrimAlloc Allocator
-  | PrimExp   Expression
+  | PrimExp Expression
+  | AntiExpr String
   deriving (Eq, Show, Typeable, Data)
-
 
 -- data Expression = Expression Relation (Maybe (LogicalOperator, Relation))
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data Relation         = Relation {
 --     relation_shift_expression :: ShiftExpression
 --   , relation_operator         :: Maybe (RelationalOperator, ShiftExpression)
 --   }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data ShiftExpression  = ShiftExpression {
 --     shifte_simple_expression  :: SimpleExpression
 --   , shifte_shift_operator     :: Maybe (ShiftOperator, SimpleExpression)
 --   }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data SimpleExpression = SimpleExpression {
 --     sexp_sign                 :: Maybe Sign
 --   , sexp_term                 :: Term
 --   , sexp_adding               :: [(AddingOperator, Term)]
 --   }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data Term = Term {
 --     term_factor               :: Factor
 --   , term_multiplying          :: [(MultiplyingOperator, Factor)]
 --   }
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data Factor =
 --     FacPrim Primary (Maybe Primary)
 --   | FacAbs  Primary
 --   | FacNot  Primary
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data Primary =
 --     PrimName  Name
 --   | PrimLit   Literal
@@ -1850,7 +1736,6 @@ data Expression = Unary UnOp Expression
 --   | PrimAlloc Allocator
 --   | PrimExp   Expression
 --   deriving (Eq, Show, Typeable, Data)
-
 --------------------------------------------------------------------------------
 -- * 7.2 Operators
 {-
@@ -1868,76 +1753,79 @@ data Expression = Unary UnOp Expression
 
     miscellaneous_operator ::= ** | ABS | NOT
 -}
-
 -- data LogicalOperator       = And | Or | Nand | Nor | Xor | Xnor
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data RelationalOperator    = Eq | Neq | Lt | Lte | Gt | Gte
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data ShiftOperator         = Sll | Srl | Sla | Sra | Rol | Ror
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data AddingOperator        = Plus | Minus | Concat
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data Sign                  = Identity | Negation
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data MultiplyingOperator   = Times | Div | Mod | Rem
 --   deriving (Eq, Show, Typeable, Data)
-
 -- data MiscellaneousOperator = Exp | Abs | Not
 --   deriving (Eq, Show, Typeable, Data)
-
-data BinOp  = And | Or | Nand | Nor | Xor | Xnor |
-              Eq | Neq | Lt | Lte | Gt | Gte |
-              Sll | Srl | Sla | Sra | Rol | Ror |
-              Times | Div | Mod | Rem | Plus | Minus |
-              Concat | Exp
+data BinOp
+  = And
+  | Or
+  | Nand
+  | Nor
+  | Xor
+  | Xnor
+  | Eq
+  | Neq
+  | Lt
+  | Lte
+  | Gt
+  | Gte
+  | Sll
+  | Srl
+  | Sla
+  | Sra
+  | Rol
+  | Ror
+  | Times
+  | Div
+  | Mod
+  | Rem
+  | Plus
+  | Minus
+  | Concat
+  | Exp
   deriving (Eq, Show, Typeable, Data)
 
-data UnOp = Identity | Negation | Abs | Not
+data UnOp
+  = Identity
+  | Negation
+  | Abs
+  | Not
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 7.2.1 Logical operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.2.2 Relational operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.2.3 Shift operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.2.4 Adding operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.2.5 Sign operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.2.6 Multiplying operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.2.7 Miscellaneous operators
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- * 7.3 Operands
-
 --------------------------------------------------------------------------------
 -- ** 7.3.1 Literals
 {-
@@ -1952,29 +1840,29 @@ data UnOp = Identity | Negation | Abs | Not
         abstract_literal
       | physical_literal
 -}
-
-data Literal =
-    LitNum       NumericLiteral
-  | LitEnum      EnumerationLiteral
-  | LitString    StringLiteral
+data Literal
+  = LitNum NumericLiteral
+  | LitEnum EnumerationLiteral
+  | LitString StringLiteral
   | LitBitString BitStringLiteral
-  | LitNull 
+  | LitNull
   deriving (Eq, Show, Typeable, Data)
 
-data NumericLiteral =
-    NLitAbstract AbstractLiteral
+data NumericLiteral
+  = NLitAbstract AbstractLiteral
   | NLitPhysical PhysicalLiteral
+  | AntiLitnum String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 7.3.2 Aggregates
-
 {-
     aggregate ::=
       ( element_association { , element_association } )
 
     element_association ::=
       [ choices => ] expression
+
 
     choices ::= choice { | choice }
 
@@ -1984,44 +1872,38 @@ data NumericLiteral =
       | element_simple_name
       | OTHERS
 -}
+data Aggregate = Aggregate
+  { agg_element_association :: [ElementAssociation]
+  } deriving (Eq, Show, Typeable, Data)
 
-data Aggregate = Aggregate {
-    agg_element_association :: [ElementAssociation]
-  }
-  deriving (Eq, Show, Typeable, Data)
-
-data ElementAssociation = ElementAssociation {
-    eassoc_choices'   :: Maybe Choices
+data ElementAssociation = ElementAssociation
+  { eassoc_choices'   :: Maybe Choices
   , eassoc_expression :: Expression
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+data Choices =
+  Choices [Choice]
   deriving (Eq, Show, Typeable, Data)
 
-data Choices = Choices [Choice]
-  deriving (Eq, Show, Typeable, Data)
-
-data Choice =
-    ChoiceSimple Expression
-  | ChoiceRange  DiscreteRange
-  | ChoiceName   SimpleName
+data Choice
+  = ChoiceSimple Expression
+  | ChoiceRange DiscreteRange
+  | ChoiceName SimpleName
   | ChoiceOthers
   deriving (Eq, Show, Typeable, Data)
+
 -- data Choice =
 --     ChoiceSimple SimpleExpression
 --   | ChoiceRange  DiscreteRange
 --   | ChoiceName   SimpleName
 --   | ChoiceOthers
 --   deriving (Eq, Show, Typeable, Data)
-
 --------------------------------------------------------------------------------
 -- *** 7.3.2.1 Record aggregates
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- *** 7.3.2.2 Array aggregates
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.3.3 Function calls
 {-
@@ -2030,12 +1912,10 @@ data Choice =
 
     actual_parameter_part ::= parameter_association_list
 -}
-
-data FunctionCall = FunctionCall {
-    fc_function_name         :: FunctionName
+data FunctionCall = FunctionCall
+  { fc_function_name         :: FunctionName
   , fc_actual_parameter_part :: Maybe ActualParameterPart
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type ActualParameterPart = AssociationList
 
@@ -2048,10 +1928,11 @@ type FunctionName = Identifier
         type_mark ' ( expression )
       | type_mark ' aggregate
 -}
-
-data QualifiedExpression =
-    QualExp TypeMark Expression
-  | QualAgg TypeMark Aggregate
+data QualifiedExpression
+  = QualExp TypeMark
+            Expression
+  | QualAgg TypeMark
+            Aggregate
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2059,12 +1940,10 @@ data QualifiedExpression =
 {-
     type_conversion ::= type_mark ( expression )
 -}
-
-data TypeConversion = TypeConversion {
-    type_mark  :: TypeMark
-  , expr :: Expression
-  }
-  deriving (Eq, Show, Typeable, Data)
+data TypeConversion = TypeConversion
+  { type_mark :: TypeMark
+  , expr      :: Expression
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 7.3.6 Allocators
@@ -2073,31 +1952,22 @@ data TypeConversion = TypeConversion {
         NEW subtype_indication
       | NEW qualified_expression
 -}
-
-data Allocator =
-    AllocSub  SubtypeIndication
+data Allocator
+  = AllocSub SubtypeIndication
   | AllocQual QualifiedExpression
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 7.4 Static expressions
-
 --------------------------------------------------------------------------------
 -- ** 7.4.1 Locally static primaries
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- ** 7.4.2 Globally static primaries
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- * 7.5 Universal expressions
-
 -- ...
-
-
 --------------------------------------------------------------------------------
 --
 --                                   -- 8 --
@@ -2123,23 +1993,22 @@ data Allocator =
       | return_statement
       | null_statement
 -}
-
 type SequenceOfStatements = [SequentialStatement]
 
-data SequentialStatement =
-    SWait      WaitStatement
-  | SAssert    AssertionStatement
-  | SReport    ReportStatement
+data SequentialStatement
+  = SWait WaitStatement
+  | SAssert AssertionStatement
+  | SReport ReportStatement
   | SSignalAss SignalAssignmentStatement
-  | SVarAss    VariableAssignmentStatement
-  | SProc      ProcedureCallStatement
-  | SIf        IfStatement
-  | SCase      CaseStatement
-  | SLoop      LoopStatement
-  | SNext      NextStatement
-  | SExit      ExitStatement
-  | SReturn    ReturnStatement
-  | SNull      NullStatement
+  | SVarAss VariableAssignmentStatement
+  | SProc ProcedureCallStatement
+  | SIf IfStatement
+  | SCase CaseStatement
+  | SLoop LoopStatement
+  | SNext NextStatement
+  | SExit ExitStatement
+  | SReturn ReturnStatement
+  | SNull NullStatement
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2158,23 +2027,29 @@ data SequentialStatement =
 
     timeout_clause ::= FOR time_expression
 -}
-
-data WaitStatement = WaitStatement
-    (Maybe Label) (Maybe SensitivityClause) (Maybe ConditionClause) (Maybe TimeoutClause)
+data WaitStatement =
+  WaitStatement (Maybe Label)
+                (Maybe SensitivityClause)
+                (Maybe ConditionClause)
+                (Maybe TimeoutClause)
   deriving (Eq, Show, Typeable, Data)
 
-data SensitivityClause = SensitivityClause SensitivityList
+data SensitivityClause =
+  SensitivityClause SensitivityList
   deriving (Eq, Show, Typeable, Data)
 
-data SensitivityList = SensitivityList [Name]
+data SensitivityList =
+  SensitivityList [Name]
   deriving (Eq, Show, Typeable, Data)
 
-data ConditionClause = ConditionClause Condition
+data ConditionClause =
+  ConditionClause Condition
   deriving (Eq, Show, Typeable, Data)
 
 type Condition = Expression
 
-data TimeoutClause = TimeoutClause TimeExpression
+data TimeoutClause =
+  TimeoutClause TimeExpression
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2187,13 +2062,15 @@ data TimeoutClause = TimeoutClause TimeExpression
         [ REPORT expression ]
         [ SEVERITY expression ]
 -}
-
-data AssertionStatement = AssertionStatement
-      (Maybe Label) Assertion
+data AssertionStatement =
+  AssertionStatement (Maybe Label)
+                     Assertion
   deriving (Eq, Show, Typeable, Data)
 
-data Assertion = Assertion
-      Condition (Maybe Expression) (Maybe Expression)
+data Assertion =
+  Assertion Condition
+            (Maybe Expression)
+            (Maybe Expression)
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2204,9 +2081,10 @@ data Assertion = Assertion
         REPORT expression
           [ SEVERITY expression ] ;
 -}
-
-data ReportStatement = ReportStatement
-      (Maybe Label) Expression (Maybe Expression)
+data ReportStatement =
+  ReportStatement (Maybe Label)
+                  Expression
+                  (Maybe Expression)
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2227,23 +2105,25 @@ data ReportStatement = ReportStatement
         waveform_element { , waveform_element }
       | UNAFFECTED
 -}
-
-data SignalAssignmentStatement = SignalAssignmentStatement
-      (Maybe Label) Target (Maybe DelayMechanism) Waveform
+data SignalAssignmentStatement =
+  SignalAssignmentStatement (Maybe Label)
+                            Target
+                            (Maybe DelayMechanism)
+                            Waveform
   deriving (Eq, Show, Typeable, Data)
 
-data DelayMechanism =
-    DMechTransport
-  | DMechInertial  (Maybe TimeExpression)
+data DelayMechanism
+  = DMechTransport
+  | DMechInertial (Maybe TimeExpression)
   deriving (Eq, Show, Typeable, Data)
 
-data Target =
-    TargetName Name
-  | TargetAgg  Aggregate
+data Target
+  = TargetName Name
+  | TargetAgg Aggregate
   deriving (Eq, Show, Typeable, Data)
 
-data Waveform =
-    WaveElem [WaveformElement]
+data Waveform
+  = WaveElem [WaveformElement]
   | WaveUnaffected
   deriving (Eq, Show, Typeable, Data)
 
@@ -2254,10 +2134,10 @@ data Waveform =
         value_expression [ AFTER time_expression ]
       | null [ AFTER time_expression ]
 -}
-
-data WaveformElement =
-    WaveEExp  Expression (Maybe TimeExpression)
-  | WaveENull            (Maybe TimeExpression)
+data WaveformElement
+  = WaveEExp Expression
+             (Maybe TimeExpression)
+  | WaveENull (Maybe TimeExpression)
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2266,16 +2146,15 @@ data WaveformElement =
     variable_assignment_statement ::=
       [ label : ] target := expression ;
 -}
-
-data VariableAssignmentStatement = VariableAssignmentStatement
-      (Maybe Label) Target Expression
+data VariableAssignmentStatement =
+  VariableAssignmentStatement (Maybe Label)
+                              Target
+                              Expression
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 8.5.1 Array variable assignments
-
 -- ...
-
 --------------------------------------------------------------------------------
 -- * 8.6 Procedure call statement
 {-
@@ -2283,13 +2162,14 @@ data VariableAssignmentStatement = VariableAssignmentStatement
 
     procedure_call ::= procedure_name [ ( actual_parameter_part ) ]
 -}
-
-data ProcedureCallStatement = ProcedureCallStatement
-      (Maybe Label) ProcedureCall
+data ProcedureCallStatement =
+  ProcedureCallStatement (Maybe Label)
+                         ProcedureCall
   deriving (Eq, Show, Typeable, Data)
 
-data ProcedureCall = ProcedureCall
-      Name (Maybe ActualParameterPart)
+data ProcedureCall =
+  ProcedureCall Name
+                (Maybe ActualParameterPart)
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2305,14 +2185,12 @@ data ProcedureCall = ProcedureCall
           sequence_of_statements ]
         END IF [ if_label ] ;
 -}
-
-data IfStatement = IfStatement {
-    if_label     :: Maybe Label
-  , if_then      :: (Condition, SequenceOfStatements)
-  , if_also      :: [(Condition, SequenceOfStatements)]
-  , if_else      :: Maybe SequenceOfStatements
-  }
-  deriving (Eq, Show, Typeable, Data)
+data IfStatement = IfStatement
+  { if_label :: Maybe Label
+  , if_then  :: (Condition, SequenceOfStatements)
+  , if_also  :: [(Condition, SequenceOfStatements)]
+  , if_else  :: Maybe SequenceOfStatements
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 8.8 Case statement
@@ -2328,15 +2206,15 @@ data IfStatement = IfStatement {
       WHEN choices =>
         sequence_of_statements
 -}
-
-data CaseStatement = CaseStatement {
-    case_label        :: Maybe Label
+data CaseStatement = CaseStatement
+  { case_label        :: Maybe Label
   , case_expression   :: Expression
   , case_alternatives :: [CaseStatementAlternative]
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data CaseStatementAlternative = CaseStatementAlternative Choices SequenceOfStatements
+data CaseStatementAlternative =
+  CaseStatementAlternative Choices
+                           SequenceOfStatements
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2355,24 +2233,21 @@ data CaseStatementAlternative = CaseStatementAlternative Choices SequenceOfState
     parameter_specification ::=
       identifier IN discrete_range
 -}
-
-data LoopStatement = LoopStatement {
-    loop_label            :: Maybe Label
+data LoopStatement = LoopStatement
+  { loop_label            :: Maybe Label
   , loop_iteration_scheme :: Maybe IterationScheme
   , loop_statements       :: SequenceOfStatements
-  }
+  } deriving (Eq, Show, Typeable, Data)
+
+data IterationScheme
+  = IterWhile Condition
+  | IterFor ParameterSpecification
   deriving (Eq, Show, Typeable, Data)
 
-data IterationScheme =
-    IterWhile Condition
-  | IterFor   ParameterSpecification
-  deriving (Eq, Show, Typeable, Data)
-
-data ParameterSpecification = ParameterSpecification {
-    paramspec_identifier     :: Identifier
+data ParameterSpecification = ParameterSpecification
+  { paramspec_identifier     :: Identifier
   , paramspec_discrete_range :: DiscreteRange
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 8.10 Next statement
@@ -2380,13 +2255,11 @@ data ParameterSpecification = ParameterSpecification {
     next_statement ::=
       [ label : ] NEXT [ loop_label ] [ WHEN condition ] ;
 -}
-
-data NextStatement = NextStatement {
-    next_label :: Maybe Label
+data NextStatement = NextStatement
+  { next_label :: Maybe Label
   , next_loop  :: Maybe Label
   , next_when  :: Maybe Condition
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 8.11 Exit statement
@@ -2394,13 +2267,11 @@ data NextStatement = NextStatement {
     exit_statement ::=
       [ label : ] EXIT [ loop_label ] [ WHEN condition ] ;
 -}
-
-data ExitStatement = ExitStatement {
-    exit_label :: Maybe Label
+data ExitStatement = ExitStatement
+  { exit_label :: Maybe Label
   , exit_loop  :: Maybe Label
   , exit_when  :: Maybe Condition
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 8.12 Return statement
@@ -2408,12 +2279,10 @@ data ExitStatement = ExitStatement {
     return_statement ::=
       [ label : ] RETURN [ expression ] ;
 -}
-
-data ReturnStatement = ReturnStatement {
-    return_label      :: Maybe Label
+data ReturnStatement = ReturnStatement
+  { return_label      :: Maybe Label
   , return_expression :: Maybe Expression
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 8.13 Null statement
@@ -2421,11 +2290,9 @@ data ReturnStatement = ReturnStatement {
     null_statement ::=
       [ label : ] NULL ;
 -}
-
-data NullStatement = NullStatement {
-    null_label :: Maybe Label
-  }
-  deriving (Eq, Show, Typeable, Data)
+data NullStatement = NullStatement
+  { null_label :: Maybe Label
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 --
@@ -2434,7 +2301,6 @@ data NullStatement = NullStatement {
 --                            Concurrent statements
 --
 --------------------------------------------------------------------------------
-
 {-
     concurrent_statement ::=
         block_statement
@@ -2445,15 +2311,14 @@ data NullStatement = NullStatement {
       | component_instantiation_statement
       | generate_statement
 -}
-
-data ConcurrentStatement =
-    ConBlock     BlockStatement
-  | ConProcess   ProcessStatement
-  | ConProcCall  ConcurrentProcedureCallStatement
+data ConcurrentStatement
+  = ConBlock BlockStatement
+  | ConProcess ProcessStatement
+  | ConProcCall ConcurrentProcedureCallStatement
   | ConAssertion ConcurrentAssertionStatement
   | ConSignalAss ConcurrentSignalAssignmentStatement
   | ConComponent ComponentInstantiationStatement
-  | ConGenerate  GenerateStatement
+  | ConGenerate GenerateStatement
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2480,25 +2345,22 @@ data ConcurrentStatement =
     block_statement_part ::=
       { concurrent_statement }
 -}
-
-data BlockStatement = BlockStatement {
-    blocks_label            :: Label
+data BlockStatement = BlockStatement
+  { blocks_label            :: Label
   , blocks_guard_expression :: Maybe Expression
   , blocks_header           :: BlockHeader
   , blocks_declarative_part :: BlockDeclarativePart
   , blocks_statment_part    :: BlockStatementPart
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data BlockHeader = BlockHeader {
-    blockh_generic_clause   :: Maybe (GenericClause, Maybe GenericMapAspect)
-  , blockh_port_clause      :: Maybe (PortClause,    Maybe PortMapAspect)
-  }
-  deriving (Eq, Show, Typeable, Data)
+data BlockHeader = BlockHeader
+  { blockh_generic_clause :: Maybe (GenericClause, Maybe GenericMapAspect)
+  , blockh_port_clause    :: Maybe (PortClause, Maybe PortMapAspect)
+  } deriving (Eq, Show, Typeable, Data)
 
 type BlockDeclarativePart = [BlockDeclarativeItem]
 
-type BlockStatementPart   = [ConcurrentStatement]
+type BlockStatementPart = [ConcurrentStatement]
 
 --------------------------------------------------------------------------------
 -- * 9.2 Process statement
@@ -2531,33 +2393,31 @@ type BlockStatementPart   = [ConcurrentStatement]
     process_statement_part ::=
       { sequential_statement }
 -}
-
-data ProcessStatement = ProcessStatement {
-    procs_label            :: Maybe Label
+data ProcessStatement = ProcessStatement
+  { procs_label            :: Maybe Label
   , procs_postponed        :: Bool
   , procs_sensitivity_list :: Maybe SensitivityList
   , procs_declarative_part :: ProcessDeclarativePart
   , procs_statement_part   :: ProcessStatementPart
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type ProcessDeclarativePart = [ProcessDeclarativeItem]
 
-data ProcessDeclarativeItem =
-    PDISubprogDecl SubprogramDeclaration
+data ProcessDeclarativeItem
+  = PDISubprogDecl SubprogramDeclaration
   | PDISubprogBody SubprogramBody
-  | PDIType        TypeDeclaration
-  | PDISubtype     SubtypeDeclaration
-  | PDIConstant    ConstantDeclaration
-  | PDIVariable    VariableDeclaration
-  | PDIFile        FileDeclaration
-  | PDIAlias       AliasDeclaration
-  | PDIAttrDecl    AttributeDeclaration
-  | PDIAttrSpec    AttributeSpecification
-  | PDIUseClause   UseClause
---  | ProcDIGroupType   ()
+  | PDIType TypeDeclaration
+  | PDISubtype SubtypeDeclaration
+  | PDIConstant ConstantDeclaration
+  | PDIVariable VariableDeclaration
+  | PDIFile FileDeclaration
+  | PDIAlias AliasDeclaration
+  | PDIAttrDecl AttributeDeclaration
+  | PDIAttrSpec AttributeSpecification
+  | PDIUseClause UseClause
   deriving (Eq, Show, Typeable, Data)
 
+--  | ProcDIGroupType   ()
 type ProcessStatementPart = [SequentialStatement]
 
 --------------------------------------------------------------------------------
@@ -2566,13 +2426,11 @@ type ProcessStatementPart = [SequentialStatement]
     concurrent_procedure_call_statement ::=
       [ label : ] [ POSTPONED ] procedure_call ;
 -}
-
-data ConcurrentProcedureCallStatement = ConcurrentProcedureCallStatement {
-    cpcs_label          :: Maybe Label
+data ConcurrentProcedureCallStatement = ConcurrentProcedureCallStatement
+  { cpcs_label          :: Maybe Label
   , cpcs_postponed      :: Bool
   , cpcs_procedure_call :: ProcedureCall
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 9.4 Concurrent assertion statements
@@ -2580,13 +2438,11 @@ data ConcurrentProcedureCallStatement = ConcurrentProcedureCallStatement {
     concurrent_assertion_statement ::=
       [ label : ] [ POSTPONED ] assertion ;
 -}
-
-data ConcurrentAssertionStatement = ConcurrentAssertionStatement {
-    cas_label          :: Maybe Label
-  , cas_postponed      :: Bool
-  , cas_assertion      :: Assertion
-  }
-  deriving (Eq, Show, Typeable, Data)
+data ConcurrentAssertionStatement = ConcurrentAssertionStatement
+  { cas_label     :: Maybe Label
+  , cas_postponed :: Bool
+  , cas_assertion :: Assertion
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- * 9.5 Concurrent signal assignment statements
@@ -2597,25 +2453,19 @@ data ConcurrentAssertionStatement = ConcurrentAssertionStatement {
 
     options ::= [ GUARDED ] [ delay_mechanism ]
 -}
-
-data ConcurrentSignalAssignmentStatement =
-    CSASCond {
-      csas_cond_label               :: Maybe Label
-    , csas_cond_postponed           :: Bool
-    , csas_cond_signal_assignment   :: ConditionalSignalAssignment
-    }
-  | CSASSelect {
-      csas_select_label             :: Maybe Label
-    , csas_select_postponed         :: Bool
-    , csas_select_signal_assignment :: SelectedSignalAssignment
-    }
+data ConcurrentSignalAssignmentStatement
+  = CSASCond { csas_cond_label             :: Maybe Label
+            ,  csas_cond_postponed         :: Bool
+            ,  csas_cond_signal_assignment :: ConditionalSignalAssignment}
+  | CSASSelect { csas_select_label             :: Maybe Label
+              ,  csas_select_postponed         :: Bool
+              ,  csas_select_signal_assignment :: SelectedSignalAssignment}
   deriving (Eq, Show, Typeable, Data)
 
-data Options = Options {
-    options_guarded         :: Bool
+data Options = Options
+  { options_guarded         :: Bool
   , options_delay_mechanism :: Maybe DelayMechanism
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 9.5.1 Conditional signal assignments
@@ -2627,19 +2477,16 @@ data Options = Options {
       { waveform WHEN condition ELSE }
       waveform [ WHEN condition ]
 -}
-
-data ConditionalSignalAssignment = ConditionalSignalAssignment {
-    csa_target                :: Target
+data ConditionalSignalAssignment = ConditionalSignalAssignment
+  { csa_target                :: Target
   , csa_options               :: Options
   , csa_conditional_waveforms :: ConditionalWaveforms
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data ConditionalWaveforms = ConditionalWaveforms {
-    cw_optional              :: [(Waveform, Condition)]
-  , cw_wave                  :: (Waveform, Maybe Condition)
-  }
-  deriving (Eq, Show, Typeable, Data)
+data ConditionalWaveforms = ConditionalWaveforms
+  { cw_optional :: [(Waveform, Condition)]
+  , cw_wave     :: (Waveform, Maybe Condition)
+  } deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 9.5.2 Selected signal assignments
@@ -2652,16 +2499,15 @@ data ConditionalWaveforms = ConditionalWaveforms {
       { waveform WHEN choices , }
       waveform WHEN choices
 -}
-
-data SelectedSignalAssignment = SelectedSignalAssignment {
-    ssa_expression         :: Expression
+data SelectedSignalAssignment = SelectedSignalAssignment
+  { ssa_expression         :: Expression
   , ssa_target             :: Target
   , ssa_options            :: Options
   , ssa_selected_waveforms :: SelectedWaveforms
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data SelectedWaveforms = SelectedWaveforms [(Waveform, Choices)]
+data SelectedWaveforms =
+  SelectedWaveforms [(Waveform, Choices)]
   deriving (Eq, Show, Typeable, Data)
 
 -- data SelectedWaveforms = SelectedWaveforms {
@@ -2669,7 +2515,6 @@ data SelectedWaveforms = SelectedWaveforms [(Waveform, Choices)]
 --   , sw_last     :: (Waveform, Choices)
 --   }
 --   deriving (Eq, Show, Typeable, Data)
-
 --------------------------------------------------------------------------------
 -- * 9.6 Component instantiation statements
 {-
@@ -2684,27 +2529,24 @@ data SelectedWaveforms = SelectedWaveforms [(Waveform, Choices)]
       | ENTITY entity_name [ ( architecture_identifier ) ]
       | CONFIGURATION configuration_name
 -}
-
-data ComponentInstantiationStatement = ComponentInstantiationStatement {
-    cis_instantiation_label :: Label
+data ComponentInstantiationStatement = ComponentInstantiationStatement
+  { cis_instantiation_label :: Label
   , cis_instantiated_unit   :: InstantiatedUnit
   , cis_generic_map_aspect  :: Maybe GenericMapAspect
   , cis_port_map_aspect     :: Maybe PortMapAspect
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data InstantiatedUnit =
-    IUComponent Name
-  | IUEntity    Name (Maybe Identifier)
-  | IUConfig    Name
+data InstantiatedUnit
+  = IUComponent Name
+  | IUEntity Name
+             (Maybe Identifier)
+  | IUConfig Name
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 9.6.1 Instantiation of a component
-
 --------------------------------------------------------------------------------
 -- ** 9.6.2 Instantiation of a design entity
-
 --------------------------------------------------------------------------------
 -- * 9.7 Generate statements
 {-
@@ -2722,21 +2564,20 @@ data InstantiatedUnit =
 
     label ::= identifier
 -}
-
-data GenerateStatement = GenerateStatement {
-    gens_label                  :: Label
+data GenerateStatement = GenerateStatement
+  { gens_label                  :: Label
   , gens_generation_scheme      :: GenerationScheme
   , gens_block_declarative_item :: Maybe BlockDeclarativeItem
   , gens_concurrent_statement   :: [ConcurrentStatement]
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data GenerationScheme =
-    GSFor ParameterSpecification
+data GenerationScheme
+  = GSFor ParameterSpecification
   | GSIf Condition
   deriving (Eq, Show, Typeable, Data)
 
 type Label = Identifier
+
 --------------------------------------------------------------------------------
 --
 --                                  -- 10 --
@@ -2744,30 +2585,24 @@ type Label = Identifier
 --                            Scope and visibility
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- ** 10.1 Declarative region
-
 --------------------------------------------------------------------------------
 -- ** 10.2 Scope of declarations
-
 --------------------------------------------------------------------------------
 -- ** 10.3 Visibility
-
 --------------------------------------------------------------------------------
 -- ** 10.4 Use clauses
-
 {-
     use_clause ::=
       USE selected_name { , selected_name } ;
 -}
-
-data UseClause = UseClause [SelectedName]
+data UseClause =
+  UseClause [SelectedName]
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 10.5 The context of overload resolution
-
 --------------------------------------------------------------------------------
 --
 --                                  -- 11 --
@@ -2775,10 +2610,8 @@ data UseClause = UseClause [SelectedName]
 --                        Design units and their analysis
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- ** 11.1 Design units
-
 {-
     design_file ::= design_unit { design_unit }
 
@@ -2797,32 +2630,33 @@ data UseClause = UseClause [SelectedName]
         architecture_body
       | package_body
 -}
-
-data DesignFile = DesignFile [DesignUnit]
+data DesignFile =
+  DesignFile [DesignUnit]
   deriving (Eq, Show, Typeable, Data)
 
-data DesignUnit = DesignUnit ContextClause LibraryUnit
+data DesignUnit =
+  DesignUnit ContextClause
+             LibraryUnit
   deriving (Eq, Show, Typeable, Data)
 
-data LibraryUnit =
-    LibraryPrimary   PrimaryUnit
+data LibraryUnit
+  = LibraryPrimary PrimaryUnit
   | LibrarySecondary SecondaryUnit
   deriving (Eq, Show, Typeable, Data)
 
-data PrimaryUnit =
-    PrimaryEntity  EntityDeclaration
-  | PrimaryConfig  ConfigurationDeclaration
+data PrimaryUnit
+  = PrimaryEntity EntityDeclaration
+  | PrimaryConfig ConfigurationDeclaration
   | PrimaryPackage PackageDeclaration
   deriving (Eq, Show, Typeable, Data)
 
-data SecondaryUnit =
-    SecondaryArchitecture ArchitectureBody
-  | SecondaryPackage      PackageBody
+data SecondaryUnit
+  = SecondaryArchitecture ArchitectureBody
+  | SecondaryPackage PackageBody
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 11.2 Design libraries
-
 {-
     library_clause ::= LIBRARY logical_name_list ;
 
@@ -2830,18 +2664,18 @@ data SecondaryUnit =
 
     logical_name ::= identifier
 -}
-
-data LibraryClause = LibraryClause LogicalNameList
+data LibraryClause =
+  LibraryClause LogicalNameList
   deriving (Eq, Show, Typeable, Data)
 
-data LogicalNameList = LogicalNameList [LogicalName]
+data LogicalNameList =
+  LogicalNameList [LogicalName]
   deriving (Eq, Show, Typeable, Data)
 
 type LogicalName = Identifier
 
 --------------------------------------------------------------------------------
 -- ** 11.3 Context clauses
-
 {-
     context_clause ::= { context_item }
 
@@ -2849,18 +2683,17 @@ type LogicalName = Identifier
         library_clause
       | use_clause
 -}
-
-data ContextClause = ContextClause [ContextItem]
+data ContextClause =
+  ContextClause [ContextItem]
   deriving (Eq, Show, Typeable, Data)
 
-data ContextItem =
-    ContextLibrary LibraryClause
-  | ContextUse     UseClause
+data ContextItem
+  = ContextLibrary LibraryClause
+  | ContextUse UseClause
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 11.3 Order of analysis
-
 --------------------------------------------------------------------------------
 --
 --                                  -- 12 --
@@ -2868,9 +2701,7 @@ data ContextItem =
 --                           Elaboration and execution
 --
 --------------------------------------------------------------------------------
-
 -- ...
-
 --------------------------------------------------------------------------------
 --
 --                                  -- 13 --
@@ -2878,17 +2709,14 @@ data ContextItem =
 --                              Lexical elements
 --
 --------------------------------------------------------------------------------
-
 --------------------------------------------------------------------------------
 -- ** 13.4
-
 {-
     abstract_literal ::= decimal_literal | based_literal
 -}
-
-data AbstractLiteral  =
-      ALitDecimal DecimalLiteral
-    | ALitBased   BasedLiteral
+data AbstractLiteral
+  = ALitDecimal DecimalLiteral
+  | ALitBased BasedLiteral
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2896,7 +2724,6 @@ data AbstractLiteral  =
 --
 -- I use Haskell's Integer to represent integers in VHDL. Its syntax seems to be
 -- slightly different though (the underline part).
-
 {-
     decimal_literal ::= integer [ . integer ] [ exponent ]
 
@@ -2904,22 +2731,19 @@ data AbstractLiteral  =
 
     exponent ::= E [ + ] integer | E – integer
 -}
-
-data DecimalLiteral = DecimalLiteral {
-    decimal_integral_part   :: Integer
+data DecimalLiteral = DecimalLiteral
+  { decimal_integral_part   :: Integer
   , decimal_fractional_part :: Maybe Integer
   , decimal_exponent        :: Maybe Exponent
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
-data Exponent =
-    ExponentPos Integer
+data Exponent
+  = ExponentPos Integer
   | ExponentNeg Integer
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- *** 13.4.2
-
 {-
     based_literal ::=
       base # based_integer [ . based_integer ] # [ exponent ]
@@ -2931,14 +2755,12 @@ data Exponent =
 
     extended_digit ::= digit | letter
 -}
-
-data BasedLiteral = BasedLiteral {
-    based_lit_base                  :: Base
+data BasedLiteral = BasedLiteral
+  { based_lit_base                  :: Base
   , based_lit_based_integral_part   :: BasedInteger
   , based_lit_based_fractional_part :: Maybe BasedInteger
   , based_lit_exponent              :: Maybe Exponent
-  }
-  deriving (Eq, Show, Typeable, Data)
+  } deriving (Eq, Show, Typeable, Data)
 
 type Base = Integer
 
@@ -2951,52 +2773,67 @@ type BasedInteger = StringLiteral
 --                                  - ToDo -
 --
 --------------------------------------------------------------------------------
-
-data Identifier       = Ident String
+data Identifier
+  = Ident String
+  | AntiIdent String
   deriving (Eq, Show, Typeable, Data)
 
-data CharacterLiteral = CLit Char
+data CharacterLiteral
+  = CLit Char
+  | AntiClit String
   deriving (Eq, Show, Typeable, Data)
 
-data StringLiteral    = SLit String
+data StringLiteral
+  = SLit String
+  | AntiSlit String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
-
-data BaseSpecifier = BaseSpecifier
+data BaseSpecifier =
+  BaseSpecifier
   deriving (Eq, Show, Typeable, Data)
 
-data BaseUnitDeclaration = BaseUnitDeclaration
+data BaseUnitDeclaration =
+  BaseUnitDeclaration
   deriving (Eq, Show, Typeable, Data)
 
-data BasicCharacter = BasicCharacter
+data BasicCharacter =
+  BasicCharacter
   deriving (Eq, Show, Typeable, Data)
 
-data BasicGraphicCharacter = BasicGraphicCharacter
+data BasicGraphicCharacter =
+  BasicGraphicCharacter
   deriving (Eq, Show, Typeable, Data)
 
-data BasicIdentifier = BasicIdentifier
+data BasicIdentifier =
+  BasicIdentifier
   deriving (Eq, Show, Typeable, Data)
 
-data BitStringLiteral = BitStringLiteral
+data BitStringLiteral =
+  BitStringLiteral
   deriving (Eq, Show, Typeable, Data)
 
-data BitValue = BitValue
+data BitValue =
+  BitValue
   deriving (Eq, Show, Typeable, Data)
 
-data ExtendedDigit = ExtendedDigit
+data ExtendedDigit =
+  ExtendedDigit
   deriving (Eq, Show, Typeable, Data)
 
-data ExtendedIdentifier = ExtendedIdentifier
+data ExtendedIdentifier =
+  ExtendedIdentifier
   deriving (Eq, Show, Typeable, Data)
 
-data GraphicCharacter = GraphicCharacter
+data GraphicCharacter =
+  GraphicCharacter
   deriving (Eq, Show, Typeable, Data)
 
-data Letter = Letter
+data Letter =
+  Letter
   deriving (Eq, Show, Typeable, Data)
 
-data LetterOrDigit = LetterOrDigit
+data LetterOrDigit =
+  LetterOrDigit
   deriving (Eq, Show, Typeable, Data)
-
 --------------------------------------------------------------------------------
