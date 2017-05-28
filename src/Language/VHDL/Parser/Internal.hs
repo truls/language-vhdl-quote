@@ -1,6 +1,14 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Language.VHDL.Parser.Internal where
+module Language.VHDL.Parser.Internal
+  ( designFile
+  , expression
+  , sequentialStatement
+  , sequenceOfStatements
+  , concurrentStatement
+  , concurrentStatements
+  , name
+  ) where
 
 import           Prelude                    hiding (exponent)
 import           Text.Parsec                hiding (label)
