@@ -272,7 +272,8 @@ vhdlDef =
 lexer = P.makeTokenParser vhdlDef
 
 -- To VHDL.Syntax Identifier type
-identifier = antiQ' identifier AntiIdent $ Ident <$> P.identifier lexer
+identifier =
+  antiQ' identifier AntiIdent (Ident <$> P.identifier lexer) <?> "identifier"
 reserved = P.reserved lexer
 operator = P.operator lexer
 reservedOp = P.reservedOp lexer
