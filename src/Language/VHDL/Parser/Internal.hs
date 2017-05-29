@@ -2015,7 +2015,7 @@ sequentialStatement =
          , SReport <$> reportStatement
          , SIf <$> ifStatement
          -- , SCase <$> caseStatement
-         -- , SLoop <$> loopStatement
+         , SLoop <$> loopStatement
          -- , SNext <$> nextStatement
          , SReturn <$> returnStatement
          -- , SNull <$> nullStatement
@@ -2231,6 +2231,42 @@ ifStatement =
           sequenceOfStatements) <*>
        optionMaybe (reserved "else" *> sequenceOfStatements) <*
        (reserved "end" >> reserved "if" >> (optionEndNameLabel <$> l) >> semi))
+
+--------------------------------------------------------------------------------
+-- * 8.9 Loop statement
+{-
+    loop_statement ::=
+      [ loop_label : ]
+        [ iteration_scheme ] LOOP
+          sequence_of_statements
+        END LOOP [ loop_label ] ;
+
+    iteration_scheme ::=
+        WHILE condition
+      | FOR loop_parameter_specification
+
+    parameter_specification ::=
+      identifier IN discrete_range
+-}
+
+loopStatement :: Parser LoopStatement
+loopStatement =
+  stmLabelPush
+    (\l ->
+       LoopStatement <$> l <*> (optionMaybe iterationScheme <* reserved "loop") <*>
+       sequenceOfStatements <*
+       (reserved "end" >> reserved "loop" >> (optionEndNameLabel <$> l) >> semi))
+
+iterationScheme :: Parser IterationScheme
+iterationScheme =
+  choice
+    [ reserved "while" >> (IterWhile <$> condition)
+    , reserved "for" >> (IterFor <$> parameterSpecification)
+    ]
+
+parameterSpecification :: Parser ParameterSpecification
+parameterSpecification =
+  ParameterSpecification <$> identifier <* reserved "in" <*> discreteRange
 
 -- * 8.12 Return statement
 {-
