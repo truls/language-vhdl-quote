@@ -2016,6 +2016,7 @@ sequentialStatement =
          , SIf <$> ifStatement
          -- , SCase <$> caseStatement
          , SLoop <$> loopStatement
+         , SExit <$> exitStatement
          -- , SNext <$> nextStatement
          , SReturn <$> returnStatement
          -- , SNull <$> nullStatement
@@ -2267,6 +2268,22 @@ iterationScheme =
 parameterSpecification :: Parser ParameterSpecification
 parameterSpecification =
   ParameterSpecification <$> identifier <* reserved "in" <*> discreteRange
+
+--------------------------------------------------------------------------------
+-- * 8.11 Exit statement
+{-
+    exit_statement ::=
+      [ label : ] EXIT [ loop_label ] [ WHEN condition ] ;
+-}
+-- TODO: Verify that label refers to a lop in scope
+exitStatement :: Parser ExitStatement
+exitStatement =
+  stmLabel
+    (\l ->
+       reserved "exit" >>
+       ExitStatement <$> l <*> optionMaybe label <*>
+       optionMaybe (reserved "when" >> condition) <*
+       semi)
 
 -- * 8.12 Return statement
 {-
