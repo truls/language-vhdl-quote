@@ -903,7 +903,9 @@ indexConstraint :: Parser IndexConstraint
 indexConstraint = IndexConstraint <$> parens (commaSep1 discreteRange)
 
 discreteRange :: Parser DiscreteRange
-discreteRange = choice [DRSub <$> subtypeIndication, DRRange <$> range]
+discreteRange =
+  trace "discreteRange" $
+  choice [DRSub <$> subtypeIndication, DRRange <$> range]
 
 --------------------------------------------------------------------------------
 -- *** 3.2.1.1 Index constraints and discrete ranges
@@ -1084,15 +1086,13 @@ subtypeDeclaration =
 
 -- FIXME: Review this
 subtypeIndication :: Parser SubtypeIndication
-subtypeIndication = (try twonames <|> onename) <*> optionMaybe constraint
+subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
   where
-    twonames = do
+    go = do
       name1 <- name
-      name2 <- typeMark
-      return $ SubtypeIndication (Just name1) name2
-    onename = do
-      name1 <- typeMark
-      return $ SubtypeIndication Nothing name1
+      optionMaybe (try typeMark) >>= \case
+        Just ty -> return $ SubtypeIndication (Just name1) ty
+        Nothing -> return $ SubtypeIndication Nothing (TMType name1)
 
 typeMark :: Parser TypeMark
 -- Syntax defines subtype names separately, but we have no way of distinguisthing
