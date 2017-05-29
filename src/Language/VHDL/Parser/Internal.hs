@@ -2126,7 +2126,7 @@ waveform :: Parser Waveform
 waveform =
   trace "waveform" $
   choice
-    [ WaveElem <$> many1 waveformElement
+    [ WaveElem <$> commaSep1 waveformElement
     , reserved "unaffected" *> pure WaveUnaffected
     ]
 
