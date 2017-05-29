@@ -903,9 +903,7 @@ indexConstraint :: Parser IndexConstraint
 indexConstraint = IndexConstraint <$> parens (commaSep1 discreteRange)
 
 discreteRange :: Parser DiscreteRange
-discreteRange =
-  trace "discreteRange" $
-  choice [DRSub <$> subtypeIndication, DRRange <$> range]
+discreteRange = choice [DRSub <$> subtypeIndication, DRRange <$> range]
 
 --------------------------------------------------------------------------------
 -- *** 3.2.1.1 Index constraints and discrete ranges
@@ -2523,9 +2521,10 @@ primaryUnit =
 
 secondaryUnit :: Parser SecondaryUnit
 secondaryUnit =
-  choice
-    [ try $
-      lookAhead (reserved "package" >> reserved "body") >>
+  trace
+    "secondaryUnit"
+    choice
+    [ try (lookAhead (reserved "package" >> reserved "body")) >>
       SecondaryPackage <$> packageBody
     , SecondaryArchitecture <$> architectureBody
     ]
