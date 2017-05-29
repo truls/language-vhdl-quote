@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Language.VHDL.Parser.Internal
@@ -204,8 +205,7 @@ entityDeclarativePart :: Parser EntityDeclarativePart
 entityDeclarativePart =
   many $
   choice
-    [ EDISubprogDecl <$> subprogramDeclaration
-    , EDISubprogBody <$> subprogramBody
+    [ subprogramDeclOrBody EDISubprogDecl EDISubprogBody
     , EDIType <$> typeDeclaration
     , EDISubtype <$> subtypeDeclaration
     , EDIConstant <$> constantDeclaration
@@ -294,8 +294,7 @@ architectureDeclarativePart = many blockDeclarativeItem
 blockDeclarativeItem :: Parser BlockDeclarativeItem
 blockDeclarativeItem =
   choice
-    [ BDISubprogDecl <$> subprogramDeclaration
-    , BDISubprogBody <$> subprogramBody
+    [ subprogramDeclOrBody BDISubprogDecl BDISubprogBody
     , BDIType <$> typeDeclaration
     , BDISubtype <$> subtypeDeclaration
     , BDIConstant <$> constantDeclaration
@@ -450,9 +449,12 @@ componentConfiguration =
 
     operator_symbol ::= string_literal
 -}
-subprogramDeclaration :: Parser SubprogramDeclaration
-subprogramDeclaration =
-  trace "subprogramDeclaration" $ subprogramSpecification <* semi
+subprogramDeclaration :: SubprogramSpecification -> Parser SubprogramDeclaration
+subprogramDeclaration = trace "subprogramDeclaration" pure
+
+subprogramDeclaration' ::  Parser SubprogramDeclaration
+subprogramDeclaration' =
+  trace "subprogramDeclaration'" $ subprogramSpecification <* semi
 
 subprogramSpecification :: Parser SubprogramSpecification
 subprogramSpecification = subprogramProcedure <|> subprogramFunction
@@ -461,7 +463,7 @@ subprogramProcedure :: Parser SubprogramSpecification
 subprogramProcedure =
   reserved "procedure" >>
   SubprogramProcedure <$> designator <*>
-  parens (optionMaybe formalParameterList)
+  optionMaybe (parens formalParameterList)
 
 data Purity
   = Pure
@@ -489,6 +491,15 @@ designator = choice [DId <$> identifier, DOp <$> operatorSymbol]
 
 operatorSymbol :: Parser StringLiteral
 operatorSymbol = stringLiteral
+
+subprogramDeclOrBody :: (SubprogramDeclaration -> a)
+                     -> (SubprogramBody -> a)
+                     -> Parser a
+subprogramDeclOrBody t1 t2 =
+  subprogramSpecification >>=
+  (\s ->
+     t1 <$> (semi *> subprogramDeclaration s) <|>
+     t2 <$> (reserved "is" *> subprogramBody s))
 
 --------------------------------------------------------------------------------
 -- ** 2.1.1 Formal parameters
@@ -533,11 +544,10 @@ formalParameterList = interfaceList
 
     subprogram_kind ::= PROCEDURE | FUNCTION
 -}
-subprogramBody :: Parser SubprogramBody
-subprogramBody =
+subprogramBody :: SubprogramSpecification -> Parser SubprogramBody
+subprogramBody s =
   trace "subProgramBody" $
-  SubprogramBody <$> (subprogramSpecification <* reserved "is") <*>
-  (subprogramDeclarativePart <* reserved "begin") <*>
+  SubprogramBody s <$> (subprogramDeclarativePart <* reserved "begin") <*>
   subprogramStatementPart <*>
   (reserved "end" *> optionMaybe subprogramKind) <*>
   (optionMaybe designator <* semi)
@@ -550,8 +560,7 @@ subprogramDeclarativePart = many subprogramDeclarativeItem
 subprogramDeclarativeItem :: Parser SubprogramDeclarativeItem
 subprogramDeclarativeItem =
   choice
-    [ SDISubprogDecl <$> subprogramDeclaration
-    , SDISubprogBody <$> subprogramBody
+    [ subprogramDeclOrBody SDISubprogDecl SDISubprogBody
     , SDIType <$> typeDeclaration
     , SDISubtype <$> subtypeDeclaration
     , SDIConstant <$> constantDeclaration
@@ -640,8 +649,7 @@ packageDeclarativePart = many packageDeclarativeItem
 packageDeclarativeItem :: Parser PackageDeclarativeItem
 packageDeclarativeItem =
   choice
-    [ PHDISubprogDecl <$> subprogramDeclaration
-    , PHDISubprogBody <$> subprogramBody
+    [ subprogramDeclOrBody PHDISubprogDecl PHDISubprogBody
     , PHDIType <$> typeDeclaration
     , PHDISubtype <$> subtypeDeclaration
     , PHDIConstant <$> constantDeclaration
@@ -695,10 +703,7 @@ packageBodyDeclarativePart = many packageBodyDeclarativeItem
 packageBodyDeclarativeItem :: Parser PackageBodyDeclarativeItem
 packageBodyDeclarativeItem =
   choice
-    [ try $
-      lookAhead (subprogramSpecification >> reserved "is") >>
-      PBDISubprogBody <$> subprogramBody
-    , PBDISubprogDecl <$> subprogramDeclaration
+    [ subprogramDeclOrBody PBDISubprogDecl PBDISubprogBody
     , PBDIType <$> typeDeclaration
     , PBDISubtype <$> subtypeDeclaration
     , PBDIConstant <$> constantDeclaration
@@ -1011,7 +1016,7 @@ declaration =
     -- , DGroup <$> groupDeclaration
     , DEntity <$> entityDeclaration
     , DConfiguration <$> configurationDeclaration
-    , DSubprogram <$> subprogramDeclaration
+    , DSubprogram <$> subprogramDeclaration'
     , DPackage <$> packageDeclaration
                      -- TODO
     ]
@@ -2332,8 +2337,7 @@ processDeclarativeItem :: Parser ProcessDeclarativeItem
 processDeclarativeItem =
   trace "processDeclarativeItemm" $
   choice
-    [ PDISubprogDecl <$> subprogramDeclaration
-    , PDISubprogBody <$> subprogramBody
+    [ subprogramDeclOrBody PDISubprogDecl PDISubprogBody
     , PDIType <$> typeDeclaration
     , PDISubtype <$> subtypeDeclaration
     , PDIConstant <$> constantDeclaration
