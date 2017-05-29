@@ -1527,6 +1527,7 @@ data SignalList
         name
       | function_call
 -}
+
 data Name
   = NSimple SimpleName
   | NOp OperatorSymbol
@@ -1561,7 +1562,7 @@ type SimpleName = Identifier
       | ALL
 -}
 data SelectedName
-  = SelectedName { sname_prefix :: Prefix
+  = SelectedName { sname_prefix :: Name
                 ,  sname_suffix :: Suffix}
   | AntiSelname
   deriving (Eq, Show, Typeable, Data)
@@ -1579,7 +1580,8 @@ data Suffix
     indexed_name ::= prefix ( expression { , expression } )
 -}
 data IndexedName = IndexedName
-  { iname_prefix     :: Prefix
+  --TODO: { iname_prefix     :: Prefix
+  { iname_prefix     :: Name
   , iname_expression :: [Expression]
   } deriving (Eq, Show, Typeable, Data)
 
@@ -1589,7 +1591,8 @@ data IndexedName = IndexedName
     slice_name ::= prefix ( discrete_range )
 -}
 data SliceName = SliceName
-  { slice_prefix         :: Prefix
+  -- TODO{ slice_prefix         :: Prefix
+  { slice_prefix         :: Name
   , slice_discrete_range :: DiscreteRange
   } deriving (Eq, Show, Typeable, Data)
 
@@ -1602,7 +1605,8 @@ data SliceName = SliceName
     attribute_designator ::= attribute_simple_name
 -}
 data AttributeName = AttributeName
-  { aname_prefix               :: Prefix
+  --TODO: { aname_prefix               :: Prefix
+  { aname_prefix               :: Name
   , aname_signature            :: Maybe Signature
   , aname_attribute_designator :: AttributeDesignator
   , aname_expression           :: Maybe Expression

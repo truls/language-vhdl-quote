@@ -762,7 +762,7 @@ range :: Parser Range
 range =
   choice
     [ RSimple <$> expression <*> direction <*> expression
-    , RAttr <$> attributeName
+    , RAttr <$> (name >>= attributeName) -- FIXME: This won't work
     ]
 
 direction :: Parser Direction
@@ -1361,8 +1361,8 @@ actualDesignator =
   trace "actualDesignator" $
   choice
     [ reserved "open" *> pure ADOpen
+    , ADVariable <$> try name
     , ADExpression <$> try expression
-    , ADVariable <$> name
     , ADSignal <$> name
     , ADFile <$> name
     ]
@@ -1558,29 +1558,25 @@ physical_literal ::= [ abstract_literal ] unit_name
         name
       | function_call
 -}
--- parse: $vhdname:foo
+
 name :: Parser Name
-name = antiQ AntiName (nameNonterm <|> nameTerm)
-
-nameNonterm :: Parser Name
--- TODO: Look at all the trys here
-nameNonterm =
-  trace "nameNonterm" $
-  choice
-    [ NSelect <$> try selectedName
-    , NIndex <$> try indexedName
-    , NSlice <$> try sliceName
-    , NAttr <$> try attributeName
-    ]
-
-nameTerm :: Parser Name
-nameTerm = choice [NOp <$> operatorSymbol, NSimple <$> simpleName]
+name = antiQ AntiName $ NSimple <$> simpleName >>= rest
+  where
+    rest :: Name -> Parser Name
+    rest context =
+      trace "rest" $
+      choice
+        [ dot >> suffix >>= rest . NSelect . SelectedName context
+        , attributeName context >>= rest . NAttr
+        , sliceName context >>= rest . NSlice
+        , indexedName context >>= rest . NIndex
+        , pure context
+        ]
 
 prefix :: Parser Prefix
--- FIXME: Is using simpleName instead of name for Prefix a problem
 prefix =
   trace "prefix" $
-  choice [PName . NSimple <$> simpleName, PFun <$> functionCall]
+  choice [PName  <$> name, PFun <$> functionCall]
 
 --------------------------------------------------------------------------------
 -- * 6.2 Simple names
@@ -1601,15 +1597,17 @@ simpleName = trace "simpleName" identifier
       | operator_symbol
       | ALL
 -}
+
 selectedName :: Parser SelectedName
-selectedName =
-  trace
-    "selectedName"
-    (SelectedName <$> (prefix <* dot) <*> suffix <?> "SelectedName")
+selectedName = do
+  n <- name
+  case n of
+    (NSelect s) -> return s
+    _           -> unexpected "Expected a selectedName"
 
 suffix :: Parser Suffix
 suffix =
-  trace "suffic" $
+  trace "suffix" $
   choice
     [ SSimple <$> simpleName
     , SChar <$> charLiteral
@@ -1622,17 +1620,17 @@ suffix =
 {-
     indexed_name ::= prefix ( expression { , expression } )
 -}
-indexedName :: Parser IndexedName
-indexedName =
-  trace "indexedName" $ IndexedName <$> prefix <*> parens (commaSep1 expression)
+indexedName :: Name -> Parser IndexedName
+indexedName n =
+  trace "indexedName" $ IndexedName n <$> parens (commaSep1 expression)
 
 --------------------------------------------------------------------------------
 -- * 6.5 Slice names
 {-
     slice_name ::= prefix ( discrete_range )
 -}
-sliceName :: Parser SliceName
-sliceName = SliceName <$> prefix <*> parens discreteRange
+sliceName :: Name -> Parser SliceName
+sliceName m = SliceName m <$> parens discreteRange
 
 --------------------------------------------------------------------------------
 -- * 6.6 Attribute names
@@ -1642,10 +1640,10 @@ sliceName = SliceName <$> prefix <*> parens discreteRange
 
     attribute_designator ::= attribute_simple_name
 -}
-attributeName :: Parser AttributeName
-attributeName =
-  trace "attributeName" $
-  try (AttributeName <$> prefix <*> (optionMaybe signature <* char '\'')) <*>
+attributeName :: Name -> Parser AttributeName
+attributeName n =
+  trace ("attributeName" ++ show n) $
+  try (AttributeName n <$> (optionMaybe signature <* char '\'')) <*>
   attributeDesignator <*>
   optionMaybe (parens expression)
 
@@ -1711,10 +1709,10 @@ primary =
   antiQ AntiExpr $
   choice
     [ PrimQual <$> try qualifiedExpression
+    , PrimFun <$> functionCall
     , PrimName <$> name
     , PrimLit <$> literal
     , PrimAgg <$> aggregate
-    , PrimFun <$> functionCall
     , PrimTCon <$> typeConversion
     , PrimAlloc <$> allocator
     , PrimExp <$> parens expression
@@ -1901,7 +1899,7 @@ choice' =
 -}
 -- TODO
 functionCall :: Parser FunctionCall
-functionCall = FunctionCall <$> functionName <*> pure Nothing -- optionMaybe actualParameterPart
+functionCall = FunctionCall <$> functionName <*> optionMaybe (parens actualParameterPart)
 
 functionName :: Parser Identifier
 functionName = identifier
@@ -2476,7 +2474,7 @@ instantiatedUnit =
       USE selected_name { , selected_name } ;
 -}
 useClause :: Parser UseClause
-useClause = reserved "use" >> UseClause <$> selectedName `sepBy` comma <* semi
+useClause = reserved "use" >> UseClause <$> selectedName `sepBy1` comma <* semi
 
 --------------------------------------------------------------------------------
 --
