@@ -565,9 +565,9 @@ subprogramDeclarativeItem =
     , SDISubtype <$> subtypeDeclaration
     , SDIConstant <$> constantDeclaration
     , SDIVariable <$> variableDeclaration
-     -- TODO
+    , SDIAlias <$> aliasDeclaration
+      -- TODO
      -- , SDIFile <$> fileDeclaration
-     -- , SDIAlias <$> aliasDeclaration
      -- , SDIAttrDecl <$> attributeDeclaration
      -- , SDIAttrSepc <$> attributeSpecification
      -- , SDIUseClause <$> useClause
@@ -1375,6 +1375,30 @@ actualPart =
     -- FIXME: This looks ambigous
     , try $ APFunction <$> name <*> parens actualDesignator
     , APDesignator <$> actualDesignator
+
+--------------------------------------------------------------------------------
+-- ** 4.3.3 Alias declarations
+{-
+    alias_declaration ::=
+      ALIAS alias_designator [ : subtype_indication ] IS name [ signature ] ;
+
+    alias_designator ::= identifier | character_literal | operator_symbol
+-}
+aliasDeclaration :: Parser AliasDeclaration
+aliasDeclaration =
+  reserved "alias" >>
+  AliasDeclaration <$> aliasDesignator <*>
+  optionMaybe (colon *> subtypeIndication) <*>
+  (reserved "is" *> name) <*>
+  optionMaybe signature <*
+  semi
+
+aliasDesignator :: Parser AliasDesignator
+aliasDesignator =
+  choice
+    [ ADOperator <$> operatorSymbol
+    , ADCharacter <$> charLiteral
+    , ADIdentifier <$> identifier
     ]
 
 --------------------------------------------------------------------------------
