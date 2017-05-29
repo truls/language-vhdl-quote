@@ -12,11 +12,11 @@ module Language.VHDL.Parser
   )
 where
 
-import Text.Parsec
+import           Text.Parsec
 
-import Language.VHDL.Syntax
-import Language.VHDL.Parser.Internal
-import Language.VHDL.Parser.Monad
+import           Language.VHDL.Parser.Internal
+import           Language.VHDL.Parser.Monad
+import           Language.VHDL.Syntax
 
 type Result a = Either ParseError a
 
