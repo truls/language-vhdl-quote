@@ -1082,7 +1082,9 @@ subtypeDeclaration =
   SubtypeDeclaration <$> identifier <*>
   (reserved "is" *> subtypeIndication <* semi)
 
--- FIXME: Review this
+-- FIXME: Should bit_vector(length - 1 downto 0) be parsed as subtypeIndication
+-- a simpleName typeMark followed by a subtypeIndication constraint or a
+-- subtypeIndication containing a sliceName>
 subtypeIndication :: Parser SubtypeIndication
 subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
   where
