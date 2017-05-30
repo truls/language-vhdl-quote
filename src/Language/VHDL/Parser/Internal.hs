@@ -2281,7 +2281,7 @@ ifStatement lab =
        ((,) <$> (reserved "if" *> condition <* reserved "then") <*>
         sequenceOfStatements) <*>
        many
-         ((,) <$> (reserved "elseif" *> condition <* reserved "then") <*>
+         ((,) <$> (reserved "elsif" *> condition <* reserved "then") <*>
           sequenceOfStatements) <*>
        optionMaybe (reserved "else" *> sequenceOfStatements) <*
        (reserved "end" >> reserved "if" >> optionEndNameLabel l >> semi))
