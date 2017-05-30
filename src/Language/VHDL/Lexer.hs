@@ -35,7 +35,8 @@ module Language.VHDL.Lexer
   , whiteSpace
   ) where
 
-import           Data.Char                 (chr)
+import           Control.Arrow
+import           Data.Char                 (chr, toLower)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
 import           Text.Parsec
@@ -413,7 +414,8 @@ bitValue = BitValue <$> (SLit <$> (filter ('_' /=) <$> stringLiteral'))
 
 baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
   where
-    specMap =
+    specMap = specMap' ++  map (first (toLower <$>)) specMap'
+    specMap' =
       [ ("B",  BinaryBase)
       , ("O",  OctalBase)
       , ("X",  HexBase)
