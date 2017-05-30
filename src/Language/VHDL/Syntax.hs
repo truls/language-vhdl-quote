@@ -2713,6 +2713,24 @@ data ContextItem
 --                              Lexical elements
 --
 --------------------------------------------------------------------------------
+
+-- TODO: sort in sections
+data Identifier
+  = Ident String
+  | ExtendedIdent String
+  | AntiIdent String
+  deriving (Eq, Show, Typeable, Data)
+
+data CharacterLiteral
+  = CLit Char
+  | AntiClit String
+  deriving (Eq, Show, Typeable, Data)
+
+data StringLiteral
+  = SLit String
+  | AntiSlit String
+  deriving (Eq, Show, Typeable, Data)
+
 --------------------------------------------------------------------------------
 -- ** 13.4
 {-
@@ -2783,7 +2801,7 @@ base_specifier ::= B | O | X | UB | UO | UX | SB | SO | SX | D
 -}
 
 data BitStringLiteral = BitStringLiteral
-  { bitstring_length :: Int
+  { bitstring_length :: Maybe Integer
   , bitstring_base   :: BaseSpecifier
   , bit_value        :: BitValue
   } deriving (Eq, Show, Typeable, Data)
@@ -2807,26 +2825,6 @@ data BaseSpecifier
 
 
 --------------------------------------------------------------------------------
---
---                                  - ToDo -
---
---------------------------------------------------------------------------------
-data Identifier
-  = Ident String
-  | AntiIdent String
-  deriving (Eq, Show, Typeable, Data)
-
-data CharacterLiteral
-  = CLit Char
-  | AntiClit String
-  deriving (Eq, Show, Typeable, Data)
-
-data StringLiteral
-  = SLit String
-  | AntiSlit String
-  deriving (Eq, Show, Typeable, Data)
-
---------------------------------------------------------------------------------
 
 data BaseUnitDeclaration =
   BaseUnitDeclaration
@@ -2848,19 +2846,4 @@ data ExtendedDigit =
   ExtendedDigit
   deriving (Eq, Show, Typeable, Data)
 
-data ExtendedIdentifier =
-  ExtendedIdentifier
-  deriving (Eq, Show, Typeable, Data)
-
-data GraphicCharacter =
-  GraphicCharacter
-  deriving (Eq, Show, Typeable, Data)
-
-data Letter =
-  Letter
-  deriving (Eq, Show, Typeable, Data)
-
-data LetterOrDigit =
-  LetterOrDigit
-  deriving (Eq, Show, Typeable, Data)
 --------------------------------------------------------------------------------

@@ -112,7 +112,17 @@ instance Pretty AttributeSpecification where
     pp d <+> text "of" <+> pp s <+> text "is" <+> pp e <> semi
 
 instance Pretty BaseSpecifier where
-  pp = error "missing: BaseSpecifier" -- todo
+  pp BinaryBase         = text "B"
+  pp OctalBase          = text "O"
+  pp HexBase            = text "X"
+  pp UnsignedBinaryBase = text "UB"
+  pp UnsignedOctalBase  = text "UO"
+  pp UnsignedHexBase    = text "UX"
+  pp SignedBinaryBase   = text "SB"
+  pp SignedHoctalBase   = text "SO"
+  pp SignedHexBase      = text "SX"
+  pp Decimal            = text "D"
+
 
 instance Pretty BaseUnitDeclaration where
   pp = error "missing: BaseUnitDeclaration" -- todo
@@ -135,10 +145,10 @@ instance Pretty BindingIndication where
     vcat [condR (text "USE") e, cond id g, cond id p]
 
 instance Pretty BitStringLiteral where
-  pp = error "missing: BitStringLiteral" -- todo
+  pp (BitStringLiteral l b v) = cond id l <> pp b <> pp v
 
 instance Pretty BitValue where
-  pp = error "missing: BitValue" -- todo
+  pp (BitValue s) = pp s
 
 instance Pretty BlockConfiguration where
   pp (BlockConfiguration s u c) =
@@ -510,9 +520,6 @@ instance Pretty TimeExpression where
 instance Pretty ExtendedDigit where
   pp = error "missing: ExtendedDigit" -- todo
 
-instance Pretty ExtendedIdentifier where
-  pp = error "missing: ExtendedIdentifier" -- todo
-
 instance Pretty BinOp where
   pp And    = text "and"
   pp Or     = text "or"
@@ -604,9 +611,6 @@ instance Pretty GenericClause where
 instance Pretty GenericMapAspect where
   pp (GenericMapAspect as) = text "generic map" <+> parens (pp as) <> semi
 
-instance Pretty GraphicCharacter where
-  pp = error "missing: GraphicCharacter" -- todo
-
 instance Pretty GroupConstituent where
   pp (GCName n) = pp n
   pp (GCChar c) = pp c
@@ -624,8 +628,9 @@ instance Pretty GuardedSignalSpecification where
   pp (GuardedSignalSpecification ss t) = pp ss <> colon <+> pp t
 
 instance Pretty Identifier where
-  pp (Ident i)       = text i
-  pp a@(AntiIdent i) = ppAnti a i
+  pp (Ident i)         = text i
+  pp (ExtendedIdent i) = char '\\' <> text i <> char '\\'
+  pp a@(AntiIdent i)   = ppAnti a i
 
 --instance Pretty IdentifierList where pp = undefined
 instance Pretty IfStatement where
@@ -717,13 +722,6 @@ instance Pretty InterfaceList where
 instance Pretty IterationScheme where
   pp (IterWhile c) = text "while" <+> pp c
   pp (IterFor p)   = text "for" <+> pp p
-
---instance Pretty Label where pp = undefined
-instance Pretty Letter where
-  pp = error "missing: Letter" -- todo
-
-instance Pretty LetterOrDigit where
-  pp = error "missing: LetterOrDigit" -- todo
 
 instance Pretty LibraryClause where
   pp (LibraryClause ns) = text "library" <+> pp ns <> semi

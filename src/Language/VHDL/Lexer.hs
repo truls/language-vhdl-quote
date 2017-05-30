@@ -4,6 +4,7 @@
 module Language.VHDL.Lexer
   ( abstractLiteral
   , angles
+  , bitStringLiteral
   , braces
   , brackets
   , charLiteral
@@ -273,17 +274,14 @@ vhdlDef =
   }
 
 lexer = P.makeTokenParser vhdlDef
-
--- To VHDL.Syntax Identifier type
-identifier =
-  antiQ' identifier AntiIdent (Ident <$> P.identifier lexer) <?> "identifier"
 reserved = P.reserved lexer
 operator = P.operator lexer
 reservedOp = P.reservedOp lexer
-charLiteral = antiQ' identifier AntiClit $ CLit <$> P.charLiteral lexer
+charLiteral =
+  antiQ' identifier AntiClit $
+  CLit <$> lexeme (char '\'' *> (char '"' <|> graphicalChar) <* char '\'')
 stringLiteral = antiQ' identifier AntiSlit $ SLit <$> stringLiteral'
 natural = P.natural lexer
-integer = P.integer lexer
 float = P.float lexer
 naturalOrFloat = P.naturalOrFloat lexer
 decimal = P.decimal lexer
@@ -305,6 +303,129 @@ semiSep = P.semiSep lexer
 semiSep1 = P.semiSep1 lexer
 commaSep = P.commaSep lexer
 commaSep1 = P.commaSep1 lexer
+
+------------------------------------------------------------------------------------
+-- ** 15.4 Identifiers
+{-
+   identifier ::= basic_identifier | extended_identifier
+-}
+identifier =
+  antiQ'
+    identifier
+    AntiIdent
+    (ExtendedIdent <$> extendedIdentifier <|>
+     Ident <$> basicIdentifier <?> "identifier")
+
+-- ** 15.4.2 Basic identifiers
+{-
+   basic_identifier ::= letter { [ underline ] letter_or_digit }
+
+   letter_or_digit ::= letter | digit
+
+   letter ::= upper_case_letter | lower_case_letter
+-}
+
+basicIdentifier = P.identifier lexer
+
+-- ** 15.4.3 Extended identifiers
+{-
+   extended_identifier ::=
+      \ graphic_character { graphic_character } \
+-}
+extendedIdentifier =
+  lexeme $
+  between
+    (char '\\')
+    (char '\\' <?> "end of extended identifier")
+    (many1 graphicalChar)
+
+--------------------------------------------------------------------------------
+-- ** 15.5 AbstractLiteral
+{-
+    abstract_literal ::= decimal_literal | based_literal
+-}
+abstractLiteral =
+  (ALitDecimal <$> decimalLiteral) <|> (ALitBased <$> basedLiteral)
+
+------------------------------------------------------------------------------------
+-- ***15.5.2 Decimal literals
+--
+-- I use Haskell's Integer to represent integers in VHDL. Its syntax seems to be
+-- slightly different though (the underline part).
+{-
+decimal_literal ::= integer [ . integer ] [ exponent ]
+
+integer ::= digit { [ underline ] digit }
+
+exponent ::= E [ + ] integer | E – integer
+-}
+decimalLiteral =
+  DecimalLiteral <$> integer <*> optionMaybe (dot *> integer) <*>
+  optionMaybe exponent'
+
+integer =
+  toInteger <$> (read :: String -> Int) . concat <$> number `sepBy1` symbol "_"
+  where
+    number = lexeme $ many1 digit
+
+exponent' =
+  symbol "E" >>
+  ((ExponentNeg <$> (symbol "-" *> integer)) <|>
+   (ExponentPos <$> (optional (symbol "+") *> integer)))
+
+--------------------------------------------------------------------------------
+-- *** 15.5.3
+{-
+    based_literal ::=
+      base # based_integer [ . based_integer ] # [ exponent ]
+
+    base ::= integer
+
+    based_integer ::=
+      extended_digit { [ underline ] extended_digit }
+
+    extended_digit ::= digit | letter
+-}
+basedLiteral =
+  BasedLiteral <$> base <*> (symbol "#" *> basedInteger) <*>
+  (dot *> optionMaybe basedInteger) <*>
+  optionMaybe (symbol "#" *> exponent')
+
+base = integer
+
+-- TODO: Probably case sensitive
+basedInteger = SLit . concat <$> many1 alphaNum `sepBy1` char '_'
+
+--------------------------------------------------------------------------------
+-- *** 15.8
+{-
+bit_string_literal ::= [ integer ] base_specifier " [ bit_value ] "
+
+bit_value ::= graphic_character { [ underline ] graphic_character }
+
+base_specifier ::= B | O | X | UB | UO | UX | SB | SO | SX | D
+-}
+bitStringLiteral = --BitStringLiteral Nothing <$> try baseSpecifier <*> bitValue
+                   BitStringLiteral <$> try (optionMaybe integer) <*> baseSpecifier <*> bitValue
+
+-- FIXME: Should we filter out _'s?
+bitValue = BitValue <$> (SLit <$> (filter ('_' /=) <$> stringLiteral'))
+
+baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
+  where
+    specMap =
+      [ ("B",  BinaryBase)
+      , ("O",  OctalBase)
+      , ("X",  HexBase)
+      , ("UB", UnsignedBinaryBase)
+      , ("UO", UnsignedOctalBase)
+      , ("UX", UnsignedHexBase)
+      , ("SB", SignedBinaryBase)
+      , ("SO", SignedHoctalBase)
+      , ("SX", SignedHexBase)
+      , ("D",  Decimal)
+      ]
+
 
 -- The following is somewhat inspired by the language module of parsec
 

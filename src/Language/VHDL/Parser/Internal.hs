@@ -802,7 +802,11 @@ enumerationTypeDefinition =
   EnumerationTypeDefinition <$> parens (commaSep1 enumerationLiteral)
 
 enumerationLiteral :: Parser EnumerationLiteral
-enumerationLiteral = choice [EChar <$> try charLiteral, EId <$> identifier]
+enumerationLiteral =
+  choice
+    [ EChar <$> charLiteral
+    , EId <$> identifier
+    ]
 
 --------------------------------------------------------------------------------
 -- *** 3.1.1.1 Predefined enumeration types
@@ -1751,7 +1755,9 @@ condition_operator primary
       | ( expression )
 -}
 expression :: Parser Expression
-expression = antiQ AntiExpr $ buildExpressionParser table primary
+expression =
+  trace "expression" $
+  antiQ AntiExpr $ seeNext 10 >> buildExpressionParser table primary
 
 primary :: Parser Expression
 primary =
@@ -1760,9 +1766,9 @@ primary =
     [ PrimAgg <$> try aggregate
     , PrimExp <$> parens expression
     -- TODO:, PrimQual <$> try qualifiedExpression
+    , PrimLit <$> literal
     , PrimName <$> try name
     , PrimFun <$> try functionCall
-    , PrimLit <$> literal
     , PrimTCon <$> typeConversion
     , PrimAlloc <$> allocator
     ]
@@ -1899,15 +1905,16 @@ makeOpParser = choice . map oneOp
         astract_literal
       | physical_literal
 -}
--- FIXME: Passing random text gives an IntLit?
+-- TODO: We parse enum literals referred to by identifier as name since we
+-- cannot distinguish. Document this!
 literal :: Parser Literal
 literal =
   choice
-    [ LitEnum <$> enumerationLiteral
+    [ LitEnum . EChar <$> charLiteral
     , LitString <$> stringLiteral
-    --, LitBitString <$> bitStringLiteral
+    , LitBitString <$> try bitStringLiteral
+    , LitNum <$> try numericLiteral
     , reserved "null" *> pure LitNull
-    , LitNum <$> numericLiteral
     ]
 
 numericLiteral :: Parser NumericLiteral
@@ -2792,70 +2799,3 @@ contextClause = ContextClause <$> many contextItem
 contextItem :: Parser ContextItem
 contextItem =
   choice [ContextLibrary <$> libraryClause, ContextUse <$> useClause]
-
---------------------------------------------------------------------------------
---
---                                  -- 13 --
---
---                              Lexical elements
---
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- ** 13.4
-{-
-    abstract_literal ::= decimal_literal | based_literal
--}
-abstractLiteral :: Parser AbstractLiteral
-abstractLiteral =
-  (ALitDecimal <$> decimalLiteral) <|> (ALitBased <$> basedLiteral)
-
---------------------------------------------------------------------------------
--- *** 13.4.1
---
--- I use Haskell's Integer to represent integers in VHDL. Its syntax seems to be
--- slightly different though (the underline part).
-{-
-    decimal_literal ::= integer [ . integer ] [ exponent ]
-
-    integer ::= digit { [ underline ] digit }
-
-    exponent ::= E [ + ] integer | E – integer
--}
-decimalLiteral :: Parser DecimalLiteral
-decimalLiteral =
-  DecimalLiteral <$> integer <*> optionMaybe (dot *> integer) <*>
-  optionMaybe exponent
-
-exponent :: Parser Exponent
-exponent =
-  symbol "E" >>
-  ((ExponentNeg <$> (symbol "-" *> integer)) <|>
-   (ExponentPos <$> (optional (symbol "+") *> integer)))
-
---------------------------------------------------------------------------------
--- *** 13.4.2
-{-
-    based_literal ::=
-      base # based_integer [ . based_integer ] # [ exponent ]
-
-    base ::= integer
-
-    based_integer ::=
-      extended_digit { [ underline ] extended_digit }
-
-    extended_digit ::= digit | letter
--}
-basedLiteral :: Parser BasedLiteral
-basedLiteral =
-  BasedLiteral <$> base <*> (symbol "#" *> basedInteger) <*>
-  (dot *> optionMaybe basedInteger) <*>
-  optionMaybe (symbol "#" *> exponent)
-
-base
-  :: forall u.
-     ParsecT String u Data.Functor.Identity.Identity Integer
-base = integer
-
--- TODO: Probably case sensitive
-basedInteger :: Parser BasedInteger
-basedInteger = SLit . concat <$> many1 alphaNum `sepBy1` char '_'
