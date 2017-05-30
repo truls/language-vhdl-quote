@@ -2,35 +2,36 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Language.VHDL.Lexer
-  ( identifier
-  , reserved
-  , operator
-  , reservedOp
-  , charLiteral
-  , stringLiteral
-  , natural
-  , integer
-  , float
-  , naturalOrFloat
-  , decimal
-  , hexadecimal
-  , octal
-  , symbol
-  , lexeme
-  , whiteSpace
-  , parens
-  , braces
+  ( abstractLiteral
   , angles
+  , braces
   , brackets
-  , squares
-  , semi
-  , comma
+  , charLiteral
   , colon
-  , dot
-  , semiSep
-  , semiSep1
+  , comma
   , commaSep
   , commaSep1
+  , decimal
+  , dot
+  , float
+  , hexadecimal
+  , identifier
+  , integer
+  , lexeme
+  , natural
+  , naturalOrFloat
+  , octal
+  , operator
+  , parens
+  , reserved
+  , reservedOp
+  , semi
+  , semiSep
+  , semiSep1
+  , squares
+  , stringLiteral
+  , symbol
+  , whiteSpace
   ) where
 
 import           Data.Char                 (chr)
