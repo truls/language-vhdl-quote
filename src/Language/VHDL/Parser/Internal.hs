@@ -1906,15 +1906,17 @@ numericLiteral =
       | element_simple_name
       | OTHERS
 -}
+
+-- FIXME: Combine with parser for expr wrapped in parens and reduce aggregate to
+--  ( expr ) when aggregate only contains a single expression.
 aggregate :: Parser Aggregate
 aggregate =
   trace "aggregate" $ Aggregate <$> parens (commaSep1 elementAssociation)
 
 -- FIXME: we mayu have a problem here
 elementAssociation :: Parser ElementAssociation
-elementAssociation = ElementAssociation Nothing <$> expression
+elementAssociation = ElementAssociation <$> optionMaybe (choices <* symbol "=>") <*> expression
 
---elementAssociation = ElementAssociation <$> optionMaybe (choices <* symbol "=>") <*> expression
 choices :: Parser Choices
 choices = Choices <$> choice' `sepBy1` symbol "|"
 
