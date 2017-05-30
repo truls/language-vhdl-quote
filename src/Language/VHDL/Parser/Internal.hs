@@ -2225,9 +2225,12 @@ procedureCallStatement l =
   trace "procedureCallStatement" $
   ProcedureCallStatement l <$> procedureCall <* semi
 
+-- FIXME: replaced name by identifier. I don't _think_ a
+-- function name can be anything else
 procedureCall :: Parser ProcedureCall
 procedureCall =
-  ProcedureCall <$> name <*> optionMaybe (parens actualParameterPart)
+  ProcedureCall <$> (NSimple <$> identifier) <*>
+  optionMaybe (parens actualParameterPart)
 
 -- * 8.7 If statement
 {-
