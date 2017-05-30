@@ -2468,9 +2468,9 @@ concurrentStatements = many concurrentStatement
       { sequential_statement }
 -}
 processStatement :: Maybe Label -> Parser ProcessStatement
-processStatement l =
+processStatement lab =
   stmLabelPush
-    l
+    lab
     (\l -> do
        postponed <- try (isReserved "postponed")
        ProcessStatement l postponed <$>
