@@ -2486,7 +2486,7 @@ blockStatement lab =
     "block"
     lab
     (\l ->
-       BlockStatement <$> (labelRequired l) <*> optionMaybe (parens expression) <*
+       BlockStatement <$> labelRequired l <*> optionMaybe (parens expression) <*
        optional (reserved "is") <*>
        blockHeader <*>
        blockDeclarativePart <*
