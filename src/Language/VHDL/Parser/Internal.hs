@@ -2428,6 +2428,7 @@ newLabel = optionMaybe $ try (label <* colon)
       | component_instantiation_statement
       | generate_statement
 -}
+-- FIXME: component instantiation/procedure calls are ambigous
 concurrentStatement :: Parser ConcurrentStatement
 concurrentStatement =
   antiQ AntiConStm $
@@ -2436,9 +2437,9 @@ concurrentStatement =
        choice
          [ ConBlock <$> blockStatement l
          , ConProcess <$> processStatement l
-    -- , ConProcCall <$> concurrentProcedureCallStatement
     -- , ConAssertion <$> concurrentAssertionStatement
          , ConSignalAss <$> try (concurrentSignalAssignmentStatement l)
+         , ConProcCall <$> try (concurrentProcedureCallStatement l)
          , ConComponent <$> componentInstantiationStatement l
     -- , ConGenerate <$> generateStatement
          ])
@@ -2572,6 +2573,18 @@ processDeclarativeItem =
 
 processStatementPart :: Parser [SequentialStatement]
 processStatementPart = trace "ProcessStatementPart" $ many sequentialStatement
+
+--------------------------------------------------------------------------------
+-- * 9.3 Concurrent procedure call statements
+{-
+    concurrent_procedure_call_statement ::=
+      [ label : ] [ POSTPONED ] procedure_call ;
+-}
+concurrentProcedureCallStatement :: Maybe Label -> Parser ConcurrentProcedureCallStatement
+concurrentProcedureCallStatement l =
+  ConcurrentProcedureCallStatement l <$> try (isReserved "postponed") <*>
+  procedureCall <*
+  semi
 
 --------------------------------------------------------------------------------
 -- * 9.4 Concurrent assertion statements
