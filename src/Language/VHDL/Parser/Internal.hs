@@ -2072,7 +2072,7 @@ sequentialStatement =
          , SExit <$> exitStatement l
          -- , SNext <$> nextStatement
          , SReturn <$> returnStatement l
-         -- , SNull <$> nullStatement
+         , SNull <$> nullStatement l
          , SSignalAss <$> signalAssignmentStatement l
          , SVarAss <$> variableAssignmentStatement l
          , SProc <$> procedureCallStatement l
@@ -2374,6 +2374,15 @@ returnStatement :: Maybe Label -> Parser ReturnStatement
 returnStatement l =
        reserved "return" >>
        ReturnStatement l <$> optionMaybe expression <* semi
+
+--------------------------------------------------------------------------------
+-- * 8.13 Null statement
+{-
+    null_statement ::=
+      [ label : ] NULL ;
+-}
+nullStatement :: Maybe Label -> Parser NullStatement
+nullStatement l = reserved "null" *> semi *> pure (NullStatement l)
 
 --------------------------------------------------------------------------------
 -- ** 9.6.1 Instantiation of a component
