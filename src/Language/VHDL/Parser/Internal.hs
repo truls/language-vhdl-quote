@@ -1753,14 +1753,14 @@ primary :: Parser Expression
 primary =
   antiQ AntiExpr $
   choice
-    [ PrimQual <$> try qualifiedExpression
-    , PrimFun <$> functionCall
-    , PrimName <$> name
+    [ PrimAgg <$> try aggregate
+    , PrimExp <$> parens expression
+    -- TODO:, PrimQual <$> try qualifiedExpression
+    , PrimName <$> try name
+    , PrimFun <$> try functionCall
     , PrimLit <$> literal
-    , PrimAgg <$> aggregate
     , PrimTCon <$> typeConversion
     , PrimAlloc <$> allocator
-    , PrimExp <$> parens expression
     ]
 
 table :: [[Operator String ParseState Data.Functor.Identity.Identity Expression]]
