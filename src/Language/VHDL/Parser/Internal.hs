@@ -1939,14 +1939,14 @@ aggregate :: Parser Aggregate
 aggregate =
   trace "aggregate" $ Aggregate <$> parens (commaSep1 elementAssociation)
 
--- FIXME: we mayu have a problem here
 elementAssociation :: Parser ElementAssociation
-elementAssociation = ElementAssociation <$> optionMaybe (choices <* symbol "=>") <*> expression
+elementAssociation = ElementAssociation <$> optionMaybe (try (choices <* symbol "=>")) <*> expression
 
 choices :: Parser Choices
 choices = Choices <$> choice' `sepBy1` symbol "|"
 
 -- FIXME: Replacing simpleExpression by expression
+-- FIXME: expression <|> simpleName will never reach simpleName
 choice' :: Parser Choice
 choice' =
   choice
