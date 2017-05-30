@@ -1942,7 +1942,8 @@ choice' =
 
     actual_parameter_part ::= parameter_association_list
 -}
--- TODO
+-- TODO: Consider removing this parser and instead parsing functionCalls as
+-- names. We have no way of disambiguating
 functionCall :: Parser FunctionCall
 functionCall = FunctionCall <$> functionName <*> optionMaybe (parens actualParameterPart)
 
