@@ -2425,7 +2425,8 @@ concurrentStatement =
   stmLabel
     (\l ->
        choice
-         [ ConProcess <$> processStatement l
+         [ ConBlock <$> blockStatement l
+         , ConProcess <$> processStatement l
     -- , ConProcCall <$> concurrentProcedureCallStatement
     -- , ConAssertion <$> concurrentAssertionStatement
          , ConSignalAss <$> try (concurrentSignalAssignmentStatement l)
@@ -2435,6 +2436,60 @@ concurrentStatement =
 
 concurrentStatements :: Parser [ConcurrentStatement]
 concurrentStatements = many concurrentStatement
+
+--------------------------------------------------------------------------------
+-- * 9.1 Block statement
+{-
+    block_statement ::=
+      block_label :
+        BLOCK [ ( guard_expression ) ] [ IS ]
+          block_header
+          block_declarative_part
+        BEGIN
+          block_statement_part
+        END BLOCK [ block_label ] ;
+
+    block_header ::=
+      [ generic_clause
+        [ generic_map_aspect ; ] ]
+      [ port_clause
+        [ port_map_aspect ; ] ]
+
+    block_declarative_part ::=
+      { block_declarative_item }
+
+    block_statement_part ::=
+      { concurrent_statement }
+-}
+
+blockStatement :: Maybe Label -> Parser BlockStatement
+blockStatement lab =
+  labeledBlock
+    "block"
+    lab
+    (\l ->
+       BlockStatement <$> (labelRequired l) <*> optionMaybe (parens expression) <*
+       optional (reserved "is") <*>
+       blockHeader <*>
+       blockDeclarativePart <*
+       reserved "begin" <*>
+       blockStatementPart)
+
+blockHeader :: Parser BlockHeader
+blockHeader = do
+  genClause <- try (optionMaybe genericClause)
+  genMap <- try (optionMaybe (genericMapAspect <* semi))
+  portClause <- try (optionMaybe portClause)
+  portMap <- try (optionMaybe (portMapAspect <* semi))
+  let genPart = maybe Nothing (\g -> Just (g, genMap)) genClause
+  let portPart = maybe Nothing (\p -> Just (p, portMap)) portClause
+  return $ BlockHeader genPart portPart
+
+blockDeclarativePart :: Parser BlockDeclarativePart
+blockDeclarativePart = many blockDeclarativeItem
+
+blockStatementPart :: Parser BlockStatementPart
+blockStatementPart = many concurrentStatement
 
 --------------------------------------------------------------------------------
 -- * 9.2 Process statement
