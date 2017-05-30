@@ -2413,6 +2413,25 @@ nullStatement l = reserved "null" *> semi *> pure (NullStatement l)
 
     label ::= identifier
 -}
+
+generateStatement :: Maybe Label -> Parser GenerateStatement
+generateStatement lab =
+  stmLabelPush
+    lab
+    (\l ->
+       GenerateStatement <$> labelRequired l <*>
+       (generationScheme <* reserved "generate") <*>
+       try (optionMaybe (many blockDeclarativeItem <* reserved "begin")) <*>
+       concurrentStatements <*
+       (reserved "end" >> reserved "generate" >> optionEndNameLabel l >> semi))
+
+generationScheme :: Parser GenerationScheme
+generationScheme =
+  choice
+    [ reserved "for" >> GSFor <$> parameterSpecification
+    , reserved "if" >> GSIf <$> condition
+    ]
+
 label :: Parser Identifier
 label = identifier
 
@@ -2449,7 +2468,7 @@ concurrentStatement =
          , ConSignalAss <$> try (concurrentSignalAssignmentStatement l)
          , ConProcCall <$> try (concurrentProcedureCallStatement l)
          , ConComponent <$> componentInstantiationStatement l
-    -- , ConGenerate <$> generateStatement
+         , ConGenerate <$> generateStatement l
          ])
 
 concurrentStatements :: Parser [ConcurrentStatement]
