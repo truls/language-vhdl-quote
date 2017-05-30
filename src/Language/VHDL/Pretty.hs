@@ -1061,7 +1061,11 @@ instance Pretty SliceName where
   pp (SliceName p r) = pp p <+> parens (pp r)
 
 instance Pretty StringLiteral where
-  pp (SLit s)       = char '\"' <> text s <> char '\"'
+  pp (SLit s) = char '\"' <> text (fixQuotes s) <> char '\"'
+    where
+      fixQuote xs '"' = xs ++ "\"\""
+      fixQuote xs x   = xs ++ [x]
+      fixQuotes = foldl fixQuote []
   pp a@(AntiSlit s) = ppAnti a s
 
 instance Pretty SubprogramBody where
