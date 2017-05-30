@@ -1607,7 +1607,7 @@ physical_literal ::= [ abstract_literal ] unit_name
         name
       | function_call
 -}
-
+-- TODO: Maybe explicitly handle base_specifiers (avoid try in expr)
 name :: Parser Name
 name = antiQ AntiName $ NSimple <$> simpleName >>= rest
   where
@@ -1615,10 +1615,11 @@ name = antiQ AntiName $ NSimple <$> simpleName >>= rest
     rest context =
       trace "rest" $
       choice
-        [ dot >> suffix >>= rest . NSelect . SelectedName context
-        , attributeName context >>= rest . NAttr
-        , sliceName context >>= rest . NSlice
-        , indexedName context >>= rest . NIndex
+        [ dot >> (suffix <?> "selected_name") >>=
+          rest . NSelect . SelectedName context
+        , (attributeName context <?> "attribute_name") >>= rest . NAttr
+        , try $ (sliceName context <?> "slice_name") >>= rest . NSlice
+        , (indexedName context <?> "indexed_name") >>= rest . NIndex
         , pure context
         ]
 
