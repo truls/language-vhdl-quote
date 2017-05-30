@@ -2027,6 +2027,9 @@ allocator =
 sequenceOfStatements :: Parser SequenceOfStatements
 sequenceOfStatements = many sequentialStatement
 
+-- TODO: Should we use the try combinator with all reserved words?  TODO: Rework
+-- label handling. Parse labels only here and only push labels for block
+-- statements
 sequentialStatement :: Parser SequentialStatement
 sequentialStatement =
   stmLabel
