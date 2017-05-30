@@ -18,7 +18,7 @@ import           Text.Parsec.Expr
 import           Control.Monad              (void, when)
 import           Data.Data                  (Data)
 import qualified Data.Functor.Identity
-import           Data.Maybe                 (isJust)
+import           Data.Maybe                 (fromJust, isJust)
 
 import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Monad
@@ -67,6 +67,16 @@ block s p =
   reserved s >>
   p <* (reserved "end" *> optional (reserved s)) <* optionEndName s <* semi
 
+labeledBlock
+  :: String
+  -> Maybe Label
+  -> (Maybe Label -> Parser a)
+  -> Parser a
+labeledBlock s l p = do
+  labelPush l
+  reserved s
+  p l <* (reserved "end" *> optional (reserved s)) <* optionEndNameLabel l <* semi
+
 blockN :: [String] -> Parser a -> Parser a
 blockN s p =
   mapM_ reserved s >>
@@ -74,28 +84,40 @@ blockN s p =
   optionEndName (unwords s) <*
   semi
 
-stmLabelPush :: (Parser (Maybe Label) -> Parser a) -> Parser a
-stmLabelPush =
-  stmLabel'
-    (\s ->
-       trace ("PUUUUUUUU " ++ show s) $
-       case s of
-         Just a  -> void $ pushBlockName a
-         Nothing -> return ())
+labelPush :: Maybe Label -> Parser ()
+labelPush l =
+  case l of
+    Just lab -> void $ pushBlockName lab
+    Nothing  -> return ()
+
+stmLabelPush :: Maybe Label -> (Maybe Label -> Parser a) -> Parser a
+stmLabelPush l p = do
+  when (isJust l) (void $ pushBlockName (fromJust l))
+  p l
+
+stmLabelPush' :: (Maybe Label -> Parser a) -> Parser a
+stmLabelPush' p = do
+  lab <- optionMaybe $ try (label <* reservedOp ":")
+  stmLabelPush lab p
+
+    -- trace ("PUUUUUUUU " ++ show s) $
+       -- case s of
+       --   Just a  -> void $ pushBlockName a
+       --   Nothing -> return ())
 
 --(\s -> whenIsJust s (\i -> isJust pushBlockName i >> return ()))
-stmLabel :: (Parser (Maybe Label) -> Parser a) -> Parser a
+stmLabel :: (Maybe Label -> Parser a) -> Parser a
 stmLabel = stmLabel' (\_ -> return ())
 
 stmLabel' :: (Maybe Label -> Parser ())
-          -> (Parser (Maybe Label) -> Parser a)
+          -> (Maybe Label -> Parser a)
           -> Parser a
 stmLabel' f g
   --lab <- optionMaybe $ (trace "stmLabel") $ try (label <* reservedOp ":")
  = do
   lab <- optionMaybe $ try (label <* reservedOp ":")
   f lab
-  g (trace ("Label: " ++ show lab) pure lab)
+  g (trace ("Label: " ++ show lab) lab)
 
 lookaheadLabel :: String -> Parser a -> Parser a
 lookaheadLabel s p =
@@ -106,10 +128,9 @@ blockName = simpleName >>= pushBlockName
   -- label <- optionMaybe (label <* colon)
   -- f label
 
-labelRequired :: Parser (Maybe Label) -> Parser Label
-labelRequired l = do
-  lab <- l
-  case lab of
+labelRequired :: Maybe Label -> Parser Label
+labelRequired l =
+  case l of
     Just l' -> return l'
     Nothing -> fail "A label is required here"
 
@@ -2012,13 +2033,13 @@ sequentialStatement =
        choice
          [ SWait <$> waitStatement l
          , SAssert <$> assertionStatement l
-         , SReport <$> reportStatement
-         , SIf <$> ifStatement
-         -- , SCase <$> caseStatement
-         , SLoop <$> loopStatement
-         , SExit <$> exitStatement
+         , SReport <$> reportStatement l
+         , SIf <$> ifStatement l
+         , SCase <$> caseStatement l
+         , SLoop <$> loopStatement l
+         , SExit <$> exitStatement l
          -- , SNext <$> nextStatement
-         , SReturn <$> returnStatement
+         , SReturn <$> returnStatement l
          -- , SNull <$> nullStatement
          , SSignalAss <$> signalAssignmentStatement l
          , SVarAss <$> variableAssignmentStatement l
@@ -2043,11 +2064,11 @@ sequentialStatement =
 
     timeout_clause ::= FOR time_expression
 -}
-waitStatement :: Parser (Maybe Label) -> Parser WaitStatement
+waitStatement :: Maybe Label -> Parser WaitStatement
 waitStatement l =
   trace "waitStatemen" try $
   reserved "wait" >>
-  WaitStatement <$> l <*> optionMaybe sensitivityClause <*>
+  WaitStatement l <$> optionMaybe sensitivityClause <*>
   optionMaybe conditionClause <*>
   optionMaybe timeoutClause <*
   semi
@@ -2079,11 +2100,11 @@ timeoutClause = TimeoutClause <$> (reserved "for" *> timeExpression)
         [ REPORT expression ]
         [ SEVERITY expression ]
 -}
-assertionStatement :: Parser (Maybe Label) -> Parser AssertionStatement
+assertionStatement :: Maybe Label -> Parser AssertionStatement
 assertionStatement l =
   trace
     "assertionStatement"
-    (AssertionStatement <$> l <*> try assertion <*
+    (AssertionStatement l <$> try assertion <*
      semi <?> "Assertion statement")
 
 assertion :: Parser Assertion
@@ -2100,15 +2121,13 @@ assertion =
         REPORT expression
           [ SEVERITY expression ] ;
 -}
-reportStatement :: Parser ReportStatement
-reportStatement =
+reportStatement :: Maybe Label -> Parser ReportStatement
+reportStatement l =
   trace "reportStatement" $
-  stmLabel
-    (\l ->
-       reserved "report" >>
-       ReportStatement <$> l <*> expression <*>
-       optionMaybe (reserved "severity" *> expression) <*
-       semi)
+  reserved "report" >>
+  ReportStatement l <$> expression <*>
+  optionMaybe (reserved "severity" *> expression) <*
+  semi
 
 --------------------------------------------------------------------------------
 -- * 8.4 Signal assignment statement
@@ -2128,11 +2147,11 @@ reportStatement =
         waveform_element { , waveform_element }
       | UNAFFECTED
 -}
-signalAssignmentStatement :: Parser (Maybe Label)
+signalAssignmentStatement :: Maybe Label
                           -> Parser SignalAssignmentStatement
 signalAssignmentStatement l =
   trace "signalAssignmentStatement" $
-  SignalAssignmentStatement <$> l <*> try (target <* reservedOp "<=") <*>
+  SignalAssignmentStatement l <$> try (target <* reservedOp "<=") <*>
   optionMaybe delayMechanism <*>
   waveform <*
   semi
@@ -2179,11 +2198,10 @@ waveformElement =
     variable_assignment_statement ::=
       [ label : ] target := expression ;
 -}
-variableAssignmentStatement :: Parser (Maybe Label)
-                            -> Parser VariableAssignmentStatement
+variableAssignmentStatement :: Maybe Label -> Parser VariableAssignmentStatement
 variableAssignmentStatement l =
   trace "variableAssignmentStatement" $
-  VariableAssignmentStatement <$> l <*> try (target <* reservedOp ":=") <*>
+  VariableAssignmentStatement l <$> try (target <* reservedOp ":=") <*>
   (expression <* semi)
 
 --------------------------------------------------------------------------------
@@ -2198,10 +2216,10 @@ variableAssignmentStatement l =
 -}
 -- TODO: Can we disambigously distinguish between variable assignments and
 -- procedure calls without knowing what names are defined as
-procedureCallStatement :: Parser (Maybe Label) -> Parser ProcedureCallStatement
+procedureCallStatement :: Maybe Label -> Parser ProcedureCallStatement
 procedureCallStatement l =
   trace "procedureCallStatement" $
-  ProcedureCallStatement <$> l <*> procedureCall <* semi
+  ProcedureCallStatement l <$> procedureCall <* semi
 
 procedureCall :: Parser ProcedureCall
 procedureCall =
@@ -2219,19 +2237,48 @@ procedureCall =
           sequence_of_statements ]
         END IF [ if_label ] ;
 -}
-ifStatement :: Parser IfStatement
-ifStatement =
+ifStatement :: Maybe Label -> Parser IfStatement
+ifStatement lab =
   trace "ifStatement" $
-  stmLabelPush
+  stmLabelPush lab
     (\l ->
-       IfStatement <$> l <*>
+       IfStatement l <$>
        ((,) <$> (reserved "if" *> condition <* reserved "then") <*>
         sequenceOfStatements) <*>
        many
          ((,) <$> (reserved "elseif" *> condition <* reserved "then") <*>
           sequenceOfStatements) <*>
        optionMaybe (reserved "else" *> sequenceOfStatements) <*
-       (reserved "end" >> reserved "if" >> (optionEndNameLabel <$> l) >> semi))
+       (reserved "end" >> reserved "if" >> optionEndNameLabel l >> semi))
+
+--------------------------------------------------------------------------------
+-- * 8.8 Case statement
+{-
+    case_statement ::=
+      [ case_label : ]
+        CASE expression IS
+          case_statement_alternative
+          { case_statement_alternative }
+        END CASE [ case_label ] ;
+
+    case_statement_alternative ::=
+      WHEN choices =>
+        sequence_of_statements
+-}
+caseStatement :: Maybe Label -> Parser CaseStatement
+caseStatement lab =
+  labeledBlock
+    "case"
+    lab
+    (\l ->
+       CaseStatement l <$> (expression <* reserved "is") <*>
+       many1 caseStatementAlternative)
+
+caseStatementAlternative :: Parser CaseStatementAlternative
+caseStatementAlternative =
+  reserved "when" >>
+  CaseStatementAlternative <$> (choices <* reservedOp "=>") <*>
+  sequenceOfStatements
 
 --------------------------------------------------------------------------------
 -- * 8.9 Loop statement
@@ -2250,13 +2297,13 @@ ifStatement =
       identifier IN discrete_range
 -}
 
-loopStatement :: Parser LoopStatement
-loopStatement =
-  stmLabelPush
+loopStatement :: Maybe Label -> Parser LoopStatement
+loopStatement lab =
+  stmLabelPush lab
     (\l ->
-       LoopStatement <$> l <*> (optionMaybe iterationScheme <* reserved "loop") <*>
+       LoopStatement l <$> (optionMaybe iterationScheme <* reserved "loop") <*>
        sequenceOfStatements <*
-       (reserved "end" >> reserved "loop" >> (optionEndNameLabel <$> l) >> semi))
+       (reserved "end" >> reserved "loop" >> optionEndNameLabel l >> semi))
 
 iterationScheme :: Parser IterationScheme
 iterationScheme =
@@ -2276,26 +2323,22 @@ parameterSpecification =
       [ label : ] EXIT [ loop_label ] [ WHEN condition ] ;
 -}
 -- TODO: Verify that label refers to a lop in scope
-exitStatement :: Parser ExitStatement
-exitStatement =
-  stmLabel
-    (\l ->
-       reserved "exit" >>
-       ExitStatement <$> l <*> optionMaybe label <*>
-       optionMaybe (reserved "when" >> condition) <*
-       semi)
+exitStatement :: Maybe Label -> Parser ExitStatement
+exitStatement l =
+  reserved "exit" >>
+  ExitStatement l <$> optionMaybe label <*>
+  optionMaybe (reserved "when" >> condition) <*
+  semi
 
 -- * 8.12 Return statement
 {-
     return_statement ::=
       [ label : ] RETURN [ expression ] ;
 -}
-returnStatement :: Parser ReturnStatement
-returnStatement =
-  stmLabel
-    (\l ->
+returnStatement :: Maybe Label -> Parser ReturnStatement
+returnStatement l =
        reserved "return" >>
-       ReturnStatement <$> l <*> optionMaybe expression <* semi)
+       ReturnStatement l <$> optionMaybe expression <* semi
 
 --------------------------------------------------------------------------------
 -- ** 9.6.1 Instantiation of a component
@@ -2390,9 +2433,9 @@ concurrentStatements = many concurrentStatement
 -}
 processStatement :: Parser ProcessStatement
 processStatement =
-  stmLabelPush
+  stmLabelPush'
     (\l ->
-       ProcessStatement <$> l <*> isReserved "postponed" <*>
+       ProcessStatement l <$> isReserved "postponed" <*>
        try
          (reserved "process" >>
           optionMaybe (parens sensitivityList) <* optional (reserved "is")) <*>
@@ -2453,9 +2496,9 @@ concurrentSignalAssignmentStatement =
   stmLabel
     (\l ->
        choice
-         [ CSASSelect <$> l <*> isReserved "postponed" <*>
+         [ CSASSelect l <$> isReserved "postponed" <*>
            selectedSignalAssignment
-         , CSASCond <$> l <*> isReserved "postponed" <*>
+         , CSASCond l <$> isReserved "postponed" <*>
            conditionalSignalAssignment
          ])
 
