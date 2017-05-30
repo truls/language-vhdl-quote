@@ -2421,16 +2421,17 @@ newLabel = optionMaybe $ try (label <* colon)
 -}
 concurrentStatement :: Parser ConcurrentStatement
 concurrentStatement =
-  choice --ConBlock <$> blockStatement
-  -- TODO: Too many try here?
-  -- YES! Replace with a lookahead
-    [ ConProcess <$> lookaheadLabel "process" processStatement
+  antiQ AntiConStm $
+  stmLabel
+    (\l ->
+       choice
+         [ ConProcess <$> processStatement l
     -- , ConProcCall <$> concurrentProcedureCallStatement
     -- , ConAssertion <$> concurrentAssertionStatement
-    , ConSignalAss <$> try concurrentSignalAssignmentStatement
-    , ConComponent <$> componentInstantiationStatement
+         , ConSignalAss <$> try (concurrentSignalAssignmentStatement l)
+         , ConComponent <$> componentInstantiationStatement l
     -- , ConGenerate <$> generateStatement
-    ]
+         ])
 
 concurrentStatements :: Parser [ConcurrentStatement]
 concurrentStatements = many concurrentStatement
@@ -2466,21 +2467,23 @@ concurrentStatements = many concurrentStatement
     process_statement_part ::=
       { sequential_statement }
 -}
-processStatement :: Parser ProcessStatement
-processStatement =
-  stmLabelPush'
-    (\l ->
-       ProcessStatement l <$> isReserved "postponed" <*>
-       try
-         (reserved "process" >>
-          optionMaybe (parens sensitivityList) <* optional (reserved "is")) <*>
-       processDeclarativePart <*>
-       (reserved "begin" *> processStatementPart) <*
-       reserved "end" <*
-       optional (reserved "postponed") <*
-       reserved "process" <*
-       optionEndName "process" <*
-       semi) <?>
+processStatement :: Maybe Label -> Parser ProcessStatement
+processStatement l =
+  stmLabelPush
+    l
+    (\l -> do
+       postponed <- try (isReserved "postponed")
+       ProcessStatement l postponed <$>
+         try
+           (reserved "process" >>
+            optionMaybe (parens sensitivityList) <* optional (reserved "is")) <*>
+         processDeclarativePart <*>
+         (reserved "begin" *> processStatementPart) <*
+         reserved "end" <*
+         when postponed (try (reserved "postponed")) <*
+         reserved "process" <*
+         optionEndNameLabel l <*
+         semi) <?>
   "process"
 
 processDeclarativePart :: Parser [ProcessDeclarativeItem]
@@ -2526,16 +2529,12 @@ concurrentAssertionStatement =
 
     options ::= [ GUARDED ] [ delay_mechanism ]
 -}
-concurrentSignalAssignmentStatement :: Parser ConcurrentSignalAssignmentStatement
-concurrentSignalAssignmentStatement =
-  stmLabel
-    (\l ->
-       choice
-         [ CSASSelect l <$> isReserved "postponed" <*>
-           selectedSignalAssignment
-         , CSASCond l <$> isReserved "postponed" <*>
-           conditionalSignalAssignment
-         ])
+concurrentSignalAssignmentStatement :: Maybe Label -> Parser ConcurrentSignalAssignmentStatement
+concurrentSignalAssignmentStatement l =
+  choice
+    [ CSASSelect l <$> isReserved "postponed" <*> selectedSignalAssignment
+    , CSASCond l <$> isReserved "postponed" <*> conditionalSignalAssignment
+    ]
 
 options :: Parser Options
 options = Options <$> isReserved "guarded" <*> optionMaybe delayMechanism
@@ -2603,15 +2602,12 @@ selectedWaveforms =
       | ENTITY entity_name [ ( architecture_identifier ) ]
       | CONFIGURATION configuration_name
 -}
--- FIXME: label is mandatory here
-componentInstantiationStatement :: Parser ComponentInstantiationStatement
-componentInstantiationStatement =
-  stmLabel
-    (\l ->
-       ComponentInstantiationStatement <$> labelRequired l <*> instantiatedUnit <*>
-       optionMaybe genericMapAspect <*>
-       optionMaybe portMapAspect <*
-       semi)
+componentInstantiationStatement :: Maybe Label -> Parser ComponentInstantiationStatement
+componentInstantiationStatement l =
+  ComponentInstantiationStatement <$> labelRequired l <*> instantiatedUnit <*>
+  optionMaybe genericMapAspect <*>
+  optionMaybe portMapAspect <*
+  semi
 
 instantiatedUnit :: Parser InstantiatedUnit
 instantiatedUnit =
