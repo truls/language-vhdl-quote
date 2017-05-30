@@ -1,20 +1,19 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}
 module Main where
 
-import System.Environment
-import System.Exit
-import System.Directory
-import System.Console.GetOpt
+import           System.Console.GetOpt
+import           System.Directory
+import           System.Environment
+import           System.Exit
 
-import Control.Monad
+import           Control.Monad
 
-import Text.PrettyPrint
-import Text.Show.Pretty
+import           Text.PrettyPrint
+import           Text.Show.Pretty
 
-import Language.VHDL.Parser
-import Language.VHDL.Pretty
-import Language.VHDL.Syntax
+import           Language.VHDL.Parser
+import           Language.VHDL.Pretty
+import           Language.VHDL.Syntax
 
 data ArgFlag = PrintAst
              | PrintPretty
@@ -23,19 +22,19 @@ data ArgFlag = PrintAst
   deriving (Eq, Ord, Show)
 
 options :: [OptDescr ArgFlag]
-options = [ Option ['a'] ["print-ast"] (NoArg PrintAst)
+options = [ Option "a" ["print-ast"] (NoArg PrintAst)
              "Print AST"
-          , Option ['p'] ["print-pretty"] (NoArg PrintPretty)
+          , Option "p" ["print-pretty"] (NoArg PrintPretty)
             "Print pretty printed code"
-          , Option ['v'] ["verbose"] (NoArg Verbose)
+          , Option "v" ["verbose"] (NoArg Verbose)
             "Be verbose"
-          , Option ['h'] ["help"] (NoArg Help)
+          , Option "h" ["help"] (NoArg Help)
             "Prints this message"
           ]
 
-parseOptions :: [String] -> IO (([ArgFlag], [String]))
+parseOptions :: [String] -> IO ([ArgFlag], [String])
 parseOptions argv = case getOpt Permute options argv of
-  (o, n, []) -> return $ (o, n)
+  (o, n, []) -> return (o, n)
   (_,_,errs) -> ioError $ argFail errs
 
 usage :: String
@@ -60,7 +59,7 @@ main = do
   (args, files) <- getArgs >>= parseOptions
   when (Help `elem` args) (printHelp >> exitFailure)
 
-  [file] <- if (length files /= 1)
+  [file] <- if length files /= 1
             then ioError $ argFail ["FILE argument missing\n\n"]
             else pure files
 
