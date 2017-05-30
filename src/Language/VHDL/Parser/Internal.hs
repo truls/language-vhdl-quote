@@ -1798,46 +1798,68 @@ timeExpression = TimeExpression <$> physicalLiteral
 
     miscellaneous_operator ::= ** | ABS | NOT
 -}
+
+data OpType = ResOp | ResWord
+
 unOpPrec1 :: Parser UnOp
-unOpPrec1 = makeOpParser [("abs", Abs), ("not", Not)]
+unOpPrec1 = makeOpParser [(ResWord, ",abs", Abs), (ResWord, "not", Not)]
 
 binOpPrec1 :: Parser BinOp
-binOpPrec1 = makeOpParser [("**", Exp)]
+binOpPrec1 = makeOpParser [(ResOp, "**", Exp)]
 
 unOpPrec2 :: Parser UnOp
-unOpPrec2 = makeOpParser [("+", Identity), ("-", Negation)]
+unOpPrec2 = makeOpParser [(ResOp, "+", Identity), (ResOp, "-", Negation)]
 
 binOpPrec3 :: Parser BinOp
-binOpPrec3 = makeOpParser [("*", Times), ("/", Div), ("mod", Mod), ("rem", Rem)]
+binOpPrec3 =
+  makeOpParser
+    [ (ResOp, "*", Times)
+    , (ResOp, "/", Div)
+    , (ResOp, "mod", Mod)
+    , (ResOp, "rem", Rem)
+    ]
 
 binOpPrec4 :: Parser BinOp
-binOpPrec4 = makeOpParser [("+", Plus), ("-", Minus), ("&", Concat)]
+binOpPrec4 =
+  makeOpParser [(ResOp, "+", Plus), (ResOp, "-", Minus), (ResOp, "&", Concat)]
 
 binOpPrec5 :: Parser BinOp
 binOpPrec5 =
   makeOpParser
-    [("sll", Sll), ("srl", Srl), ("sla", Sla), ("rol", Rol), ("ror", Ror)]
+    [ (ResWord, "sll", Sll)
+    , (ResWord, "srl", Srl)
+    , (ResWord, "sla", Sla)
+    , (ResWord, "rol", Rol)
+    , (ResWord, "ror", Ror)
+    ]
 
 binOpPrec6 :: Parser BinOp
 binOpPrec6 =
   makeOpParser
-    [("=", Eq), ("/=", Neq), ("<", Lt), ("<=", Lte), (">", Gt), (">=", Gte)]
+    [ (ResOp, "=", Eq)
+    , (ResOp, "/=", Neq)
+    , (ResOp, "<", Lt)
+    , (ResOp, "<=", Lte)
+    , (ResOp, ">", Gt)
+    , (ResOp, ">=", Gte)
+    ]
 
 binOpPrec7 :: Parser BinOp
 binOpPrec7 =
   makeOpParser
-    [ ("and", And)
-    , ("or", Or)
-    , ("nand", Nand)
-    , ("nor", Nor)
-    , ("xor", Xor)
-    , ("xnor", Xnor)
+    [ (ResWord, "and", And)
+    , (ResWord, "or", Or)
+    , (ResWord, "nand", Nand)
+    , (ResWord, "nor", Nor)
+    , (ResWord, "xor", Xor)
+    , (ResWord, "xnor", Xnor)
     ]
 
-makeOpParser :: [(String, a)] -> Parser a
+makeOpParser :: [(OpType, String, a)] -> Parser a
 makeOpParser = choice . map oneOp
   where
-    oneOp (op, t) = reservedOp op *> pure t
+    oneOp (ResOp, op, t)   = reservedOp op *> pure t
+    oneOp (ResWord, op, t) = reserved op   *> pure t
 
 --------------------------------------------------------------------------------
 
