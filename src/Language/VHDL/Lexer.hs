@@ -314,8 +314,8 @@ stringLiteral' = lexeme (strSegment >>= rest) <?> "String lit"
   where
     rest ctx =
       choice
-        [ symbol "&" >> strSegment >>= (\s -> rest (ctx ++ s))
-        , symbol "&" >> asciiCode >>= (\s -> rest (ctx ++ [s]))
+        [ try (symbol "&" >> strSegment) >>= (\s -> rest (ctx ++ s))
+        , try (symbol "&" >> asciiCode) >>= (\s -> rest (ctx ++ [s]))
         , pure ctx
         ]
 
