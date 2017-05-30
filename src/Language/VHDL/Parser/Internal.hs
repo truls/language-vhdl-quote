@@ -189,7 +189,7 @@ portClause = reserved "port" >> PortClause <$> parens portList <* semi
     generic_list ::= generic_interface_list
 -}
 genericList :: Parser InterfaceList
-genericList = genericInterfaceList
+genericList = interfaceList
 
 --------------------------------------------------------------------------------
 -- *** 1.1.1.2 Ports
@@ -197,7 +197,7 @@ genericList = genericInterfaceList
     port_list ::= port_interface_list
 -}
 portList :: Parser InterfaceList
-portList = portInterfaceList
+portList = interfaceList
 
 --------------------------------------------------------------------------------
 -- ** 1.1.2 Entity declarative part
