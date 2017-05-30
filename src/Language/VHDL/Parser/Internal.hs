@@ -1692,8 +1692,12 @@ attributeName n =
   attributeDesignator <*>
   optionMaybe (parens expression)
 
+-- LRM08 15.10 explicitly defines range and subtype as reserved words that are
+-- also predefined attributes names so we prevent them from reaching the
+-- identifier parser (this is a bit of a hack)
 attributeDesignator :: Parser SimpleName
-attributeDesignator = simpleName
+attributeDesignator =
+  choice [Ident <$> try (symbol "range"), Ident <$> try (symbol "subtype"), simpleName]
 
 --------------------------------------------------------------------------------
 --
