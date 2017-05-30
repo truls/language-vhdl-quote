@@ -1913,7 +1913,7 @@ literal =
 numericLiteral :: Parser NumericLiteral
 numericLiteral =
   antiQ AntiLitnum $
-  choice [NLitAbstract <$> abstractLiteral, NLitPhysical <$> physicalLiteral]
+  choice [NLitPhysical <$> try physicalLiteral, NLitAbstract <$> abstractLiteral]
 
 --------------------------------------------------------------------------------
 -- ** 7.3.2 Aggregates
