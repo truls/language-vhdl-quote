@@ -48,7 +48,6 @@ data EntityDeclaration = EntityDeclaration
 data EntityHeader = EntityHeader
   { formal_generic_clause :: Maybe GenericClause
   , formal_port_clause    :: Maybe PortClause
-  , pos                   :: Position
   } deriving (Eq, Show, Typeable, Data)
 
 data GenericClause =
@@ -1564,7 +1563,6 @@ type SimpleName = Identifier
 data SelectedName
   = SelectedName { sname_prefix :: Name
                 ,  sname_suffix :: Suffix}
-  | AntiSelname
   deriving (Eq, Show, Typeable, Data)
 
 data Suffix
@@ -2013,6 +2011,7 @@ data SequentialStatement
   | SExit ExitStatement
   | SReturn ReturnStatement
   | SNull NullStatement
+  | AntiSeqStm String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2323,6 +2322,7 @@ data ConcurrentStatement
   | ConSignalAss ConcurrentSignalAssignmentStatement
   | ConComponent ComponentInstantiationStatement
   | ConGenerate GenerateStatement
+  | AntiConStm String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2772,6 +2772,40 @@ type Base = Integer
 -- FIXME:  Figure out what to do here. Just changed to string type for now
 type BasedInteger = StringLiteral
 
+------------------------------------------------------------------------------
+-- *** 13.8
+{-
+bit_string_literal ::= [ integer ] base_specifier " [ bit_value ] "
+
+bit_value ::= graphic_character { [ underline ] graphic_character }
+
+base_specifier ::= B | O | X | UB | UO | UX | SB | SO | SX | D
+-}
+
+data BitStringLiteral = BitStringLiteral
+  { bitstring_length :: Int
+  , bitstring_base   :: BaseSpecifier
+  , bit_value        :: BitValue
+  } deriving (Eq, Show, Typeable, Data)
+
+data BitValue =
+  BitValue StringLiteral
+  deriving (Eq, Show, Typeable, Data)
+
+data BaseSpecifier
+  = BinaryBase
+  | OctalBase
+  | HexBase
+  | UnsignedBinaryBase
+  | UnsignedOctalBase
+  | UnsignedHexBase
+  | SignedBinaryBase
+  | SignedHoctalBase
+  | SignedHexBase
+  | Decimal
+  deriving (Eq, Show, Typeable, Data)
+
+
 --------------------------------------------------------------------------------
 --
 --                                  - ToDo -
@@ -2793,9 +2827,6 @@ data StringLiteral
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
-data BaseSpecifier =
-  BaseSpecifier
-  deriving (Eq, Show, Typeable, Data)
 
 data BaseUnitDeclaration =
   BaseUnitDeclaration
@@ -2811,14 +2842,6 @@ data BasicGraphicCharacter =
 
 data BasicIdentifier =
   BasicIdentifier
-  deriving (Eq, Show, Typeable, Data)
-
-data BitStringLiteral =
-  BitStringLiteral
-  deriving (Eq, Show, Typeable, Data)
-
-data BitValue =
-  BitValue
   deriving (Eq, Show, Typeable, Data)
 
 data ExtendedDigit =
