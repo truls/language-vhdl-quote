@@ -2112,7 +2112,7 @@ sensitivityList :: Parser SensitivityList
 sensitivityList = SensitivityList <$> name `sepBy1` comma
 
 conditionClause :: Parser ConditionClause
-conditionClause = ConditionClause <$> (reserved "util" *> condition)
+conditionClause = ConditionClause <$> (reserved "until" *> condition)
   -- FIXME: Check this, grammar says boolean_expression but syntax says expression
 
 condition :: Parser Expression
