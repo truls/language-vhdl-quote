@@ -1317,7 +1317,7 @@ data EntitySpecification = EntitySpecification
   } deriving (Eq, Show, Typeable, Data)
 
 data EntityClass
-  = RCHITECTURE
+  = ARCHITECTURE
   | COMPONENT
   | CONFIGURATION
   | CONSTANT
