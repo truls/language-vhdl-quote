@@ -1899,6 +1899,7 @@ binOpPrec5 =
     [ (ResWord, "sll", Sll)
     , (ResWord, "srl", Srl)
     , (ResWord, "sla", Sla)
+    , (ResWord, "sra", Sra)
     , (ResWord, "rol", Rol)
     , (ResWord, "ror", Ror)
     ]
