@@ -232,11 +232,11 @@ entityDeclarativePart =
     , EDIConstant <$> constantDeclaration
     , EDISignal <$> signalDeclaration
     , EDIShared <$> variableDeclaration
-    -- , EDIFile <$> fileDeclaration
     -- , EDIDiscSpec <$> disconnectionSpecification
     , EDIAttrDecl <$> attributeDeclaration
     , EDIAttrSpec <$> attributeSpecification
     , EDIAlias <$> aliasDeclaration
+    , EDIFile <$> fileDeclaration
     , EDIUseClause <$> useClause
     -- , EDIGroupTemp <$> groupTempDeclaration
     -- , EDIGroup <$> groupDeclaration
@@ -589,8 +589,8 @@ subprogramDeclarativeItem =
     , SDIAlias <$> aliasDeclaration
     , SDIAttrDecl <$> attributeDeclaration
     , SDIAttrSpec <$> attributeSpecification
+    , SDIFile <$> fileDeclaration
       -- TODO
-     -- , SDIFile <$> fileDeclaration
      -- , SDIUseClause <$> useClause
      -- , SDIGroupTemp <$> groupTemplateDeclaration
      -- , SDIGroup <$> groupDeclaration
@@ -2664,8 +2664,7 @@ processDeclarativeItem =
     , PDISubtype <$> subtypeDeclaration
     , PDIConstant <$> constantDeclaration
     , PDIVariable <$> variableDeclaration
-    -- TODO
-    -- , PDIFile <$> fileDeclaration
+    , PDIFile <$> fileDeclaration
     , PDIAttrDecl <$> attributeDeclaration
     , PDIAttrSpec <$> attributeSpecification
     , PDIAlias <$> aliasDeclaration
