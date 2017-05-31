@@ -258,12 +258,13 @@ entityStatementPart = many1 entityStatement
 
 entityStatement :: Parser EntityStatement
 entityStatement =
-  choice
-    [ ESConcAssert <$> concurrentAssertionStatement
-     -- , ESPassiveConc <$> concurrentProcedureCallStatement
-     -- , ESPassiveProc <$> processStatement
-     -- TODO
-    ]
+  stmLabel
+    (\l ->
+       choice
+         [ ESPassiveProc <$> processStatement l
+         , ESConcAssert <$> try (concurrentAssertionStatement l)
+         , ESPassiveConc <$> concurrentProcedureCallStatement l
+         ])
 
 --------------------------------------------------------------------------------
 -- * 1.2 Arcitecture bodies
