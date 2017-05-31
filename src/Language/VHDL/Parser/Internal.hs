@@ -983,9 +983,9 @@ accessTypeDefinition =
 {-
     incomplete_type_declaration ::= TYPE identifier ;
 -}
+-- Type keyword parsed in typeDeclaration
 incompleteTypeDeclaration :: Parser IncompleteTypeDeclaration
-incompleteTypeDeclaration =
-  reserved "type" >> IncompleteTypeDeclaration <$> identifier
+incompleteTypeDeclaration = IncompleteTypeDeclaration <$> identifier <* semi
 
 --------------------------------------------------------------------------------
 -- *** 3.3.2 Allocation and deallocation of objects
@@ -1065,12 +1065,12 @@ declaration =
 -}
 typeDeclaration :: Parser TypeDeclaration
 typeDeclaration =
+  reserved "type" >>
   choice
     [TDFull <$> fullTypeDeclaration, TDPartial <$> incompleteTypeDeclaration]
 
 fullTypeDeclaration :: Parser FullTypeDeclaration
 fullTypeDeclaration =
-  reserved "type" >>
   FullTypeDeclaration <$> identifier <*> (reserved "is" *> typeDefinition) <*
   semi
 
