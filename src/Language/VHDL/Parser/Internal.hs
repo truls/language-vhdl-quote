@@ -1765,8 +1765,11 @@ attributeName n =
 -- identifier parser (this is a bit of a hack)
 attributeDesignator :: Parser SimpleName
 attributeDesignator =
-  choice [Ident <$> try (symbol "range"), Ident <$> try (symbol "subtype"), simpleName]
-
+  choice
+    [ Ident <$> try (symbol "range")
+    , Ident <$> try (symbol "subtype")
+    , simpleName
+    ]
 --------------------------------------------------------------------------------
 --
 --                                   -- 7 --
