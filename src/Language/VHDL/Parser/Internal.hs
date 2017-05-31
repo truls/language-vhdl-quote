@@ -1617,7 +1617,7 @@ name = antiQ AntiName $ NSimple <$> simpleName >>= rest
       choice
         [ dot >> (suffix <?> "selected_name") >>=
           rest . NSelect . SelectedName context
-        , (attributeName context <?> "attribute_name") >>= rest . NAttr
+        , try (attributeName context <?> "attribute_name") >>= rest . NAttr
         , try $ (sliceName context <?> "slice_name") >>= rest . NSlice
         , (indexedName context <?> "indexed_name") >>= rest . NIndex
         , pure context
@@ -1692,8 +1692,9 @@ sliceName m = SliceName m <$> parens discreteRange
 -}
 attributeName :: Name -> Parser AttributeName
 attributeName n =
-  trace ("attributeName" ++ show n) $
-  try (AttributeName n <$> (optionMaybe signature <* char '\'')) <*>
+  trace ("attributeName " ++ show n) $
+  (AttributeName n <$> optionMaybe signature <*
+   (symbol "\'" <* try (notFollowedBy (symbol "(")))) <*>
   attributeDesignator <*>
   optionMaybe (parens expression)
 
@@ -1766,7 +1767,7 @@ primary =
   choice
     [ PrimAgg <$> try aggregate
     , PrimExp <$> parens expression
-    -- TODO:, PrimQual <$> try qualifiedExpression
+    , PrimQual <$> try qualifiedExpression
     , PrimLit <$> literal
     , PrimName <$> try name
     , PrimFun <$> try functionCall
