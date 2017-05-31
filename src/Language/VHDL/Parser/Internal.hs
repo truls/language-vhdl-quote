@@ -1711,8 +1711,14 @@ signalList =
 -}
 -- TODO: Maybe explicitly handle base_specifiers (avoid try in expr)
 name :: Parser Name
-name = antiQ AntiName $ NSimple <$> simpleName >>= rest
+name = antiQ AntiName $ firstPart >>= rest
   where
+    firstPart :: Parser Name
+    -- possible hack: a name is most certainly a name if the initial simple
+    -- name is not followed by '( (qualified expr) or " (bitstring lit)
+    firstPart =
+      (NSimple <$> simpleName) <*
+      notFollowedBy ((symbol "'" >> symbol "('") <|> symbol "\"")
     rest :: Name -> Parser Name
     rest context =
       trace "rest" $
