@@ -233,10 +233,10 @@ entityDeclarativePart =
     , EDISignal <$> signalDeclaration
     , EDIShared <$> variableDeclaration
     -- , EDIFile <$> fileDeclaration
-    -- , EDIAlias <$> aliasDeclaration
     -- , EDIDiscSpec <$> disconnectionSpecification
     , EDIAttrDecl <$> attributeDeclaration
     , EDIAttrSpec <$> attributeSpecification
+    , EDIAlias <$> aliasDeclaration
     , EDIUseClause <$> useClause
     -- , EDIGroupTemp <$> groupTempDeclaration
     -- , EDIGroup <$> groupDeclaration
@@ -322,7 +322,7 @@ blockDeclarativeItem =
     , BDISignal <$> signalDeclaration
     , BDIShared <$> variableDeclaration
     , BDIFile <$> fileDeclaration
-    -- , BDIAlias <$> aliasDeclaration
+    , BDIAlias <$> aliasDeclaration
     , BDIComp <$> componentDeclaration
     -- , BDIConfigSepc <$> configurationSpecification
     -- , BDIDisconSpec <$> disconnectionSpecification
@@ -671,10 +671,9 @@ packageDeclarativeItem =
     , PHDISignal <$> signalDeclaration
     , PHDIShared <$> variableDeclaration
     , PHDIFile <$> fileDeclaration
-    -- TODO
-    --, PHDfIAlias <$> aliasDeclaration
     , PHDIAttrDecl <$> attributeDeclaration
     , PHDIAttrSpec <$> attributeSpecification
+    , PHDIAlias <$> aliasDeclaration
     , PHDIComp <$> componentDeclaration
     -- TODO
     --, PHDIDiscSpec <$> disconnectionSpecification
@@ -724,8 +723,7 @@ packageBodyDeclarativeItem =
     , PBDIConstant <$> constantDeclaration
     , PBDIShared <$> variableDeclaration
     , PBDIFile <$> fileDeclaration
-    -- TODO
-    -- , PBDIAlias aliasDeclaration
+    , PBDIAlias <$> aliasDeclaration
     , PBDIUseClause <$> useClause
     -- TODO
     -- , PBDIGroupTemp groupTemplateDeclaration
@@ -1036,8 +1034,8 @@ declaration =
     [ DType <$> typeDeclaration
     , DSubtype <$> subtypeDeclaration
     , DObject <$> objectDeclaration
-    -- , DAlias <$> aliasDeclaration
     , DAttribute <$> attributeDeclaration
+    , DAlias <$> aliasDeclaration
     -- , DComponent <$> componentDelaration
     -- , DGroupTemplate <$> groupTemplateDeclaration
     -- , DGroup <$> groupDeclaration
@@ -1413,7 +1411,7 @@ actualPart =
 -}
 aliasDeclaration :: Parser AliasDeclaration
 aliasDeclaration =
-  reserved "alias" >>
+  try (reserved "alias") >>
   AliasDeclaration <$> aliasDesignator <*>
   optionMaybe (colon *> subtypeIndication) <*>
   (reserved "is" *> name) <*>
@@ -2668,9 +2666,9 @@ processDeclarativeItem =
     , PDIVariable <$> variableDeclaration
     -- TODO
     -- , PDIFile <$> fileDeclaration
-    -- , PDIAlias <$> aliasDeclaration
     , PDIAttrDecl <$> attributeDeclaration
     , PDIAttrSpec <$> attributeSpecification
+    , PDIAlias <$> aliasDeclaration
     , PDIUseClause <$> useClause
     ]
 
