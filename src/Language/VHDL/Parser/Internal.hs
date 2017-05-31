@@ -1257,7 +1257,7 @@ interfaceConstantDeclaration =
   InterfaceConstantDeclaration <$>
   (identifierList <* colon <* optional (reserved "in")) <*>
   subtypeIndication <*>
-  optionMaybe expression
+  optionMaybe (reservedOp ":=" *> expression)
 
 interfaceSignalDeclaration :: Parser InterfaceDeclaration
 interfaceSignalDeclaration =
@@ -1267,7 +1267,7 @@ interfaceSignalDeclaration =
   optionMaybe interfaceMode <*>
   subtypeIndication <*>
   choice [reserved "bus" *> pure True, pure False] <*>
-  optionMaybe expression
+  optionMaybe (reservedOp ":=" *> expression)
 
 interfaceVariableDeclaration :: Parser InterfaceDeclaration
 interfaceVariableDeclaration =
@@ -1276,7 +1276,7 @@ interfaceVariableDeclaration =
   InterfaceVariableDeclaration <$> (identifierList <* colon) <*>
   optionMaybe interfaceMode <*>
   subtypeIndication <*>
-  optionMaybe expression
+  optionMaybe (reservedOp ":=" *> expression)
 
 interfaceFileDeclaration :: Parser InterfaceDeclaration
 interfaceFileDeclaration =
