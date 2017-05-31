@@ -235,8 +235,8 @@ entityDeclarativePart =
     -- , EDIFile <$> fileDeclaration
     -- , EDIAlias <$> aliasDeclaration
     -- , EDIAttrDecl <$> attributeDeclaration
-    -- , EDIAttrSpec <$> attributeSpecification
     -- , EDIDiscSpec <$> disconnectionSpecification
+    , EDIAttrSpec <$> attributeSpecification
     , EDIUseClause <$> useClause
     -- , EDIGroupTemp <$> groupTempDeclaration
     -- , EDIGroup <$> groupDeclaration
@@ -325,9 +325,9 @@ blockDeclarativeItem =
     -- , BDIAlias <$> aliasDeclaration
     , BDIComp <$> componentDeclaration
     -- , BDIAttrDecl <$> attributeDeclaration
-    -- , BDIAttrSepc <$> attributeSpecification
     -- , BDIConfigSepc <$> configurationSpecification
     -- , BDIDisconSpec <$> disconnectionSpecification
+    , BDIAttrSepc <$> attributeSpecification
     , BDIUseClause <$> useClause
     -- , BDIGroupTemp <$> groupTemplateDeclaration
     -- , BDIGroup <$> groupDeclaration
@@ -376,7 +376,7 @@ configurationDeclarativeItem :: Parser ConfigurationDeclarativeItem
 configurationDeclarativeItem =
   choice
     [ CDIUse <$> useClause
-     -- , CDIAttrSpec <$> attributeSpecification
+    , CDIAttrSpec <$> attributeSpecification
      -- , CDIGroup <$> groupDeclaration
      -- TODO:
     ]
@@ -587,10 +587,10 @@ subprogramDeclarativeItem =
     , SDIConstant <$> constantDeclaration
     , SDIVariable <$> variableDeclaration
     , SDIAlias <$> aliasDeclaration
+    , SDIAttrSpec <$> attributeSpecification
       -- TODO
      -- , SDIFile <$> fileDeclaration
      -- , SDIAttrDecl <$> attributeDeclaration
-     -- , SDIAttrSepc <$> attributeSpecification
      -- , SDIUseClause <$> useClause
      -- , SDIGroupTemp <$> groupTemplateDeclaration
      -- , SDIGroup <$> groupDeclaration
@@ -673,10 +673,10 @@ packageDeclarativeItem =
     , PHDIFile <$> fileDeclaration
     -- TODO
     --, PHDfIAlias <$> aliasDeclaration
+    , PHDIAttrSpec <$> attributeSpecification
     , PHDIComp <$> componentDeclaration
     -- TODO
     --, PHDIAttrDecl <$> attributeDeclaration
-    --, PHDIAttrSpec <$> attributeSpecification
     --, PHDIDiscSpec <$> disconnectionSpecification
     , PHDIUseClause <$> useClause
     -- TODO
@@ -1479,6 +1479,56 @@ componentDeclaration =
 
     entity_tag ::= simple_name | character_literal | operator_symbol
 -}
+attributeSpecification :: Parser AttributeSpecification
+attributeSpecification =
+  try (reserved "attribute") >>
+  AttributeSpecification <$> (attributeDesignator <* reserved "of") <*>
+  (entitySpecification <* reserved "is") <*>
+  expression <*
+  semi
+
+entitySpecification :: Parser EntitySpecification
+entitySpecification =
+  EntitySpecification <$> (entityNameList <* colon) <*> entityClass
+
+entityClass :: Parser EntityClass
+entityClass =
+  choice
+    [ reserved "architecture"  *> pure ARCHITECTURE
+    , reserved "component"     *> pure COMPONENT
+    , reserved "configuration" *> pure CONFIGURATION
+    , reserved "constant"      *> pure CONSTANT
+    , reserved "entity"        *> pure ENTITY
+    , reserved "file"          *> pure FILE
+    , reserved "function"      *> pure FUNCTION
+    , reserved "group"         *> pure GROUP
+    , reserved "label"         *> pure LABEL
+    , reserved "literal"       *> pure LITERAL
+    , reserved "package"       *> pure PACKAGE
+    , reserved "procedure"     *> pure PROCEDURE
+    , reserved "signal"        *> pure SIGNAL
+    , reserved "subtype"       *> pure SUBTYPE
+    , reserved "type"          *> pure TYPE
+    , reserved "units"         *> pure UNITS
+    , reserved "variable"      *> pure VARIABLE
+    ]
+
+entityNameList :: Parser EntityNameList
+entityNameList =
+  choice
+    [ reserved "pthers" *> pure ENLOthers
+    , reserved "all" *> pure ENLAll
+    , ENLDesignators <$> commaSep1 entityDesignator
+    ]
+
+entityDesignator :: Parser EntityDesignator
+entityDesignator = EntityDesignator <$> entityTag <*> optionMaybe signature
+
+entityTag :: Parser EntityTag
+entityTag =
+  choice
+    [ETChar <$> charLiteral, ETOp <$> operatorSymbol, ETName <$> simpleName]
+
 --------------------------------------------------------------------------------
 -- * 5.2 Configuration specification
 {-
@@ -2608,7 +2658,7 @@ processDeclarativeItem =
     -- , PDIFile <$> fileDeclaration
     -- , PDIAlias <$> aliasDeclaration
     -- , PDIAttrDecl <$> attributeDeclaration
-    -- , PDIAttrSpec <$> attributeSpecification
+    , PDIAttrSpec <$> attributeSpecification
     , PDIUseClause <$> useClause
     ]
 

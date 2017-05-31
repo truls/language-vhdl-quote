@@ -1317,41 +1317,23 @@ data EntitySpecification = EntitySpecification
   } deriving (Eq, Show, Typeable, Data)
 
 data EntityClass
-  = ENTITY
-  | ARCHITECTURE
-  | CONFIGURATION
-  | PROCEDURE
-  | FUNCTION
-  | PACKAGE
-  | TYPE
-  | SUBTYPE
-  | CONSTANT
-  | SIGNAL
-  | VARIABLE
+  = RCHITECTURE
   | COMPONENT
+  | CONFIGURATION
+  | CONSTANT
+  | ENTITY
+  | FILE
+  | FUNCTION
+  | GROUP
   | LABEL
   | LITERAL
+  | PACKAGE
+  | PROCEDURE
+  | SIGNAL
+  | SUBTYPE
+  | TYPE
   | UNITS
-  | GROUP
-  | FILE
-  | Entity
-  | Architecture
-  | Configuration
-  | Procedure'
-  | Function'
-  | Package
-  | Type
-  | Subtype
-  | Constant
-  | Signal
-  | Variable
-  | Constant'
-  | Label
-  | Literal
-  | Units
-  | Group
-  | File
-  | Component
+  | VARIABLE
   deriving (Eq, Show, Typeable, Data)
 
 data EntityNameList
