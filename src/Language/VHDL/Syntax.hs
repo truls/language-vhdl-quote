@@ -1490,7 +1490,7 @@ physical_literal ::= [ abstract_literal ] unit_name
 -}
 data DisconnectionSpecification = DisconnectionSpecification
   { ds_guarded_signal_specification :: GuardedSignalSpecification
-  , ds_time_expression              :: TimeExpression
+  , ds_time_expression              :: Expression
   } deriving (Eq, Show, Typeable, Data)
 
 data GuardedSignalSpecification = GuardedSignalSpecification
@@ -1679,9 +1679,6 @@ condition_operator primary
 --   | ENor  (Relation) (Maybe Relation)
 --   | EXnor [Relation]
 --   deriving (Eq, Show, Typeable, Data)
-data TimeExpression =
-  TimeExpression PhysicalLiteral
-  deriving (Eq, Show, Typeable, Data)
 
 data Expression
   = Unary UnOp
@@ -2052,7 +2049,7 @@ data ConditionClause =
 type Condition = Expression
 
 data TimeoutClause =
-  TimeoutClause TimeExpression
+  TimeoutClause Expression
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2117,7 +2114,7 @@ data SignalAssignmentStatement =
 
 data DelayMechanism
   = DMechTransport
-  | DMechInertial (Maybe TimeExpression)
+  | DMechInertial (Maybe Expression)
   deriving (Eq, Show, Typeable, Data)
 
 data Target
@@ -2139,8 +2136,8 @@ data Waveform
 -}
 data WaveformElement
   = WaveEExp Expression
-             (Maybe TimeExpression)
-  | WaveENull (Maybe TimeExpression)
+             (Maybe Expression)
+  | WaveENull (Maybe Expression)
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------

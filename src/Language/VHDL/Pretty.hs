@@ -489,9 +489,6 @@ instance Pretty Expression where
   pp (PrimAlloc a)     = pp a
   pp (PrimExp e)       = text "(" <> pp e <> text ")"
 
-instance Pretty TimeExpression where
-  pp (TimeExpression l) = pp l
-
 instance Pretty ExtendedDigit where
   pp = error "missing: ExtendedDigit" -- todo
 

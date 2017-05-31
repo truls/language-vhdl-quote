@@ -1780,9 +1780,6 @@ table =
   , [Infix (Binary <$> binOpPrec7) AssocLeft]
   ]
 
-timeExpression :: Parser TimeExpression
-timeExpression = TimeExpression <$> physicalLiteral
-
 --------------------------------------------------------------------------------
 -- * 7.2 Operators
 {-
@@ -2123,7 +2120,7 @@ condition = expression
 
 -- FIXME: Check this, grammar says time_expression but syntax says Expression
 timeoutClause :: Parser TimeoutClause
-timeoutClause = TimeoutClause <$> (reserved "for" *> timeExpression)
+timeoutClause = TimeoutClause <$> (reserved "for" *> expression)
 
 --------------------------------------------------------------------------------
 -- * 8.2 Assertion statement
@@ -2195,7 +2192,7 @@ delayMechanism :: Parser DelayMechanism
 delayMechanism =
   choice
     [ reserved "transport" *> pure DMechTransport
-    , DMechInertial <$> optionMaybe (reserved "reject" *> timeExpression) <*
+    , DMechInertial <$> optionMaybe (reserved "reject" *> expression) <*
       reserved "intertial"
     ]
 
@@ -2222,9 +2219,9 @@ waveformElement :: Parser WaveformElement
 waveformElement =
   choice
     [ WaveENull <$>
-      (reserved "null" *> optionMaybe (reserved "after" *> timeExpression))
+      (reserved "null" *> optionMaybe (reserved "after" *> expression))
     , WaveEExp <$> expression <*>
-      optionMaybe (reserved "after" *> timeExpression)
+      optionMaybe (reserved "after" *> expression)
     ]
 
 --------------------------------------------------------------------------------
