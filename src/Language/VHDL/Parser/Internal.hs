@@ -1804,7 +1804,7 @@ timeExpression = TimeExpression <$> physicalLiteral
 data OpType = ResOp | ResWord
 
 unOpPrec1 :: Parser UnOp
-unOpPrec1 = makeOpParser [(ResWord, ",abs", Abs), (ResWord, "not", Not)]
+unOpPrec1 = makeOpParser [(ResWord, "abs", Abs), (ResWord, "not", Not)]
 
 binOpPrec1 :: Parser BinOp
 binOpPrec1 = makeOpParser [(ResOp, "**", Exp)]
