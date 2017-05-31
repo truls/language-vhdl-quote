@@ -766,7 +766,7 @@ scalarTypeDefinition =
     ]
 
 rangeConstraint :: Parser RangeConstraint
-rangeConstraint = reserved "range" >> RangeConstraint <$> range
+rangeConstraint = reserved "range" >> RangeConstraint <$> range'
 
 -- range :: Parser Range
 -- range = choice [ RAttr <$> attributeName
@@ -779,6 +779,13 @@ range =
     [ RSimple <$> expression <*> direction <*> expression
     , RAttr <$> (name >>= attributeName) -- FIXME: This won't work
     ]
+
+-- For parsing definite ranges (i.e. preceded by range kw)
+range' :: Parser Range
+range' =
+  expression >>= \case
+    PrimName (NAttr n@(AttributeName {})) -> RAttr <$> pure n
+    e -> RSimple e <$> direction <*> expression
 
 direction :: Parser Direction
 direction = choice [reserved "to" *> pure To, reserved "downto" *> pure DownTo]
