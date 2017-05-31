@@ -2688,11 +2688,9 @@ processStatement lab =
   stmLabelPush
     lab
     (\l -> do
-       postponed <- try (isReserved "postponed")
+       postponed <- try (isReserved "postponed" <* reserved "process")
        ProcessStatement l postponed <$>
-         try
-           (reserved "process" >>
-            optionMaybe (parens sensitivityList) <* optional (reserved "is")) <*>
+         (optionMaybe (parens sensitivityList) <* optional (reserved "is")) <*>
          processDeclarativePart <*>
          (reserved "begin" *> processStatementPart) <*
          reserved "end" <*
