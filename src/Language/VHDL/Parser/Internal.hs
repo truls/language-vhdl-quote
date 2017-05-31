@@ -2073,7 +2073,7 @@ sequentialStatement =
          , SCase <$> caseStatement l
          , SLoop <$> loopStatement l
          , SExit <$> exitStatement l
-         -- , SNext <$> nextStatement
+         , SNext <$> nextStatement l
          , SReturn <$> returnStatement l
          , SNull <$> nullStatement l
          , SSignalAss <$> signalAssignmentStatement l
@@ -2353,6 +2353,20 @@ iterationScheme =
 parameterSpecification :: Parser ParameterSpecification
 parameterSpecification =
   ParameterSpecification <$> identifier <* reserved "in" <*> discreteRange
+
+--------------------------------------------------------------------------------
+-- * 8.10 Next statement
+{-
+    next_statement ::=
+      [ label : ] NEXT [ loop_label ] [ WHEN condition ] ;
+-}
+-- TODO: Verify that label matches a loop in scope
+nextStatement :: Maybe Label -> Parser NextStatement
+nextStatement l =
+  reserved "next" >>
+  NextStatement l <$> optionMaybe label <*>
+  optionMaybe (reserved "when" *> condition) <*
+  semi
 
 --------------------------------------------------------------------------------
 -- * 8.11 Exit statement
