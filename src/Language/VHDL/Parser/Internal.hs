@@ -2578,7 +2578,7 @@ concurrentStatement =
        choice
          [ ConBlock <$> blockStatement l
          , ConProcess <$> processStatement l
-    -- , ConAssertion <$> concurrentAssertionStatement
+         , ConAssertion <$> concurrentAssertionStatement l
          , ConSignalAss <$> try (concurrentSignalAssignmentStatement l)
          , ConProcCall <$> try (concurrentProcedureCallStatement l)
          , ConComponent <$> componentInstantiationStatement l
@@ -2732,10 +2732,10 @@ concurrentProcedureCallStatement l =
     concurrent_assertion_statement ::=
       [ label : ] [ POSTPONED ] assertion ;
 -}
-concurrentAssertionStatement :: Parser ConcurrentAssertionStatement
-concurrentAssertionStatement =
-  ConcurrentAssertionStatement <$> newLabel <*> isReserved "postponed" <*>
-  assertion <?> "Concurrent assertion"
+concurrentAssertionStatement :: Maybe Label -> Parser ConcurrentAssertionStatement
+concurrentAssertionStatement l =
+  ConcurrentAssertionStatement l <$> isReserved "postponed" <*> assertion <*
+  semi <?> "Concurrent assertion"
 
 --------------------------------------------------------------------------------
 -- * 9.5 Concurrent signal assignment statements
