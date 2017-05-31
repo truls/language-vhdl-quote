@@ -441,13 +441,13 @@ configurationItem =
       END FOR ;
 -}
 -- XXX: How to distinguish this form the previous?
--- FIXME: Missing end for semi
 componentConfiguration :: Parser ComponentConfiguration
 componentConfiguration =
   reserved "for" >>
   ComponentConfiguration <$> componentSpecification <*>
-  optionMaybe bindingIndication <*>
-  optionMaybe blockConfiguration
+  optionMaybe (bindingIndication <* semi) <*>
+  optionMaybe blockConfiguration <*
+  (reserved "end" >> reserved "for" >> semi)
 
 --------------------------------------------------------------------------------
 --
