@@ -232,11 +232,11 @@ entityDeclarativePart =
     , EDIConstant <$> constantDeclaration
     , EDISignal <$> signalDeclaration
     , EDIShared <$> variableDeclaration
-    -- , EDIDiscSpec <$> disconnectionSpecification
     , EDIAttrDecl <$> attributeDeclaration
     , EDIAttrSpec <$> attributeSpecification
     , EDIAlias <$> aliasDeclaration
     , EDIFile <$> fileDeclaration
+    , EDIDiscSpec <$> disconnectionSpecification
     , EDIUseClause <$> useClause
     -- , EDIGroupTemp <$> groupTempDeclaration
     -- , EDIGroup <$> groupDeclaration
@@ -325,9 +325,9 @@ blockDeclarativeItem =
     , BDIAlias <$> aliasDeclaration
     , BDIComp <$> componentDeclaration
     -- , BDIConfigSepc <$> configurationSpecification
-    -- , BDIDisconSpec <$> disconnectionSpecification
     , BDIAttrDecl <$> attributeDeclaration
     , BDIAttrSepc <$> attributeSpecification
+    , BDIDisconSpec <$> disconnectionSpecification
     , BDIUseClause <$> useClause
     -- , BDIGroupTemp <$> groupTemplateDeclaration
     -- , BDIGroup <$> groupDeclaration
@@ -675,8 +675,7 @@ packageDeclarativeItem =
     , PHDIAttrSpec <$> attributeSpecification
     , PHDIAlias <$> aliasDeclaration
     , PHDIComp <$> componentDeclaration
-    -- TODO
-    --, PHDIDiscSpec <$> disconnectionSpecification
+    , PHDIDiscSpec <$> disconnectionSpecification
     , PHDIUseClause <$> useClause
     -- TODO
     -- , PHDIGroupTemp <$> groupTemplateDeclaration
@@ -1647,6 +1646,43 @@ physical_literal ::= [ abstract_literal ] unit_name
 --                   , symbol "ms" >> pure Ms
 --                   , symbol "sec" >> pure Sec
 --                   ]
+
+--------------------------------------------------------------------------------
+-- * 5.3 Disconnection specification
+{-
+    disconnection_specification ::=
+      DISCONNECT guarded_signal_specification AFTER time_expression ;
+
+    guarded_signal_specification ::=
+      guarded_signal_list : type_mark
+
+    signal_list ::=
+        signal_name { , signal_name }
+      | OTHERS
+      | ALL
+-}
+
+disconnectionSpecification :: Parser DisconnectionSpecification
+disconnectionSpecification =
+  reserved "disconnect" >>
+  DisconnectionSpecification <$>
+  (guardedSignalSpecification <* reserved "after") <*>
+  expression <*
+  semi
+
+guardedSignalSpecification :: Parser GuardedSignalSpecification
+guardedSignalSpecification =
+  GuardedSignalSpecification <$> (signalList <* colon) <*> typeMark
+
+signalList :: Parser SignalList
+signalList =
+  choice
+    [ reserved "all" *> pure SLAll
+    , reserved "others" *> pure SLOthers
+    , SLName <$> commaSep1 name
+    ]
+
+
 --------------------------------------------------------------------------------
 --
 --                                   -- 6 --
