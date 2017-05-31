@@ -619,16 +619,10 @@ subprogramKind =
 -}
 signature :: Parser Signature
 signature =
-  cleanupNothing . Signature <$>
-  optionMaybe
+  Signature <$>
+  brackets
     ((,) <$> optionMaybe (commaSep typeMark) <*>
      optionMaybe (reserved "return" *> typeMark))
-    -- Quick hack to make sure that an empty signature will actually parse to
-    -- Nothing
-    -- TODO: Clean up AST?
-  where
-    cleanupNothing (Signature (Just (Just [], Nothing))) = Signature Nothing
-    cleanupNothing a                                     = a
 
 --------------------------------------------------------------------------------
 -- * 2.5 Package declarations

@@ -437,7 +437,7 @@ data SubprogramKind
     signature ::= [ [ type_mark { , type_mark } ] [ RETURN type_mark ] ]
 -}
 data Signature =
-  Signature (Maybe (Maybe [TypeMark], Maybe TypeMark))
+  Signature ((Maybe [TypeMark], Maybe TypeMark))
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
