@@ -2110,7 +2110,7 @@ qualifiedExpression :: Parser QualifiedExpression
 qualifiedExpression =
   trace "qualifiedExpression" $
   choice
-    [ QualExp <$> typeMark <*> (symbol "'" *> parens expression)
+    [ try $ QualExp <$> typeMark <*> (symbol "'" *> parens expression)
     , QualAgg <$> typeMark <*> (symbol "'" *> aggregate)
     ]
 
