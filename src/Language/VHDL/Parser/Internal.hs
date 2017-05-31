@@ -757,12 +757,12 @@ packageBodyDeclarativeItem =
 -}
 scalarTypeDefinition :: Parser ScalarTypeDefinition
 scalarTypeDefinition =
-  choice
-    [ ScalarEnum <$> enumerationTypeDefinition
-    , ScalarInt <$> integerTypeDefinition
-    , ScalarFloat <$> floatingTypeDefinition
-    , ScalarPhys <$> physicalTypeDefinition
-    ]
+  choice [ScalarEnum <$> enumerationTypeDefinition, rangeStart]
+  where
+    rangeStart = do
+      r <- rangeConstraint
+      -- TODO: Handle ScalarFloat. Check types of numbers in range?
+      choice [ScalarPhys <$> physicalTypeDefinition r, ScalarInt <$> pure r]
 
 rangeConstraint :: Parser RangeConstraint
 rangeConstraint = reserved "range" >> RangeConstraint <$> range'
@@ -838,19 +838,21 @@ integerTypeDefinition = rangeConstraint
 
     physical_literal ::= [ abstract_literal ] unit_name
 -}
-physicalTypeDefinition :: Parser PhysicalTypeDefinition
-physicalTypeDefinition =
-  PhysicalTypeDefinition <$> rangeConstraint <*>
-  (reserved "units" *> primaryUnitDeclaration) <*>
+physicalTypeDefinition :: RangeConstraint -> Parser PhysicalTypeDefinition
+physicalTypeDefinition r =
+  try (reserved "units") >>
+  PhysicalTypeDefinition r <$> primaryUnitDeclaration <*>
   many secondaryUnitDeclaration <*>
   (reserved "end" *> reserved "units" *> optionMaybe identifier)
 
 primaryUnitDeclaration :: Parser Identifier
-primaryUnitDeclaration = identifier
+primaryUnitDeclaration = identifier <* semi
 
 secondaryUnitDeclaration :: Parser SecondaryUnitDeclaration
 secondaryUnitDeclaration =
-  SecondaryUnitDeclaration <$> identifier <*> physicalLiteral
+  SecondaryUnitDeclaration <$> (identifier <* reservedOp "=") <*>
+  physicalLiteral <*
+  semi
 
 physicalLiteral :: Parser PhysicalLiteral
 -- TODO: Actual unit names instead of just name?
