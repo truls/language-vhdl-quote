@@ -45,9 +45,10 @@ isReserved a = isJust <$> optionMaybe (reserved a)
 optionEndNameLabel :: Maybe Label -> Parser ()
 optionEndNameLabel l =
   case l of
-    Just (Ident s)     -> optionEndName s
-    Just (AntiIdent _) -> fail "This houldn't be an anti quotation"
-    Nothing            -> return ()
+    Just (Ident s)         -> optionEndName s
+    Just (ExtendedIdent s) -> optionEndName s
+    Just (AntiIdent _)     -> fail "This houldn't be an anti quotation"
+    Nothing                -> return ()
 
 -- TODO: Is having e.g. package foo ... end foo instead of end package foo valid?
 optionEndName :: String -> Parser ()
