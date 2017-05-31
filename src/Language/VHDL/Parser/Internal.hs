@@ -848,7 +848,8 @@ secondaryUnitDeclaration =
 
 physicalLiteral :: Parser PhysicalLiteral
 -- TODO: Actual unit names instead of just name?
-physicalLiteral = PhysicalLiteral <$> optionMaybe abstractLiteral <*> name
+-- FIXME: Require an abstract literal for now
+physicalLiteral = PhysicalLiteral <$> (Just <$> abstractLiteral) <*> name
 
 --------------------------------------------------------------------------------
 -- *** 3.1.3.1 Predefined physical types
