@@ -428,8 +428,8 @@ indexSpecification =
   choice [ISRange <$> try discreteRange, ISExp <$> expression]
 
 configurationItem :: Parser ConfigurationItem
-configurationItem =
-  choice [CIBlock <$> blockConfiguration, CIComp <$> componentConfiguration]
+configurationItem = -- FIXME: Get rid of this try
+  choice [try $ CIBlock <$> blockConfiguration, CIComp <$> componentConfiguration]
 
 --------------------------------------------------------------------------------
 -- ** 1.3.2 Component configuration
