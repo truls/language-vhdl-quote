@@ -234,8 +234,8 @@ entityDeclarativePart =
     , EDIShared <$> variableDeclaration
     -- , EDIFile <$> fileDeclaration
     -- , EDIAlias <$> aliasDeclaration
-    -- , EDIAttrDecl <$> attributeDeclaration
     -- , EDIDiscSpec <$> disconnectionSpecification
+    , EDIAttrDecl <$> attributeDeclaration
     , EDIAttrSpec <$> attributeSpecification
     , EDIUseClause <$> useClause
     -- , EDIGroupTemp <$> groupTempDeclaration
@@ -324,9 +324,9 @@ blockDeclarativeItem =
     , BDIFile <$> fileDeclaration
     -- , BDIAlias <$> aliasDeclaration
     , BDIComp <$> componentDeclaration
-    -- , BDIAttrDecl <$> attributeDeclaration
     -- , BDIConfigSepc <$> configurationSpecification
     -- , BDIDisconSpec <$> disconnectionSpecification
+    , BDIAttrDecl <$> attributeDeclaration
     , BDIAttrSepc <$> attributeSpecification
     , BDIUseClause <$> useClause
     -- , BDIGroupTemp <$> groupTemplateDeclaration
@@ -587,10 +587,10 @@ subprogramDeclarativeItem =
     , SDIConstant <$> constantDeclaration
     , SDIVariable <$> variableDeclaration
     , SDIAlias <$> aliasDeclaration
+    , SDIAttrDecl <$> attributeDeclaration
     , SDIAttrSpec <$> attributeSpecification
       -- TODO
      -- , SDIFile <$> fileDeclaration
-     -- , SDIAttrDecl <$> attributeDeclaration
      -- , SDIUseClause <$> useClause
      -- , SDIGroupTemp <$> groupTemplateDeclaration
      -- , SDIGroup <$> groupDeclaration
@@ -673,10 +673,10 @@ packageDeclarativeItem =
     , PHDIFile <$> fileDeclaration
     -- TODO
     --, PHDfIAlias <$> aliasDeclaration
+    , PHDIAttrDecl <$> attributeDeclaration
     , PHDIAttrSpec <$> attributeSpecification
     , PHDIComp <$> componentDeclaration
     -- TODO
-    --, PHDIAttrDecl <$> attributeDeclaration
     --, PHDIDiscSpec <$> disconnectionSpecification
     , PHDIUseClause <$> useClause
     -- TODO
@@ -1037,8 +1037,8 @@ declaration =
     , DSubtype <$> subtypeDeclaration
     , DObject <$> objectDeclaration
     -- , DAlias <$> aliasDeclaration
+    , DAttribute <$> attributeDeclaration
     -- , DComponent <$> componentDelaration
-    -- , DAttribute <$> attributeDeclaration
     -- , DGroupTemplate <$> groupTemplateDeclaration
     -- , DGroup <$> groupDeclaration
     , DEntity <$> entityDeclaration
@@ -1427,6 +1427,18 @@ aliasDesignator =
     , ADCharacter <$> charLiteral
     , ADIdentifier <$> identifier
     ]
+
+--------------------------------------------------------------------------------
+-- * 4.4 Attribute declarations
+{-
+    attribute_declaration ::=
+      ATTRIBUTE identifier : type_mark ;
+-}
+attributeDeclaration :: Parser AttributeDeclaration
+attributeDeclaration =
+  AttributeDeclaration <$> try (reserved "attribute" *> identifier <* colon) <*>
+  typeMark <*
+  semi
 
 --------------------------------------------------------------------------------
 -- * 4.5 Component declarations
@@ -2657,7 +2669,7 @@ processDeclarativeItem =
     -- TODO
     -- , PDIFile <$> fileDeclaration
     -- , PDIAlias <$> aliasDeclaration
-    -- , PDIAttrDecl <$> attributeDeclaration
+    , PDIAttrDecl <$> attributeDeclaration
     , PDIAttrSpec <$> attributeSpecification
     , PDIUseClause <$> useClause
     ]
