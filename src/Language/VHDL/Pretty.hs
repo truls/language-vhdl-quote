@@ -929,8 +929,7 @@ instance Pretty SignalList where
   pp (SLAll)     = text "all"
 
 instance Pretty Signature where
-  pp (Signature Nothing) = empty
-  pp (Signature (Just (ts, t))) = initial <+> condL (text "return") t
+  pp (Signature (ts, t)) = brackets $ initial <+> condL (text "return") t
     where
       initial = commaSep $ maybe [] (map pp) ts
 
