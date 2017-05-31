@@ -2064,12 +2064,14 @@ choices :: Parser Choices
 choices = Choices <$> choice' `sepBy1` symbol "|"
 
 -- FIXME: Replacing simpleExpression by expression
--- FIXME: expression <|> simpleName will never reach simpleName
+-- FIXME: expression <|> simpleName will never reach simpleName -> Reduce
+-- expressions only containing a simpleName and replace with a parser parsing
+-- common subexpression first
 choice' :: Parser Choice
 choice' =
   choice
-    [ ChoiceSimple <$> expression
-    , ChoiceRange <$> discreteRange
+    [ ChoiceRange <$> try discreteRange
+    , ChoiceSimple <$> try expression
     , ChoiceName <$> simpleName
     , reserved "others" *> pure ChoiceOthers
     ]
