@@ -324,9 +324,9 @@ blockDeclarativeItem =
     , BDISignal <$> signalDeclaration
     , BDIShared <$> variableDeclaration
     , BDIFile <$> fileDeclaration
+    , BDIConfigSepc <$> configurationSpecification
     , BDIAlias <$> aliasDeclaration
     , BDIComp <$> componentDeclaration
-    -- , BDIConfigSepc <$> configurationSpecification
     , BDIAttrDecl <$> attributeDeclaration
     , BDIAttrSepc <$> attributeSpecification
     , BDIDisconSpec <$> disconnectionSpecification
