@@ -2193,7 +2193,7 @@ delayMechanism =
   choice
     [ reserved "transport" *> pure DMechTransport
     , DMechInertial <$> optionMaybe (reserved "reject" *> expression) <*
-      reserved "intertial"
+      reserved "inertial"
     ]
 
 -- FIXME: Maybe ambigous?
