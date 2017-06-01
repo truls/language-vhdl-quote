@@ -1531,7 +1531,7 @@ entityClass =
 entityNameList :: Parser EntityNameList
 entityNameList =
   choice
-    [ reserved "pthers" *> pure ENLOthers
+    [ reserved "others" *> pure ENLOthers
     , reserved "all" *> pure ENLAll
     , ENLDesignators <$> commaSep1 entityDesignator
     ]
