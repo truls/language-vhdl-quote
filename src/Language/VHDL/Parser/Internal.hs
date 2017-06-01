@@ -239,8 +239,8 @@ entityDeclarativePart =
     , EDIFile <$> fileDeclaration
     , EDIDiscSpec <$> disconnectionSpecification
     , EDIUseClause <$> useClause
-    -- , EDIGroupTemp <$> groupTempDeclaration
-    -- , EDIGroup <$> groupDeclaration
+    , EDIGroup <$> groupDeclaration
+      -- , EDIGroupTemp <$> groupTempDeclaration
     ]
 
 --------------------------------------------------------------------------------
@@ -331,8 +331,8 @@ blockDeclarativeItem =
     , BDIAttrSepc <$> attributeSpecification
     , BDIDisconSpec <$> disconnectionSpecification
     , BDIUseClause <$> useClause
-    -- , BDIGroupTemp <$> groupTemplateDeclaration
-    -- , BDIGroup <$> groupDeclaration
+    , BDIGroup <$> groupDeclaration
+      -- , BDIGroupTemp <$> groupTemplateDeclaration
     -- TODO
     ]
   --------------------------------------------------------------------------------
@@ -379,7 +379,7 @@ configurationDeclarativeItem =
   choice
     [ CDIUse <$> useClause
     , CDIAttrSpec <$> attributeSpecification
-     -- , CDIGroup <$> groupDeclaration
+    , CDIGroup <$> groupDeclaration
      -- TODO:
     ]
 
@@ -593,9 +593,9 @@ subprogramDeclarativeItem =
     , SDIAttrSpec <$> attributeSpecification
     , SDIFile <$> fileDeclaration
     , SDIUseClause <$> useClause
+    , SDIGroup <$> groupDeclaration
       -- TODO
      -- , SDIGroupTemp <$> groupTemplateDeclaration
-     -- , SDIGroup <$> groupDeclaration
     ]
 
 subprogramStatementPart :: Parser [SequentialStatement]
@@ -679,9 +679,9 @@ packageDeclarativeItem =
     , PHDIComp <$> componentDeclaration
     , PHDIDiscSpec <$> disconnectionSpecification
     , PHDIUseClause <$> useClause
-    -- TODO
+    , PHDIGroup <$> groupDeclaration
+      -- TODO
     -- , PHDIGroupTemp <$> groupTemplateDeclaration
-    -- , PHDIGroup <$> groupDeclaraiton
     ]
 
 -- * 2.6 Package bodies
@@ -726,9 +726,9 @@ packageBodyDeclarativeItem =
     , PBDIFile <$> fileDeclaration
     , PBDIAlias <$> aliasDeclaration
     , PBDIUseClause <$> useClause
-    -- TODO
-    -- , PBDIGroupTemp groupTemplateDeclaration
     -- , PBDIGroup groupDeclaration
+      -- TODO
+    -- , PBDIGroupTemp groupTemplateDeclaration
     ]
 
 --------------------------------------------------------------------------------
@@ -1042,7 +1042,7 @@ declaration =
     , DAlias <$> aliasDeclaration
     -- , DComponent <$> componentDelaration
     -- , DGroupTemplate <$> groupTemplateDeclaration
-    -- , DGroup <$> groupDeclaration
+    , DGroup <$> groupDeclaration
     , DEntity <$> entityDeclaration
     , DConfiguration <$> configurationDeclaration
     , DSubprogram <$> subprogramDeclaration'
@@ -1460,6 +1460,29 @@ componentDeclaration =
   optionMaybe portClause
   -- <*> (reserved "end" *> reserved "component"
   --   *> optionMaybe simpleName <* semi)
+
+--------------------------------------------------------------------------------
+-- * 4.7 Group declarations
+{-
+    group_declaration ::=
+      GROUP identifier : group_template_name ( group_constituent_list ) ;
+
+    group_constituent_list ::= group_constituent { , group_constituent }
+
+    group_constituent ::= name | character_literal
+-}
+groupDeclaration :: Parser GroupDeclaration
+groupDeclaration =
+  reserved "group" >>
+  GroupDeclaration <$> (identifier <* colon) <*> name <*>
+  parens groupConstituentList <*
+  semi
+
+groupConstituentList :: Parser [GroupConstituent]
+groupConstituentList = commaSep1 groupConstituent
+
+groupConstituent :: Parser GroupConstituent
+groupConstituent = choice [GCChar <$> charLiteral, GCName <$> name]
 
 --------------------------------------------------------------------------------
 --
