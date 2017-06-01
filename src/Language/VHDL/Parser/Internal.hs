@@ -1389,8 +1389,9 @@ actualDesignator :: Parser ActualDesignator
 actualDesignator =
   trace "actualDesignator" $
   choice
+  -- FIXME: Parse as expression and reduce to name if possible
     [ reserved "open" *> pure ADOpen
-    , ADVariable <$> try name
+    --, ADVariable <$> try name
     , ADExpression <$> try expression
     , ADSignal <$> name
     , ADFile <$> name
