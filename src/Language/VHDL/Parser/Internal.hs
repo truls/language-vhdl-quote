@@ -1879,7 +1879,7 @@ primary =
     [ PrimAgg <$> try aggregate
     , PrimExp <$> parens expression
     , PrimQual <$> try qualifiedExpression
-    , PrimLit <$> literal
+    , PrimLit <$> try literal
     , PrimName <$> try name
     , PrimFun <$> try functionCall
     , PrimTCon <$> typeConversion
