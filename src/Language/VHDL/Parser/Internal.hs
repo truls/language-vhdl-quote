@@ -592,8 +592,8 @@ subprogramDeclarativeItem =
     , SDIAttrDecl <$> attributeDeclaration
     , SDIAttrSpec <$> attributeSpecification
     , SDIFile <$> fileDeclaration
+    , SDIUseClause <$> useClause
       -- TODO
-     -- , SDIUseClause <$> useClause
      -- , SDIGroupTemp <$> groupTemplateDeclaration
      -- , SDIGroup <$> groupDeclaration
     ]
