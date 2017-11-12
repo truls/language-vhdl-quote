@@ -536,6 +536,11 @@ instance Pretty FullTypeDeclaration where
 instance Pretty FunctionCall where
   pp (FunctionCall n p) = pp n <+> cond parens p
 
+instance Pretty FunctionName where
+  pp (FNSelected n) = pp n
+  pp (FNSimple n)   = pp n
+  pp (FNOp n)       = pp n
+
 instance Pretty GenerateStatement where
   pp (GenerateStatement l g d s) =
     pp l <> colon `hangs`
@@ -784,9 +789,9 @@ instance Pretty Prefix where
   pp (PFun f)  = pp f
 
 instance Pretty PrimaryUnit where
-  pp (PrimaryEntity e)  = pp e
-  pp (PrimaryConfig c)  = pp c
-  pp (PrimaryPackage p) = pp p
+  pp (PrimaryEntity e)   = pp e
+  pp (PrimaryConfig c)   = pp c
+  pp (PrimaryPackage p)  = pp p
 
 instance Pretty ProcedureCall where
   pp (ProcedureCall n ap) = pp n <+> cond parens ap

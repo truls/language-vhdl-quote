@@ -2,14 +2,15 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Language.VHDL.Parser.Internal
-  ( designFile
-  , expression
-  , sequentialStatement
-  , sequenceOfStatements
-  , concurrentStatement
-  , concurrentStatements
-  , name
-  ) where
+  -- ( designFile
+  -- , expression
+  -- , sequentialStatement
+  -- , sequenceOfStatements
+  -- , concurrentStatement
+  -- , concurrentStatements
+  -- , name
+  -- )
+  where
 
 import           Prelude                    hiding (exponent)
 import           Text.Parsec                hiding (label)
@@ -19,6 +20,7 @@ import           Control.Monad              (void, when)
 import           Data.Data                  (Data)
 import qualified Data.Functor.Identity
 import           Data.Maybe                 (fromJust, isJust)
+import           Debug.Trace                (traceShowM)
 
 import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Monad
@@ -40,6 +42,9 @@ antiQ = antiQ' identifier
 
 isReserved :: String -> Parser Bool
 isReserved a = isJust <$> optionMaybe (reserved a)
+
+isReservedOp :: String -> Parser Bool
+isReservedOp a = isJust <$> optionMaybe (reservedOp a)
 
 -- Match block statements with optional label
 optionEndNameLabel :: Maybe Label -> Parser ()
@@ -96,15 +101,10 @@ stmLabelPush l p = do
   when (isJust l) (void $ pushBlockName (fromJust l))
   p l
 
-stmLabelPush' :: (Maybe Label -> Parser a) -> Parser a
-stmLabelPush' p = do
-  lab <- optionMaybe $ try (label <* reservedOp ":")
-  stmLabelPush lab p
-
-    -- trace ("PUUUUUUUU " ++ show s) $
-       -- case s of
-       --   Just a  -> void $ pushBlockName a
-       --   Nothing -> return ())
+-- stmLabelPush' :: (Maybe Label -> Parser a) -> Parser a
+-- stmLabelPush' p = do
+--   lab <- optionMaybe $ try (label <* reservedOp ":")
+--   stmLabelPush lab p
 
 --(\s -> whenIsJust s (\i -> isJust pushBlockName i >> return ()))
 stmLabel :: (Maybe Label -> Parser a) -> Parser a
@@ -134,6 +134,20 @@ labelRequired l =
   case l of
     Just l' -> return l'
     Nothing -> fail "A label is required here"
+
+--------------------------------------------------------------------------------
+-- Debugging
+--------------------------------------------------------------------------------
+-- seeNext :: Int -> Parser ()
+-- seeNext n = do
+--   s <- getParserState
+--   let out = take n (stateInput s)
+--   println out
+--   where
+--     println = traceShowM
+
+seeNext :: Int -> Parser ()
+seeNext _ = pure ()
 
 --runStateParnse p sn imp
 --------------------------------------------------------------------------------
@@ -239,8 +253,7 @@ entityDeclarativePart =
     , EDIFile <$> fileDeclaration
     , EDIDiscSpec <$> disconnectionSpecification
     , EDIUseClause <$> useClause
-    , EDIGroup <$> groupDeclaration
-      -- , EDIGroupTemp <$> groupTempDeclaration
+    , groupTemplOrDecl EDIGroupTemp EDIGroup
     ]
 
 --------------------------------------------------------------------------------
@@ -331,9 +344,7 @@ blockDeclarativeItem =
     , BDIAttrSepc <$> attributeSpecification
     , BDIDisconSpec <$> disconnectionSpecification
     , BDIUseClause <$> useClause
-    , BDIGroup <$> groupDeclaration
-      -- , BDIGroupTemp <$> groupTemplateDeclaration
-    -- TODO
+    , groupTemplOrDecl BDIGroupTemp BDIGroup
     ]
   --------------------------------------------------------------------------------
 
@@ -366,7 +377,7 @@ architectureStatementPart = concurrentStatements
 configurationDeclaration :: Parser ConfigurationDeclaration
 configurationDeclaration =
   block "configuration" $
-  ConfigurationDeclaration <$> (identifier <* reserved "of") <*>
+  ConfigurationDeclaration <$> (blockName <* reserved "of") <*>
   (name <* reserved "is") <*>
   configurationDeclarativePart <*>
   blockConfiguration
@@ -379,8 +390,7 @@ configurationDeclarativeItem =
   choice
     [ CDIUse <$> useClause
     , CDIAttrSpec <$> attributeSpecification
-    , CDIGroup <$> groupDeclaration
-     -- TODO:
+    , CDIGroup <$> (reserved "group" >> groupDeclaration)
     ]
 
 --------------------------------------------------------------------------------
@@ -418,7 +428,8 @@ blockSpecification :: Parser BlockSpecification
 -- FIXME: This distinction is probably useless
 blockSpecification =
   choice
-    [ BSGen <$> label <*> pure Nothing -- TODO <*> optionMaybe indexSpeification
+    --[ BSGen <$> label <*> pure Nothing -- TODO <*> optionMaybe indexSpeification
+    [ try $ BSGen <$> label <*> optionMaybe (parens indexSpecification)
     , BSArch <$> name
     , BSBlock <$> label
     ]
@@ -593,9 +604,7 @@ subprogramDeclarativeItem =
     , SDIAttrSpec <$> attributeSpecification
     , SDIFile <$> fileDeclaration
     , SDIUseClause <$> useClause
-    , SDIGroup <$> groupDeclaration
-      -- TODO
-     -- , SDIGroupTemp <$> groupTemplateDeclaration
+    , groupTemplOrDecl SDIGroupTemp SDIGroup
     ]
 
 subprogramStatementPart :: Parser [SequentialStatement]
@@ -657,6 +666,7 @@ signature =
 -- TODO: Match package identifier/end name
 packageDeclaration :: Parser PackageDeclaration
 packageDeclaration =
+  trace "packageDeclaration" $
   block "package" $
   PackageDeclaration <$> (blockName <* reserved "is") <*> packageDeclarativePart
 
@@ -679,9 +689,7 @@ packageDeclarativeItem =
     , PHDIComp <$> componentDeclaration
     , PHDIDiscSpec <$> disconnectionSpecification
     , PHDIUseClause <$> useClause
-    , PHDIGroup <$> groupDeclaration
-      -- TODO
-    -- , PHDIGroupTemp <$> groupTemplateDeclaration
+    , groupTemplOrDecl PHDIGroupTemp PHDIGroup
     ]
 
 -- * 2.6 Package bodies
@@ -708,7 +716,7 @@ packageDeclarativeItem =
       | group_declaration
 -}
 packageBody :: Parser PackageBody
-packageBody =
+packageBody = trace "PackageBody" $
   blockN ["package", "body"] $
   PackageBody <$> (blockName <* reserved "is") <*> packageBodyDeclarativePart
 
@@ -726,9 +734,7 @@ packageBodyDeclarativeItem =
     , PBDIFile <$> fileDeclaration
     , PBDIAlias <$> aliasDeclaration
     , PBDIUseClause <$> useClause
-    -- , PBDIGroup groupDeclaration
-      -- TODO
-    -- , PBDIGroupTemp groupTemplateDeclaration
+    , groupTemplOrDecl PBDIGroupTemp PBDIGroup
     ]
 
 --------------------------------------------------------------------------------
@@ -906,7 +912,7 @@ compositeTypeDefinition =
 -}
 arrayTypeDefinition :: Parser ArrayTypeDefinition
 arrayTypeDefinition =
-  try $
+  trace "arrayTypedefinition" $
   reserved "array" >>
   choice
     [ ArrU <$> try unconstrainedArrayDefinition
@@ -931,7 +937,9 @@ indexConstraint :: Parser IndexConstraint
 indexConstraint = IndexConstraint <$> parens (commaSep1 discreteRange)
 
 discreteRange :: Parser DiscreteRange
-discreteRange = choice [DRSub <$> subtypeIndication, DRRange <$> range]
+discreteRange = seeNext 10 >> choice [DRRange <$> try range, DRSub <$> subtypeIndication]
+
+-- discreteRange = choice [DRSub <$> try subtypeIndication, DRRange <$> range]
 
 --------------------------------------------------------------------------------
 -- *** 3.2.1.1 Index constraints and discrete ranges
@@ -1040,14 +1048,12 @@ declaration =
     , DObject <$> objectDeclaration
     , DAttribute <$> attributeDeclaration
     , DAlias <$> aliasDeclaration
-    -- , DComponent <$> componentDelaration
-    -- , DGroupTemplate <$> groupTemplateDeclaration
+    , groupTemplOrDecl DGroupTemplate DGroup
     , DGroup <$> groupDeclaration
     , DEntity <$> entityDeclaration
     , DConfiguration <$> configurationDeclaration
     , DSubprogram <$> subprogramDeclaration'
     , DPackage <$> packageDeclaration
-                     -- TODO
     ]
 
 --------------------------------------------------------------------------------
@@ -1106,7 +1112,6 @@ typeDefinition =
 -}
 subtypeDeclaration :: Parser SubtypeDeclaration
 subtypeDeclaration =
-  try $
   reserved "subtype" >>
   SubtypeDeclaration <$> identifier <*>
   (reserved "is" *> subtypeIndication <* semi)
@@ -1118,6 +1123,8 @@ subtypeIndication :: Parser SubtypeIndication
 subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
   where
     go = do
+      --name1 <- NSimple <$> simpleName
+      --return $ SubtypeIndication Nothing (TMType name1)
       name1 <- name
       optionMaybe (try typeMark) >>= \case
         Just ty -> return $ SubtypeIndication (Just name1) ty
@@ -1197,7 +1204,7 @@ variableDeclaration =
    -- <$> (try (reserved "shared" *> reserved "variable" *> pure True)
    -- <|> (reserved "variable" *> pure False))
    <$>
-  (reserved "variable" *> pure False) <*>
+  try (isReserved "shared" <* reserved "variable") <*>
   (identifierList <* colon) <*>
   subtypeIndication <*>
   optionMaybe (reservedOp ":=" *> expression) <*
@@ -1310,15 +1317,16 @@ interfaceMode =
 
     interface_element ::= interface_declaration
 -}
+
 interfaceList :: Parser InterfaceList
-interfaceList = InterfaceList <$> semiSep1 interfaceElement
+interfaceList = trace "interfaceList" $ InterfaceList <$> semiSep1 interfaceElement
 
 -- These were added to disambiguate the many occurences of interface_list int he grammer
-genericInterfaceList :: Parser InterfaceList
-genericInterfaceList = InterfaceList <$> semiSep1 interfaceConstantDeclaration
+-- genericInterfaceList :: Parser InterfaceList
+-- genericInterfaceList = InterfaceList <$> semiSep1 interfaceConstantDeclaration
 
-portInterfaceList :: Parser InterfaceList
-portInterfaceList = InterfaceList <$> semiSep1 interfaceSignalDeclaration
+-- portInterfaceList :: Parser InterfaceList
+-- portInterfaceList = InterfaceList <$> semiSep1 interfaceSignalDeclaration
 
 interfaceElement :: Parser InterfaceDeclaration
 interfaceElement =
@@ -1401,10 +1409,12 @@ actualPart :: Parser ActualPart
 actualPart =
   trace "actualPart" $
   choice
-    [ try $ APType <$> typeMark <*> parens actualDesignator
+  -- FIXME: Fix these
+    [-- try $ APType <$> typeMark <*> parens actualDesignator
     -- FIXME: This looks ambigous
-    , try $ APFunction <$> name <*> parens actualDesignator
-    , APDesignator <$> actualDesignator
+    --, try $ APFunction <$> name <*> parens actualDesignator
+    APDesignator <$> actualDesignator
+    ]
 
 --------------------------------------------------------------------------------
 -- ** 4.3.3 Alias declarations
@@ -1462,6 +1472,28 @@ componentDeclaration =
   --   *> optionMaybe simpleName <* semi)
 
 --------------------------------------------------------------------------------
+-- * 4.6 Group template declarations
+{-
+    group_template_declaration ::=
+      GROUP identifier IS ( entity_class_entry_list ) ;
+
+    entity_class_entry_list ::=
+      entity_class_entry { , entity_class_entry }
+
+    entity_class_entry ::= entity_class [ <> ]
+-}
+groupTemplateDeclaration :: Parser GroupTemplateDeclaration
+groupTemplateDeclaration =
+  GroupTemplateDeclaration <$> try (identifier <* reserved "is") <*>
+  parens entityClassEntryList <*
+  semi <?> "group_template_declcaration"
+
+entityClassEntryList :: Parser EntityClassEntryList
+entityClassEntryList = commaSep1 entityClassEntry
+
+entityClassEntry :: Parser EntityClassEntry
+entityClassEntry = EntityClassEntry <$> entityClass <*> isReservedOp "<>"
+
 -- * 4.7 Group declarations
 {-
     group_declaration ::=
@@ -1473,16 +1505,22 @@ componentDeclaration =
 -}
 groupDeclaration :: Parser GroupDeclaration
 groupDeclaration =
-  reserved "group" >>
   GroupDeclaration <$> (identifier <* colon) <*> name <*>
   parens groupConstituentList <*
-  semi
+  semi <?> "group_declaration"
 
 groupConstituentList :: Parser [GroupConstituent]
 groupConstituentList = commaSep1 groupConstituent
 
 groupConstituent :: Parser GroupConstituent
 groupConstituent = choice [GCChar <$> charLiteral, GCName <$> name]
+
+groupTemplOrDecl :: (GroupTemplateDeclaration -> a)
+                 -> (GroupDeclaration -> a)
+                 -> Parser a
+groupTemplOrDecl templ decl =
+  reserved "group" >>
+  choice [templ <$> groupTemplateDeclaration, decl <$> groupDeclaration]
 
 --------------------------------------------------------------------------------
 --
@@ -1782,11 +1820,14 @@ simpleName = trace "simpleName" identifier
 -}
 
 selectedName :: Parser SelectedName
-selectedName = do
-  n <- name
-  case n of
-    (NSelect s) -> return s
-    _           -> unexpected "Expected a selectedName"
+selectedName = NSimple <$> try (simpleName <* dot) >>= rest
+  where
+    rest :: Name -> Parser SelectedName
+    rest n =
+      choice
+        [ try (suffix <* dot) >>= rest . NSelect . SelectedName n
+        , suffix >>= pure . SelectedName n
+        ]
 
 suffix :: Parser Suffix
 suffix =
@@ -1829,7 +1870,15 @@ attributeName n =
   (AttributeName n <$> optionMaybe signature <*
    (symbol "\'" <* try (notFollowedBy (symbol "(")))) <*>
   attributeDesignator <*>
-  optionMaybe (parens expression)
+  optionMaybe (try (parens expression))
+
+-- attributeName :: Name -> Parser AttributeName
+-- attributeName n =
+--   trace ("attributeName " ++ show n) $
+--   AttributeName n <$> (optionMaybe (try signature) <* symbol "\'") <*>
+--   attributeDesignator <*>
+--   optionMaybe (parens expression)
+
 
 -- LRM08 15.10 explicitly defines range and subtype as reserved words that are
 -- also predefined attributes names so we prevent them from reaching the
@@ -1897,18 +1946,21 @@ expression =
   trace "expression" $
   antiQ AntiExpr $ seeNext 10 >> buildExpressionParser table primary
 
+-- TODO: typeConversion is indistinguishable from functionCalls and
+-- indexedNames with a single expression. FunctionCalls with only actualPart
+-- parameters are indistinguishable from indexedNames
 primary :: Parser Expression
 primary =
   antiQ AntiExpr $
   choice
-    [ PrimAgg <$> try aggregate
+    [ PrimAlloc <$> allocator
+    , PrimAgg <$> try aggregate
     , PrimExp <$> parens expression
     , PrimQual <$> try qualifiedExpression
-    , PrimLit <$> try literal
     , PrimName <$> try name
+    , PrimLit <$> try literal
     , PrimFun <$> try functionCall
     , PrimTCon <$> typeConversion
-    , PrimAlloc <$> allocator
     ]
 
 table :: [[Operator String ParseState Data.Functor.Identity.Identity Expression]]
@@ -2118,10 +2170,16 @@ choice' =
 -- TODO: Consider removing this parser and instead parsing functionCalls as
 -- names. We have no way of disambiguating
 functionCall :: Parser FunctionCall
-functionCall = FunctionCall <$> functionName <*> optionMaybe (parens actualParameterPart)
+functionCall = try $ FunctionCall <$> functionName <*> optionMaybe (parens actualParameterPart)
 
-functionName :: Parser Identifier
-functionName = identifier
+-- TODO: This may be a too restrictive definition of what a function name can be
+functionName :: Parser FunctionName
+functionName =
+  choice
+    [ FNOp <$> operatorSymbol
+    , FNSelected <$> try selectedName
+    , FNSimple <$> try simpleName
+    ]
 
 actualParameterPart :: Parser AssociationList
 actualParameterPart = associationList
@@ -2135,6 +2193,7 @@ actualParameterPart = associationList
 -}
 qualifiedExpression :: Parser QualifiedExpression
 qualifiedExpression =
+  -- TODO: Common parsing of type_mark' with try
   trace "qualifiedExpression" $
   choice
     [ try $ QualExp <$> typeMark <*> (symbol "'" *> parens expression)
@@ -2158,8 +2217,9 @@ typeConversion = TypeConversion <$> typeMark <*> parens expression
 -}
 allocator :: Parser Allocator
 allocator =
-  try (AllocSub <$> (reserved "new" *> subtypeIndication)) <|>
-  (AllocQual <$> (reserved "new" *> qualifiedExpression))
+  try (reserved "new") >>
+  choice
+    [try $ AllocQual <$> qualifiedExpression, AllocSub <$> subtypeIndication]
 
 --------------------------------------------------------------------------------
 -- * 7.4 Static expressions

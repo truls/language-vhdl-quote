@@ -1900,7 +1900,11 @@ data FunctionCall = FunctionCall
 
 type ActualParameterPart = AssociationList
 
-type FunctionName = Identifier
+data FunctionName
+  = FNSelected SelectedName
+  | FNSimple SimpleName
+  | FNOp OperatorSymbol
+  deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
 -- ** 7.3.4 Qualified expressions
@@ -2550,7 +2554,7 @@ data InstantiatedUnit
 data GenerateStatement = GenerateStatement
   { gens_label                  :: Label
   , gens_generation_scheme      :: GenerationScheme
-  , gens_block_declarative_item :: Maybe BlockDeclarativeItem
+  , gens_block_declarative_item :: Maybe [BlockDeclarativeItem]
   , gens_concurrent_statement   :: [ConcurrentStatement]
   } deriving (Eq, Show, Typeable, Data)
 
