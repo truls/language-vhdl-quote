@@ -4,4 +4,5 @@ packages:
 - '.'
 extra-deps:
 - monadIO-0.10.1.4
-resolver: lts-8.13
+- Command-0.0.7
+resolver: lts-9.12

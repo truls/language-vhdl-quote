@@ -10,7 +10,7 @@ license-file:        LICENSE
 author:              Truls Asheim <truls@asheim.dk>
 maintainer:          truls@asheim.dk
 -- copyright:
-homepage:            https://github.com/markus-git/language-vhdl
+homepage:            https://github.com/truls/language-vhdl-quote
 description:         VHDL Parser and pretty printer with quasiquoting support. Support VHDL as specified in VHDL language reference manual (2008 Edition). Based on Markus Aronsson's language-vhdl package.
 category:            Language
 build-type:          Simple
@@ -20,62 +20,79 @@ cabal-version:       >=1.10
 
 source-repository head
   type:        git
-  location:    git://github.com/markus-git/language-vhdl
+  location:    git://github.com/truls/language-vhdl-quote
 
 library
-  exposed-modules:     Language.VHDL,
-                       Language.VHDL.Pretty,
-                       Language.VHDL.Syntax,
-                       Language.VHDL.Parser,
-                       Language.VHDL.Quote
+  exposed-modules:     Language.VHDL
+                     , Language.VHDL.Pretty
+                     , Language.VHDL.Syntax
+                     , Language.VHDL.Parser
+                     , Language.VHDL.Quote
   ghc-options: -Wall
   other-modules:       Language.VHDL.Lexer
-                       Language.VHDL.Parser.Internal
-                       Language.VHDL.Parser.Monad
-                       Language.VHDL.Parser.Util
-                       Language.VHDL.Quote.Internal
-                       Language.VHDL.Quote.Quoters
+                     , Language.VHDL.Parser.Internal
+                     , Language.VHDL.Parser.Monad
+                     , Language.VHDL.Parser.Util
+                     , Language.VHDL.Quote.Internal
+                     , Language.VHDL.Quote.Quoters
 
-  other-extensions:    StandaloneDeriving,
-                       FlexibleInstances
-  build-depends:       base   >=4 && <5,
-                       pretty >=1 && <2,
-                       parsec,
-                       here,
-                       template-haskell,
-                       mtl,
-                       haskell-src-meta,
-                       syb
+  other-extensions:    StandaloneDeriving
+                     , FlexibleInstances
+  build-depends:       base   >=4 && <5
+                     , pretty >=1 && <2
+                     , parsec >= 3.1.1
+                     , here >= 1.2.11
+                     , template-haskell >= 2.11.1.0
+                     , mtl >= 2.2.1
+                     , haskell-src-meta >= 0.8.0.1
+                     , syb >= 0.7
   hs-source-dirs:      src
   default-language:    Haskell2010
 
 executable dumpast
            main-is: dumpast.hs
            hs-source-dirs: test
-           build-depends: base   >=4 && <5,
-                          pretty >=1 && <2,
-                          pretty-show,
-                          parsec,
-                          here,
-                          template-haskell,
-                          mtl,
-                          language-vhdl-quote,
-                          directory
+           build-depends: base   >=4 && <5
+                        , pretty >=1 && <2
+                        , pretty-show >= 1.6.13
+                        , parsec >= 3.1.1
+                        , here >= 1.2.11
+                        , template-haskell >= 2.11.1.0
+                        , mtl >= 2.2.1
+                        , language-vhdl-quote
+                        , directory >= 1.3.0.0
            default-language: Haskell2010
 
 Test-Suite test-parser
            type: exitcode-stdio-1.0
-           other-modules:         Language.VHDL.Lexer
-                                  Language.VHDL.Parser
-                                  Language.VHDL.Parser.Internal
-                                  Language.VHDL.Parser.Monad
-                                  Language.VHDL.Pretty
-                                  Language.VHDL.Syntax
-           main-is: Main.hs
-           hs-source-dirs: test, src
-           --exposed-modules: Language.VHDL
-           --other-modules: Language.VHDL
-           -- test-module: Main
-           build-depends: base >=4 && <5, here, parsec, pretty, pretty-show, template-haskell,mtl, tasty, tasty-hspec, tasty-program, temporary, directory, filepath, monadIO
+           other-modules: Language.VHDL.Lexer
+                        , Language.VHDL.Parser
+                        , Language.VHDL.Parser.Internal
+                        , Language.VHDL.Parser.Monad
+                        , Language.VHDL.Pretty
+                        , Language.VHDL.Syntax
+                        , Language.VHDL.Parser.Util
+                        , Language.VHDL.Quote
+                        , Language.VHDL.Quote.Internal
+                          Language.VHDL.Quote.Quoters
+
+           main-is: AQTest.hs
+           hs-source-dirs: test
+                         , src
+           build-depends: base >=4 && <5
+                        , here >= 1.2.11
+                        , parsec >= 3.1.1
+                        , pretty >=1 && <2
+                        , pretty-show >= 1.6.13
+                        , template-haskell >= 2.11.1.0
+                        , mtl >= 2.2.1
+                        , temporary >= 1.2.1.1
+                        , directory >= 1.3.0.0
+                        , filepath >= 1.4.1.1
+                        , monadIO >= 0.10.1.4
+                        , Command >=0.0.7
+                        , hspec >= 2.4.4
+                        , syb >= 0.7
+                        , haskell-src-meta >= 0.8.0.1
            ghc-options: -Wall
            default-language: Haskell2010
