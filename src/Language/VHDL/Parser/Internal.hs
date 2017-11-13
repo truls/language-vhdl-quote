@@ -1944,7 +1944,7 @@ condition_operator primary
 expression :: Parser Expression
 expression =
   trace "expression" $
-  antiQ AntiExpr $ seeNext 10 >> buildExpressionParser table primary
+  seeNext 10 >> buildExpressionParser table primary
 
 -- TODO: typeConversion is indistinguishable from functionCalls and
 -- indexedNames with a single expression. FunctionCalls with only actualPart
