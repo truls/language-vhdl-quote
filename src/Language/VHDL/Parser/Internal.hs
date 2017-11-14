@@ -2727,10 +2727,10 @@ blockHeader :: Parser BlockHeader
 blockHeader = do
   genClause <- try (optionMaybe genericClause)
   genMap <- try (optionMaybe (genericMapAspect <* semi))
-  portClause <- try (optionMaybe portClause)
+  thisPortClause <- try (optionMaybe portClause)
   portMap <- try (optionMaybe (portMapAspect <* semi))
   let genPart = maybe Nothing (\g -> Just (g, genMap)) genClause
-  let portPart = maybe Nothing (\p -> Just (p, portMap)) portClause
+  let portPart = maybe Nothing (\p -> Just (p, portMap)) thisPortClause
   return $ BlockHeader genPart portPart
 
 blockDeclarativePart :: Parser BlockDeclarativePart
