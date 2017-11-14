@@ -221,7 +221,7 @@ instance Pretty ComponentConfiguration where
   pp (ComponentConfiguration s i c) =
     vcat
       [ text "for" <+> pp s
-      , indent $ vcat [condR semi i, cond id c]
+      , indent $ vcat [condR' semi i, cond id c]
       , text "end for" <> semi
       ]
 
@@ -843,7 +843,7 @@ instance Pretty ReportStatement where
     labels l (text "report" <+> pp e `hangs` condL (text "severity") s)
 
 instance Pretty ReturnStatement where
-  pp (ReturnStatement l e) = label l <+> text "return" <+> condR semi e
+  pp (ReturnStatement l e) = label l <+> text "return" <+> condR' semi e
 
 instance Pretty ScalarTypeDefinition where
   pp (ScalarEnum e)  = pp e
@@ -1088,6 +1088,12 @@ condR
   :: Pretty a
   => Doc -> Maybe a -> Doc
 condR s = cond (<+> s)
+
+-- No space variant of condR
+condR'
+  :: Pretty a
+  => Doc -> Maybe a -> Doc
+condR' s = cond (<> s)
 
 condL
   :: Pretty a
