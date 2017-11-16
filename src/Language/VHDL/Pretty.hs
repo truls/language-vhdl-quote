@@ -40,7 +40,7 @@ instance Pretty ActualDesignator where
   pp (ADSignal n)     = pp n
   pp (ADVariable n)   = pp n
   pp (ADFile n)       = pp n
-  pp (ADOpen)         = text "open"
+  pp ADOpen           = text "open"
 
 instance Pretty ActualPart where
   pp (APDesignator a) = pp a
@@ -176,7 +176,7 @@ instance Pretty BlockHeader where
       go
         :: (Pretty a, Pretty b)
         => Maybe (a, Maybe b) -> Doc
-      go (Nothing)      = empty
+      go Nothing        = empty
       go (Just (a, mb)) = pp a $+$ cond indent mb
 
 instance Pretty BlockSpecification where
@@ -212,7 +212,7 @@ instance Pretty Choice where
   pp (ChoiceSimple s) = pp s
   pp (ChoiceRange r)  = pp r
   pp (ChoiceName n)   = pp n
-  pp (ChoiceOthers)   = text "others"
+  pp ChoiceOthers     = text "others"
 
 instance Pretty Choices where
   pp (Choices cs) = pipeSep $ map pp cs
@@ -336,7 +336,7 @@ instance Pretty Declaration where
   pp (DPackage p)       = pp p
 
 instance Pretty DelayMechanism where
-  pp (DMechTransport)  = text "transport"
+  pp DMechTransport    = text "transport"
   pp (DMechInertial e) = condL (text "reject") e <+> text "inertial"
 
 instance Pretty DesignFile where
@@ -344,14 +344,16 @@ instance Pretty DesignFile where
 
 instance Pretty DesignUnit where
   pp (DesignUnit ctxt lib) = vcat [pp ctxt, pp lib]
+  pp a@(AntiDesignUnit s)  = ppAnti a s
+  pp a@(AntiDesignUnits s) = ppAnti a s
 
 instance Pretty Designator where
   pp (DId i) = pp i
   pp (DOp o) = pp o
 
 instance Pretty Direction where
-  pp (To)     = text "to"
-  pp (DownTo) = text "downto"
+  pp To     = text "to"
+  pp DownTo = text "downto"
 
 instance Pretty DisconnectionSpecification where
   pp (DisconnectionSpecification g e) =
@@ -370,7 +372,7 @@ instance Pretty ElementDeclaration where
 instance Pretty EntityAspect where
   pp (EAEntity n i) = text "entity" <+> pp n <+> cond parens i
   pp (EAConfig n)   = text "configuration" <+> pp n
-  pp (EAOpen)       = text "open"
+  pp EAOpen         = text "open"
 
 instance Pretty EntityClass where
   pp ENTITY        = text "entity"
@@ -599,7 +601,7 @@ instance Pretty IfStatement where
         fmap
           (\(c, ss) -> (text "elsif" <+> pp c <+> text "then") `hangs` vpp ss)
       else' :: Maybe SequenceOfStatements -> Doc
-      else' (Nothing) = empty
+      else' Nothing   = empty
       else' (Just ss) = text "else" `hangs` vpp ss
 
 instance Pretty IncompleteTypeDeclaration where
@@ -625,8 +627,8 @@ instance Pretty InstantiatedUnit where
 
 instance Pretty InstantiationList where
   pp (ILLabels ls) = commaSep $ map pp ls
-  pp (ILOthers)    = text "others"
-  pp (ILAll)       = text "all"
+  pp ILOthers      = text "others"
+  pp ILAll         = text "all"
 
 instance Pretty Integer where
   pp = integer
@@ -666,7 +668,7 @@ instance Pretty Literal where
   pp (LitEnum e)      = pp e
   pp (LitString s)    = pp s
   pp (LitBitString b) = pp b
-  pp (LitNull)        = text "null"
+  pp LitNull          = text "null"
 
 instance Pretty LogicalNameList where
   pp (LogicalNameList ns) = commaSep $ fmap pp ns
@@ -680,11 +682,11 @@ instance Pretty LoopStatement where
       ]
 
 instance Pretty Mode where
-  pp (In)      = text "in"
-  pp (Out)     = text "out"
-  pp (InOut)   = text "inout"
-  pp (Buffer)  = text "buffer"
-  pp (Linkage) = text "linkage"
+  pp In      = text "in"
+  pp Out     = text "out"
+  pp InOut   = text "inout"
+  pp Buffer  = text "buffer"
+  pp Linkage = text "linkage"
 
 instance Pretty Name where
   pp (NSimple n)    = pp n
@@ -912,8 +914,8 @@ instance Pretty SignalKind where
 
 instance Pretty SignalList where
   pp (SLName ns) = commaSep $ map pp ns
-  pp (SLOthers)  = text "others"
-  pp (SLAll)     = text "all"
+  pp SLOthers    = text "others"
+  pp SLAll       = text "all"
 
 instance Pretty Signature where
   pp (Signature (ts, t)) = brackets $ initial <+> condL (text "return") t
@@ -983,7 +985,7 @@ instance Pretty Suffix where
   pp (SSimple n) = pp n
   pp (SChar c)   = pp c
   pp (SOp o)     = pp o
-  pp (SAll)      = text "all"
+  pp SAll        = text "all"
 
 instance Pretty Target where
   pp (TargetName n) = pp n
@@ -1031,8 +1033,8 @@ instance Pretty WaitStatement where
     label l <+> text "wait" <+> pp' sc <+> pp' cc <+> pp' tc <> semi
 
 instance Pretty Waveform where
-  pp (WaveElem es)    = commaSep $ map pp es
-  pp (WaveUnaffected) = text "unaffected"
+  pp (WaveElem es)  = commaSep $ map pp es
+  pp WaveUnaffected = text "unaffected"
 
 instance Pretty WaveformElement where
   pp (WaveEExp e te) = pp e <+> condL (text "after") te
@@ -1064,8 +1066,8 @@ hangs d1 d2 = d1 $+$ indent d2
 labels
   :: Pretty a
   => Maybe a -> Doc -> Doc
-labels (Nothing) doc = doc
-labels (Just a) doc  = (pp a <> colon) `hangs` doc
+labels Nothing doc  = doc
+labels (Just a) doc = (pp a <> colon) `hangs` doc
 
 block
   :: Pretty a
