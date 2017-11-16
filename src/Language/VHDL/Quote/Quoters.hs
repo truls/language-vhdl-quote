@@ -1,23 +1,46 @@
 module Language.VHDL.Quote.Quoters
-  ( name
+  ( ident
+  , name
   , expr
   , seqstm
   , seqstms
-  )
-  where
+  , constm
+  , constms
+  , designfile
+  , designunit
+  , libraryunit
+  , primaryunit
+  , contextitem
+  , contextitems
+  , blockdecl
+  , blockdecls
+  , assocel
+  , assocels
+  , wave
+  ) where
 
-import Language.Haskell.TH.Quote (QuasiQuoter)
+import           Language.Haskell.TH.Quote    (QuasiQuoter)
 
-import Language.VHDL.Parser
-import Language.VHDL.Quote.Internal
+import           Language.VHDL.Parser
+import           Language.VHDL.Quote.Internal
 
 
-name, expr, seqstm, seqstms :: QuasiQuoter
+ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave :: QuasiQuoter
+ident = quasiquote parseName
 name = quasiquote parseName
 expr = quasiquote parseExpr
 seqstm = quasiquote parseSeqStm
 seqstms = quasiquote parseSeqStms
 constm = quasiquote parseConStm
 constms = quasiquote parseConStms
-
---interfaces = quasu
+designfile = quasiquote parseDesignFileQ
+designunit = quasiquote parseDesignUnit
+libraryunit = quasiquote parseLibraryUnit
+primaryunit = quasiquote parsePrimaryUnit
+contextitem = quasiquote parseContextItem
+contextitems = quasiquote parseContextItems
+blockdecl = quasiquote parseBlockDeclIt
+blockdecls = quasiquote parseBlockDeclIts
+assocel = quasiquote parseAssociationEl
+assocels = quasiquote parseAssociationEls
+wave = quasiquote parseWaveform

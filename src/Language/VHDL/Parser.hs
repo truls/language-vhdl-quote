@@ -1,13 +1,25 @@
 module Language.VHDL.Parser
   ( parseFile
   , parseDesignFile
+  , parseDesignFileQ
+  , parseDesignUnit
+  , parseLibraryUnit
+  , parsePrimaryUnit
+  , parseContextItem
+  , parseContextItems
   , quoteParse
   , parseExpr
   , parseSeqStm
   , parseSeqStms
   , parseConStm
-  , parseSeqStm
+  , parseConStms
   , parseName
+  , parseBlockDeclIt
+  , parseBlockDeclIts
+  , parseWaveform
+  , parseAssociationEl
+  , parseAssociationEls
+  , stateParse
   , Result
   )
 where
@@ -37,13 +49,31 @@ parseFile fp = do
 parseDesignFile :: FilePath -> String -> Result DesignFile
 parseDesignFile = stateParse designFile
 
+parseDesignFileQ :: (String, Int, Int) -> String -> Result DesignFile
+parseDesignFileQ = quoteParse designFile
+
+parseDesignUnit :: (String, Int, Int) -> String -> Result DesignUnit
+parseDesignUnit = quoteParse designUnit
+
+parseLibraryUnit :: (String, Int, Int) -> String -> Result LibraryUnit
+parseLibraryUnit = quoteParse libraryUnit
+
+parsePrimaryUnit :: (String, Int, Int) -> String -> Result PrimaryUnit
+parsePrimaryUnit = quoteParse primaryUnit
+
+parseContextItem :: (String, Int, Int) -> String -> Result ContextItem
+parseContextItem = quoteParse contextItem
+
+parseContextItems :: (String, Int, Int) -> String -> Result ContextClause
+parseContextItems = quoteParse contextClause
+
 parseExpr :: (String, Int, Int) -> String -> Result Expression
 parseExpr = quoteParse expression
 
 parseSeqStm :: (String, Int, Int) -> String -> Result SequentialStatement
 parseSeqStm = quoteParse sequentialStatement
 
-parseSeqStms :: (String, Int, Int) -> String -> Result [SequentialStatement]
+parseSeqStms :: (String, Int, Int) -> String -> Result SequenceOfStatements
 parseSeqStms = quoteParse sequenceOfStatements
 
 parseConStm :: (String, Int, Int) -> String -> Result ConcurrentStatement
@@ -52,8 +82,23 @@ parseConStm = quoteParse concurrentStatement
 parseConStms :: (String, Int, Int) -> String -> Result [ConcurrentStatement]
 parseConStms = quoteParse concurrentStatements
 
+parseWaveform :: (String, Int, Int) -> String -> Result Waveform
+parseWaveform = quoteParse waveform
+
 parseName :: (String, Int, Int) -> String -> Result Name
 parseName = quoteParse name
+
+parseBlockDeclIt :: (String, Int, Int) -> String -> Result BlockDeclarativeItem
+parseBlockDeclIt = quoteParse blockDeclarativeItem
+
+parseBlockDeclIts :: (String, Int, Int) -> String -> Result BlockDeclarativePart
+parseBlockDeclIts = quoteParse blockDeclarativePart
+
+parseAssociationEl :: (String, Int, Int) -> String -> Result AssociationElement
+parseAssociationEl = quoteParse associationElement
+
+parseAssociationEls :: (String, Int, Int) -> String -> Result AssociationList
+parseAssociationEls = quoteParse associationList
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

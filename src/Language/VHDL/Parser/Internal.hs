@@ -40,6 +40,11 @@ antiQ
   => (String -> a) -> Parser a -> Parser a
 antiQ = antiQ' identifier
 
+antiQ2
+  :: (Data a)
+  => (String -> a) -> (String -> a) -> Parser a -> Parser a
+antiQ2 s p q = antiQ' identifier s q <|> antiQ' identifier p q
+
 isReserved :: String -> Parser Bool
 isReserved a = isJust <$> optionMaybe (reserved a)
 
@@ -329,6 +334,7 @@ architectureDeclarativePart = many blockDeclarativeItem
 
 blockDeclarativeItem :: Parser BlockDeclarativeItem
 blockDeclarativeItem =
+  antiQ2 AntiBlockDecl AntiBlockDecls $
   choice
     [ subprogramDeclOrBody BDISubprogDecl BDISubprogBody
     , BDIType <$> typeDeclaration
@@ -789,7 +795,7 @@ range =
 range' :: Parser Range
 range' =
   expression >>= \case
-    PrimName (NAttr n@(AttributeName {})) -> RAttr <$> pure n
+    PrimName (NAttr n@AttributeName {}) -> RAttr <$> pure n
     e -> RSimple e <$> direction <*> expression
 
 direction :: Parser Direction
@@ -1371,6 +1377,7 @@ interfaceElement =
 associationElement :: Parser AssociationElement
 associationElement =
   trace "associationElement" $
+  antiQ2 AntiAssocEl AntiAssocEls $
   AssociationElement <$>
   optionMaybe (try (formalPart <* trace "reservedOp" (reservedOp "=>"))) <*>
   actualPart
@@ -2265,6 +2272,7 @@ sequenceOfStatements = many sequentialStatement
 -- statements
 sequentialStatement :: Parser SequentialStatement
 sequentialStatement =
+  antiQ2 AntiSeqStm AntiSeqStms $
   stmLabel
     (\l ->
        choice
@@ -2407,6 +2415,7 @@ target = trace "target" $ choice [TargetAgg <$> aggregate, TargetName <$> name]
 
 waveform :: Parser Waveform
 waveform =
+  antiQ AntiWave $
   trace "waveform" $
   choice
     [ WaveElem <$> commaSep1 waveformElement
@@ -2669,7 +2678,7 @@ newLabel = optionMaybe $ try (label <* colon)
 -- FIXME: component instantiation/procedure calls are ambigous
 concurrentStatement :: Parser ConcurrentStatement
 concurrentStatement =
-  antiQ AntiConStm $
+  antiQ2 AntiConStm AntiConStms $
   stmLabel
     (\l ->
        choice
@@ -2970,14 +2979,15 @@ designFile :: Parser DesignFile
 designFile = DesignFile <$> (whiteSpace *> many1 designUnit)
 
 designUnit :: Parser DesignUnit
-designUnit = DesignUnit <$> contextClause <*> libraryUnit
+designUnit = antiQ AntiDesignUnit $ DesignUnit <$> contextClause <*> libraryUnit
 
 libraryUnit :: Parser LibraryUnit
 libraryUnit =
+  antiQ AntiLibraryUnit $
   choice [LibrarySecondary <$> secondaryUnit, LibraryPrimary <$> primaryUnit]
 
 primaryUnit :: Parser PrimaryUnit
-primaryUnit =
+primaryUnit = antiQ AntiPrimaryUnit $
   choice
     [ PrimaryEntity <$> entityDeclaration
     , PrimaryConfig <$> configurationDeclaration
@@ -2986,6 +2996,7 @@ primaryUnit =
 
 secondaryUnit :: Parser SecondaryUnit
 secondaryUnit =
+  antiQ AntiSecondaryUnit $
   trace
     "secondaryUnit"
     choice
@@ -3026,4 +3037,5 @@ contextClause = ContextClause <$> many contextItem
 
 contextItem :: Parser ContextItem
 contextItem =
+  antiQ2 AntiContextItem AntiContextItems $
   choice [ContextLibrary <$> libraryClause, ContextUse <$> useClause]

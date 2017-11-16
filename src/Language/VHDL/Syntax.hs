@@ -197,6 +197,8 @@ data BlockDeclarativeItem
   | BDIUseClause UseClause
   | BDIGroupTemp GroupTemplateDeclaration
   | BDIGroup GroupDeclaration
+  | AntiBlockDecl String
+  | AntiBlockDecls String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -1134,10 +1136,12 @@ type InterfaceElement = InterfaceDeclaration
       | function_name ( actual_designator )
       | type_mark ( actual_designator )
 -}
-data AssociationElement = AssociationElement
-  { assoc_formal_part :: Maybe FormalPart
-  , assoc_actual_part :: ActualPart
-  } deriving (Eq, Show, Typeable, Data)
+data AssociationElement
+  = AssociationElement { assoc_formal_part :: Maybe FormalPart
+                      ,  assoc_actual_part :: ActualPart}
+  | AntiAssocEl String
+  | AntiAssocEls String
+  deriving (Eq, Show, Typeable, Data)
 
 data AssociationList =
   AssociationList [AssociationElement]
@@ -1995,6 +1999,7 @@ data SequentialStatement
   | SReturn ReturnStatement
   | SNull NullStatement
   | AntiSeqStm String
+  | AntiSeqStms String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2111,6 +2116,7 @@ data Target
 data Waveform
   = WaveElem [WaveformElement]
   | WaveUnaffected
+  | AntiWave String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2306,6 +2312,7 @@ data ConcurrentStatement
   | ConComponent ComponentInstantiationStatement
   | ConGenerate GenerateStatement
   | AntiConStm String
+  | AntiConStms String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2621,25 +2628,30 @@ data DesignFile =
   DesignFile [DesignUnit]
   deriving (Eq, Show, Typeable, Data)
 
-data DesignUnit =
-  DesignUnit ContextClause
-             LibraryUnit
+data DesignUnit
+  = DesignUnit ContextClause
+               LibraryUnit
+  | AntiDesignUnit String
+  | AntiDesignUnits String
   deriving (Eq, Show, Typeable, Data)
 
 data LibraryUnit
   = LibraryPrimary PrimaryUnit
   | LibrarySecondary SecondaryUnit
+  | AntiLibraryUnit String
   deriving (Eq, Show, Typeable, Data)
 
 data PrimaryUnit
   = PrimaryEntity EntityDeclaration
   | PrimaryConfig ConfigurationDeclaration
   | PrimaryPackage PackageDeclaration
+  | AntiPrimaryUnit String
   deriving (Eq, Show, Typeable, Data)
 
 data SecondaryUnit
   = SecondaryArchitecture ArchitectureBody
   | SecondaryPackage PackageBody
+  | AntiSecondaryUnit String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
@@ -2677,6 +2689,8 @@ data ContextClause =
 data ContextItem
   = ContextLibrary LibraryClause
   | ContextUse UseClause
+  | AntiContextItem String
+  | AntiContextItems String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------

@@ -86,6 +86,8 @@ instance Pretty AssertionStatement where
 
 instance Pretty AssociationElement where
   pp (AssociationElement f a) = condR (text "=>") f <+> pp a
+  pp e@(AntiAssocEl s)        = ppAnti e s
+  pp e@(AntiAssocEls s)       = ppAnti e s
 
 instance Pretty AssociationList where
   pp (AssociationList as) = vcat $ punctuate comma $ map pp as
@@ -152,23 +154,26 @@ instance Pretty BlockConfiguration where
       ]
 
 instance Pretty BlockDeclarativeItem where
-  pp (BDISubprogDecl d) = pp d
-  pp (BDISubprogBody b) = pp b
-  pp (BDIType t)        = pp t
-  pp (BDISubtype s)     = pp s
-  pp (BDIConstant c)    = pp c
-  pp (BDISignal s)      = pp s
-  pp (BDIShared v)      = pp v
-  pp (BDIFile f)        = pp f
-  pp (BDIAlias a)       = pp a
-  pp (BDIComp c)        = pp c
-  pp (BDIAttrDecl a)    = pp a
-  pp (BDIAttrSepc a)    = pp a
-  pp (BDIConfigSepc c)  = pp c
-  pp (BDIDisconSpec d)  = pp d
-  pp (BDIUseClause u)   = pp u
-  pp (BDIGroupTemp g)   = pp g
-  pp (BDIGroup g)       = pp g
+  pp (BDISubprogDecl d)   = pp d
+  pp (BDISubprogBody b)   = pp b
+  pp (BDIType t)          = pp t
+  pp (BDISubtype s)       = pp s
+  pp (BDIConstant c)      = pp c
+  pp (BDISignal s)        = pp s
+  pp (BDIShared v)        = pp v
+  pp (BDIFile f)          = pp f
+  pp (BDIAlias a)         = pp a
+  pp (BDIComp c)          = pp c
+  pp (BDIAttrDecl a)      = pp a
+  pp (BDIAttrSepc a)      = pp a
+  pp (BDIConfigSepc c)    = pp c
+  pp (BDIDisconSpec d)    = pp d
+  pp (BDIUseClause u)     = pp u
+  pp (BDIGroupTemp g)     = pp g
+  pp (BDIGroup g)         = pp g
+  pp e@(AntiBlockDecl s)  = ppAnti e s
+  pp e@(AntiBlockDecls s) = ppAnti e s
+
 
 instance Pretty BlockHeader where
   pp (BlockHeader p g) = vcat [go p, go g]
@@ -255,13 +260,15 @@ instance Pretty ConcurrentSignalAssignmentStatement where
   pp (CSASSelect l p a) = postponed l p a
 
 instance Pretty ConcurrentStatement where
-  pp (ConBlock b)     = pp b
-  pp (ConProcess p)   = pp p
-  pp (ConProcCall c)  = pp c
-  pp (ConAssertion a) = pp a
-  pp (ConSignalAss s) = pp s
-  pp (ConComponent c) = pp c
-  pp (ConGenerate g)  = pp g
+  pp (ConBlock b)      = pp b
+  pp (ConProcess p)    = pp p
+  pp (ConProcCall c)   = pp c
+  pp (ConAssertion a)  = pp a
+  pp (ConSignalAss s)  = pp s
+  pp (ConComponent c)  = pp c
+  pp (ConGenerate g)   = pp g
+  pp a@(AntiConStm s)  = ppAnti a s
+  pp a@(AntiConStms s) = ppAnti a s
 
 --instance Pretty Condition where pp = undefined
 instance Pretty ConditionClause where
@@ -315,8 +322,10 @@ instance Pretty ContextClause where
   pp (ContextClause items) = vcat $ fmap pp items
 
 instance Pretty ContextItem where
-  pp (ContextLibrary l) = pp l
-  pp (ContextUse u)     = pp u
+  pp (ContextLibrary l)     = pp l
+  pp (ContextUse u)         = pp u
+  pp e@(AntiContextItem i)  = ppAnti e i
+  pp e@(AntiContextItems i) = ppAnti e i
 
 instance Pretty DecimalLiteral where
   pp (DecimalLiteral i f e) = pp i <+> condL (char '.') f <+> cond id e
@@ -472,6 +481,7 @@ instance Pretty Expression where
   pp (PrimTCon t)      = pp t
   pp (PrimAlloc a)     = pp a
   pp (PrimExp e)       = text "(" <> pp e <> text ")"
+  pp a@(AntiExpr e)    = ppAnti a e
 
 instance Pretty ExtendedDigit where
   pp = error "missing: ExtendedDigit" -- todo
@@ -660,8 +670,9 @@ instance Pretty LibraryClause where
   pp (LibraryClause ns) = text "library" <+> pp ns <> semi
 
 instance Pretty LibraryUnit where
-  pp (LibraryPrimary p)   = pp p
-  pp (LibrarySecondary s) = pp s
+  pp (LibraryPrimary p)    = pp p
+  pp (LibrarySecondary s)  = pp s
+  pp a@(AntiLibraryUnit s) = ppAnti a s
 
 instance Pretty Literal where
   pp (LitNum n)       = pp n
@@ -791,9 +802,10 @@ instance Pretty Prefix where
   pp (PFun f)  = pp f
 
 instance Pretty PrimaryUnit where
-  pp (PrimaryEntity e)   = pp e
-  pp (PrimaryConfig c)   = pp c
-  pp (PrimaryPackage p)  = pp p
+  pp (PrimaryEntity e)     = pp e
+  pp (PrimaryConfig c)     = pp c
+  pp (PrimaryPackage p)    = pp p
+  pp a@(AntiPrimaryUnit p) = ppAnti a p
 
 instance Pretty ProcedureCall where
   pp (ProcedureCall n ap) = pp n <+> cond parens ap
@@ -856,6 +868,7 @@ instance Pretty ScalarTypeDefinition where
 instance Pretty SecondaryUnit where
   pp (SecondaryArchitecture a) = pp a
   pp (SecondaryPackage p)      = pp p
+  pp a@(AntiSecondaryUnit v)   = ppAnti a v
 
 instance Pretty SecondaryUnitDeclaration where
   pp (SecondaryUnitDeclaration i p) = pp i <+> equals <+> pp p
@@ -881,19 +894,21 @@ instance Pretty SensitivityList where
   pp (SensitivityList ns) = commaSep $ map pp ns
 
 instance Pretty SequentialStatement where
-  pp (SWait w)      = pp w
-  pp (SAssert a)    = pp a
-  pp (SReport r)    = pp r
-  pp (SSignalAss s) = pp s
-  pp (SVarAss v)    = pp v
-  pp (SProc p)      = pp p
-  pp (SIf i)        = pp i
-  pp (SCase c)      = pp c
-  pp (SLoop l)      = pp l
-  pp (SNext n)      = pp n
-  pp (SExit e)      = pp e
-  pp (SReturn r)    = pp r
-  pp (SNull n)      = pp n
+  pp (SWait w)         = pp w
+  pp (SAssert a)       = pp a
+  pp (SReport r)       = pp r
+  pp (SSignalAss s)    = pp s
+  pp (SVarAss v)       = pp v
+  pp (SProc p)         = pp p
+  pp (SIf i)           = pp i
+  pp (SCase c)         = pp c
+  pp (SLoop l)         = pp l
+  pp (SNext n)         = pp n
+  pp (SExit e)         = pp e
+  pp (SReturn r)       = pp r
+  pp (SNull n)         = pp n
+  pp a@(AntiSeqStm s)  = ppAnti a s
+  pp a@(AntiSeqStms s) = ppAnti a s
 
 instance Pretty SignalAssignmentStatement where
   pp (SignalAssignmentStatement l t d w) =
@@ -1035,6 +1050,7 @@ instance Pretty WaitStatement where
 instance Pretty Waveform where
   pp (WaveElem es)  = commaSep $ map pp es
   pp WaveUnaffected = text "unaffected"
+  pp a@(AntiWave v) = ppAnti a v
 
 instance Pretty WaveformElement where
   pp (WaveEExp e te) = pp e <+> condL (text "after") te
