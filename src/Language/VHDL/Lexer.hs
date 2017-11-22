@@ -1,6 +1,3 @@
-{-# OPTIONS -fno-warn-missing-signatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-
 module Language.VHDL.Lexer
   ( abstractLiteral
   , angles
@@ -40,6 +37,7 @@ import           Control.Arrow              (first)
 import           Control.Monad              (unless)
 import           Data.Char                  (chr, toLower)
 import           Data.Data                  (Data)
+import           Data.Functor.Identity      (Identity)
 import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
@@ -47,6 +45,7 @@ import           Text.Parsec
 import           Text.Parsec.Language
 import qualified Text.Parsec.Token          as P
 
+vhdlReserved :: [String]
 vhdlReserved =
   [ "abs"
   , "access"
@@ -243,6 +242,7 @@ vhdlReserved =
   , "xor"
   ]
 
+vhdlOps :: [String]
 vhdlOps =
   [ "abs"
   , "not"
@@ -278,32 +278,55 @@ vhdlDef =
   , P.caseSensitive = False
   }
 
+lexer :: P.GenTokenParser String u Identity
 lexer = P.makeTokenParser vhdlDef
+
+reserved, reservedOp :: String -> Parser ()
 reserved = P.reserved lexer
-operator = P.operator lexer
 reservedOp = P.reservedOp lexer
+
+operator, semi, comma, colon, dot :: Parser String
+operator = P.operator lexer
+semi = P.semi lexer
+comma = P.comma lexer
+colon = P.colon lexer
+dot = P.dot lexer
+
+charLiteral :: Parser CharacterLiteral
 charLiteral =
   antiQ AntiClit $
   CLit <$> lexeme (char '\'' *> (char '"' <|> graphicalChar) <* char '\'')
+
+stringLiteral :: Parser StringLiteral
 stringLiteral = antiQ AntiSlit $ SLit <$> stringLiteral'
+
+natural, decimal, hexadecimal, octal :: Parser Integer
 natural = P.natural lexer
-float = P.float lexer
-naturalOrFloat = P.naturalOrFloat lexer
 decimal = P.decimal lexer
 hexadecimal = P.hexadecimal lexer
 octal = P.octal lexer
+
+float :: Parser Double
+float = P.float lexer
+
+naturalOrFloat :: Parser (Either Integer Double)
+naturalOrFloat = P.naturalOrFloat lexer
+
+symbol :: String -> Parser String
 symbol = P.symbol lexer
+
+lexeme, parens, braces, angles, brackets, squares :: Parser a -> Parser a
 lexeme = P.lexeme lexer
-whiteSpace = P.whiteSpace lexer
 parens = P.parens lexer
 braces = P.braces lexer
 angles = P.angles lexer
 brackets = P.brackets lexer
 squares = P.squares lexer
-semi = P.semi lexer
-comma = P.comma lexer
-colon = P.colon lexer
-dot = P.dot lexer
+
+whiteSpace :: Parser ()
+whiteSpace = P.whiteSpace lexer
+
+semiSep, semiSep1, commaSep, commaSep1 :: Parser a -> Parser [a]
 semiSep = P.semiSep lexer
 semiSep1 = P.semiSep1 lexer
 commaSep = P.commaSep lexer
@@ -369,6 +392,7 @@ antiQ q p = try (lexeme parseQ) <|> p
 {-
    identifier ::= basic_identifier | extended_identifier
 -}
+identifier :: Parser Identifier
 identifier =
   lexeme $
   antiQ
@@ -385,6 +409,7 @@ identifier =
    letter ::= upper_case_letter | lower_case_letter
 -}
 
+basicIdentifier :: Parser String
 basicIdentifier = P.identifier lexer
 
 -- ** 15.4.3 Extended identifiers
@@ -392,6 +417,7 @@ basicIdentifier = P.identifier lexer
    extended_identifier ::=
       \ graphic_character { graphic_character } \
 -}
+extendedIdentifier :: Parser String
 extendedIdentifier =
   between
     (char '\\')
@@ -399,10 +425,11 @@ extendedIdentifier =
     (many1 graphicalChar)
 
 --------------------------------------------------------------------------------
--- ** 15.5 AbstractLiteral
+-- ** 15.5 Abstract-literal
 {-
     abstract_literal ::= decimal_literal | based_literal
 -}
+abstractLiteral :: Parser AbstractLiteral
 abstractLiteral =
   (ALitDecimal <$> decimalLiteral) <|> (ALitBased <$> basedLiteral)
 
@@ -418,15 +445,18 @@ integer ::= digit { [ underline ] digit }
 
 exponent ::= E [ + ] integer | E – integer
 -}
+decimalLiteral :: Parser DecimalLiteral
 decimalLiteral =
   DecimalLiteral <$> integer <*> optionMaybe (dot *> integer) <*>
   optionMaybe exponent'
 
+integer :: Parser Integer
 integer =
-  toInteger <$> (read :: String -> Int) . concat <$> number `sepBy1` symbol "_"
+  toInteger . (read :: String -> Int) . concat <$> number `sepBy1` symbol "_"
   where
     number = lexeme $ many1 digit
 
+exponent' :: Parser Exponent
 exponent' =
   symbol "E" >>
   ((ExponentNeg <$> (symbol "-" *> integer)) <|>
@@ -445,14 +475,17 @@ exponent' =
 
     extended_digit ::= digit | letter
 -}
+basedLiteral :: Parser BasedLiteral
 basedLiteral =
   BasedLiteral <$> base <*> (symbol "#" *> basedInteger) <*>
   (dot *> optionMaybe basedInteger) <*>
   optionMaybe (symbol "#" *> exponent')
 
+base :: Parser Integer
 base = integer
 
 -- TODO: Probably case sensitive
+basedInteger :: Parser StringLiteral
 basedInteger = SLit . concat <$> many1 alphaNum `sepBy1` char '_'
 
 --------------------------------------------------------------------------------
@@ -464,12 +497,15 @@ bit_value ::= graphic_character { [ underline ] graphic_character }
 
 base_specifier ::= B | O | X | UB | UO | UX | SB | SO | SX | D
 -}
+bitStringLiteral :: Parser BitStringLiteral
 bitStringLiteral = --BitStringLiteral Nothing <$> try baseSpecifier <*> bitValue
                    BitStringLiteral <$> try (optionMaybe integer) <*> baseSpecifier <*> bitValue
 
 -- FIXME: Should we filter out _'s?
+bitValue :: Parser BitValue
 bitValue = BitValue <$> (SLit <$> (filter ('_' /=) <$> stringLiteral'))
 
+baseSpecifier :: Parser BaseSpecifier
 baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
   where
     specMap = specMap' ++  map (first (toLower <$>)) specMap'
@@ -492,6 +528,7 @@ baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
 -- LRM08 15.7. Parses a string consisting of string segments and escape codes
 -- separated by &
 -- FIXME: Test escape codes
+stringLiteral' :: Parser String
 stringLiteral' = lexeme (strSegment >>= rest) <?> "String lit"
   where
     rest ctx =
@@ -502,23 +539,29 @@ stringLiteral' = lexeme (strSegment >>= rest) <?> "String lit"
         ]
 
 -- Parses a segment between " and "
+strSegment :: Parser String
 strSegment =
   lexeme
     (between (char '"') (char '"' <?> "end of string") (many strChar) <?>
      "literal string")
 
 -- "" in a string becomes literal "
+strChar :: Parser Char
 strChar = try $ (string "\"\"" *> pure '"') <|> graphicalChar
 
 -- escape codes
+asciiCode :: Parser Char
 asciiCode = lexeme charAscii <?> "escape code"
 
 -- Parses names of unprintable ASCII chars such as ACK
+charAscii :: Parser Char
 charAscii = choice (map parseAscii asciiMap)
   where
+    parseAscii :: (String, Char) -> Parser Char
     parseAscii (asc, code) = try (string asc *> pure code)
 
 -- LRM08 15.2. Values as defined by the CHARACTERS type in the STANDARD package
+graphicalChar :: Parser Char
 graphicalChar = choice (map char gchars) <?> "graphical character"
   where
     gchars =
@@ -716,8 +759,10 @@ graphicalChar = choice (map char gchars) <?> "graphical character"
       ]
 
 -- escape code tables
+asciiMap :: [(String, Char)]
 asciiMap = zip (asciiNames ++ ascii2Names) (asciiCodes ++ ascii2Codes)
 
+asciiNames :: [String]
 asciiNames =
   [ "NUL"
   , "SOH"
@@ -754,6 +799,7 @@ asciiNames =
   , "DEL"
   ]
 
+asciiCodes :: String
 asciiCodes =
   [ '\NUL'
   , '\SOH'
@@ -790,6 +836,7 @@ asciiCodes =
   , '\DEL'
   ]
 
+ascii2Names :: [String]
 ascii2Names =
   [ "C128"
   , "C129"
@@ -825,6 +872,7 @@ ascii2Names =
   , "C159"
   ]
 
+ascii2Codes :: String
 ascii2Codes =
   map
     chr
