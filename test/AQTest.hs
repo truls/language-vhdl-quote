@@ -75,6 +75,10 @@ seqAss =
   let n = 2 :: Int
   in [seqstm|foo := $expr:n;|] @?= [seqstm|foo := 2;|]
 
+seqAssHexpr :: Assertion
+seqAssHexpr =
+  [seqstm|foo := $expr:((2 + 2) :: Int);|] @?= [seqstm|foo := 4;|]
+
 sigAss :: Assertion
 sigAss =
   let n = [expr|2ns|]
@@ -105,6 +109,7 @@ qqtests =
     , testCase "Can insert several statements at once method 1" ifTest3
     , testCase "Can insert several statements at once method 2" ifTest4
     , testCase "Expression antiquote in assignment" seqAss
+    , testCase "Expression antiquote in assignment with haskell expression" seqAssHexpr
     , testCase "Signal assignment with anti waveform" sigAss
     , testCase "Signal assignment with anti expression" sigAssExpr
     , testCase "Association list antiquotation" assocList
