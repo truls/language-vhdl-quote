@@ -311,7 +311,7 @@ commaSep1 = P.commaSep1 lexer
    identifier ::= basic_identifier | extended_identifier
 -}
 identifier =
-  antiQ'
+  lexeme $ antiQ'
     identifier
     AntiIdent
     (ExtendedIdent <$> extendedIdentifier <|>
@@ -334,7 +334,6 @@ basicIdentifier = P.identifier lexer
       \ graphic_character { graphic_character } \
 -}
 extendedIdentifier =
-  lexeme $
   between
     (char '\\')
     (char '\\' <?> "end of extended identifier")
