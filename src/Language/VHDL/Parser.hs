@@ -19,6 +19,8 @@ module Language.VHDL.Parser
   , parseWaveform
   , parseAssociationEl
   , parseAssociationEls
+  , parseProcDecl
+  , parseProcDecls
   , stateParse
   , Result
   )
@@ -99,6 +101,12 @@ parseAssociationEl = quoteParse associationElement
 
 parseAssociationEls :: (String, Int, Int) -> String -> Result AssociationList
 parseAssociationEls = quoteParse associationList
+
+parseProcDecl :: (String, Int, Int) -> String -> Result ProcessDeclarativeItem
+parseProcDecl = quoteParse processDeclarativeItem
+
+parseProcDecls :: (String, Int, Int) -> String -> Result ProcessDeclarativePart
+parseProcDecls = quoteParse processDeclarativePart
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

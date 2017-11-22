@@ -2794,6 +2794,7 @@ processDeclarativePart = many processDeclarativeItem
 
 processDeclarativeItem :: Parser ProcessDeclarativeItem
 processDeclarativeItem =
+  antiQ2 AntiProcDecl AntiProcDecls $
   trace "processDeclarativeItemm" $
   choice
     [ subprogramDeclOrBody PDISubprogDecl PDISubprogBody

@@ -814,17 +814,19 @@ instance Pretty ProcedureCallStatement where
   pp (ProcedureCallStatement l p) = label l <+> pp p <> semi
 
 instance Pretty ProcessDeclarativeItem where
-  pp (PDISubprogDecl s) = pp s
-  pp (PDISubprogBody b) = pp b
-  pp (PDIType t)        = pp t
-  pp (PDISubtype s)     = pp s
-  pp (PDIConstant c)    = pp c
-  pp (PDIVariable v)    = pp v
-  pp (PDIFile f)        = pp f
-  pp (PDIAlias a)       = pp a
-  pp (PDIAttrDecl a)    = pp a
-  pp (PDIAttrSpec a)    = pp a
-  pp (PDIUseClause u)   = pp u
+  pp (PDISubprogDecl s)  = pp s
+  pp (PDISubprogBody b)  = pp b
+  pp (PDIType t)         = pp t
+  pp (PDISubtype s)      = pp s
+  pp (PDIConstant c)     = pp c
+  pp (PDIVariable v)     = pp v
+  pp (PDIFile f)         = pp f
+  pp (PDIAlias a)        = pp a
+  pp (PDIAttrDecl a)     = pp a
+  pp (PDIAttrSpec a)     = pp a
+  pp (PDIUseClause u)    = pp u
+  pp a@(AntiProcDecl s)  = ppAnti a s
+  pp a@(AntiProcDecls s) = ppAnti a s
 
 instance Pretty ProcessStatement where
   pp (ProcessStatement l p ss d s) =

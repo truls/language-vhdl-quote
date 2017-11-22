@@ -2409,6 +2409,8 @@ data ProcessDeclarativeItem
   | PDIAttrDecl AttributeDeclaration
   | PDIAttrSpec AttributeSpecification
   | PDIUseClause UseClause
+  | AntiProcDecl String
+  | AntiProcDecls String
   deriving (Eq, Show, Typeable, Data)
 
 --  | ProcDIGroupType   ()

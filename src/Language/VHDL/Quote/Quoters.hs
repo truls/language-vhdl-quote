@@ -17,6 +17,8 @@ module Language.VHDL.Quote.Quoters
   , assocel
   , assocels
   , wave
+  , procdecl
+  , procdecls
   ) where
 
 import           Language.Haskell.TH.Quote    (QuasiQuoter)
@@ -25,7 +27,7 @@ import           Language.VHDL.Parser
 import           Language.VHDL.Quote.Internal
 
 
-ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave :: QuasiQuoter
+ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls :: QuasiQuoter
 ident = quasiquote parseName
 name = quasiquote parseName
 expr = quasiquote parseExpr
@@ -44,3 +46,5 @@ blockdecls = quasiquote parseBlockDeclIts
 assocel = quasiquote parseAssociationEl
 assocels = quasiquote parseAssociationEls
 wave = quasiquote parseWaveform
+procdecl = quasiquote parseProcDecl
+procdecls = quasiquote parseProcDecls

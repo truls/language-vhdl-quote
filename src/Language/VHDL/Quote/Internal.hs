@@ -203,6 +203,17 @@ qqBlockDeclListE (V.AntiBlockDecls d:decls) =
 qqBlockDeclListE (decl:decls) =
   Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
 
+qqProcDeclE :: V.ProcessDeclarativeItem -> Maybe (Q Exp)
+qqProcDeclE (V.AntiProcDecl v) = Just $ antiVarE v
+qqProcDeclE _                  = Nothing
+
+qqProcDeclListE :: [V.ProcessDeclarativeItem] -> Maybe (Q Exp)
+qqProcDeclListE [] = Just [|[]|]
+qqProcDeclListE (V.AntiProcDecls d:decls) =
+  Just [|$(antiVarE d) ++ $(dataToExpQ qqExp decls)|]
+qqProcDeclListE (decl:decls) =
+  Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -221,7 +232,9 @@ qqExp =
   qqAssocElE `extQ`
   qqAssocElListE `extQ`
   qqBlockDeclE `extQ`
-  qqBlockDeclListE
+  qqBlockDeclListE `extQ`
+  qqProcDeclE `extQ`
+  qqProcDeclListE
 
 parse :: ((String, Int, Int) -> String -> Result a) -> String -> Q a
 parse p s = do
