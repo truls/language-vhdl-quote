@@ -4,6 +4,7 @@
 module Language.VHDL.Lexer
   ( abstractLiteral
   , angles
+  , antiQ
   , bitStringLiteral
   , braces
   , brackets
@@ -35,13 +36,16 @@ module Language.VHDL.Lexer
   , whiteSpace
   ) where
 
-import           Control.Arrow
-import           Data.Char                 (chr, toLower)
+import           Control.Arrow              (first)
+import           Control.Monad              (unless)
+import           Data.Char                  (chr, toLower)
+import           Data.Data                  (Data)
+import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
 import           Text.Parsec
 import           Text.Parsec.Language
-import qualified Text.Parsec.Token         as P
+import qualified Text.Parsec.Token          as P
 
 vhdlReserved =
   [ "abs"
@@ -279,9 +283,9 @@ reserved = P.reserved lexer
 operator = P.operator lexer
 reservedOp = P.reservedOp lexer
 charLiteral =
-  antiQ' identifier AntiClit $
+  antiQ AntiClit $
   CLit <$> lexeme (char '\'' *> (char '"' <|> graphicalChar) <* char '\'')
-stringLiteral = antiQ' identifier AntiSlit $ SLit <$> stringLiteral'
+stringLiteral = antiQ AntiSlit $ SLit <$> stringLiteral'
 natural = P.natural lexer
 float = P.float lexer
 naturalOrFloat = P.naturalOrFloat lexer
@@ -306,13 +310,68 @@ commaSep = P.commaSep lexer
 commaSep1 = P.commaSep1 lexer
 
 ------------------------------------------------------------------------------------
+-- Antiquote parsing functions
+
+parseAntiExpr :: Parser String
+parseAntiExpr = firstPar
+  where
+    firstPar = do
+      c <- char '('
+      cs <- rest 1
+      return (c : cs)
+    rest :: Int -> Parser String
+    rest 0 = return []
+    rest nest = do
+      c <- anyChar
+      case c
+        -- FIXME: Make this more roboust
+            of
+        '\\' -> do
+          c2 <- anyChar
+          cs <- rest nest
+          return (c : c2 : cs)
+        '(' -> do
+          cs <- rest (nest + 1)
+          return (c : cs)
+        ')' -> do
+          cs <- rest (nest - 1)
+          return (c : cs)
+        _ -> do
+          cs <- rest nest
+          return (c : cs)
+
+antiQ
+  :: (Data a)
+  => (String -> a) -> Parser a -> Parser a
+antiQ q p = try (lexeme parseQ) <|> p
+  where
+    parseQ = do
+      _ <- char '$'
+      let qn = toQQString $ q ""
+      qs <- string qn
+      _ <- char ':'
+      identOrExpr <- optionMaybe $ lookAhead (char '(')
+      i <-
+        case identOrExpr of
+          Just _ -> parseAntiExpr
+          Nothing -> do
+            (Ident i') <- identifier
+            return i'
+      qe <- quotesEnabled
+      unless qe $ unexpected "QuasiQuotation syntax not emabled"
+      unless (qs == qn) $
+        unexpected $ "Wrong QuasiQuoter " ++ qn ++ " used in context"
+      return $ q i
+
+
+------------------------------------------------------------------------------------
 -- ** 15.4 Identifiers
 {-
    identifier ::= basic_identifier | extended_identifier
 -}
 identifier =
-  lexeme $ antiQ'
-    identifier
+  lexeme $
+  antiQ
     AntiIdent
     (ExtendedIdent <$> extendedIdentifier <|>
      Ident <$> basicIdentifier <?> "identifier")

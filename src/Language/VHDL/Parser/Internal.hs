@@ -24,7 +24,6 @@ import           Debug.Trace                (traceShowM)
 
 import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Monad
-import           Language.VHDL.Parser.Util
 import           Language.VHDL.Pretty
 import           Language.VHDL.Syntax
 
@@ -34,16 +33,10 @@ import           Language.VHDL.Syntax
 trace :: t -> a -> a
 trace _ = id
 
--- Hack to avoid circular imports between lexer and util modules
-antiQ
-  :: (Data a)
-  => (String -> a) -> Parser a -> Parser a
-antiQ = antiQ' identifier
-
 antiQ2
   :: (Data a)
   => (String -> a) -> (String -> a) -> Parser a -> Parser a
-antiQ2 s p q = antiQ' identifier s q <|> antiQ' identifier p q
+antiQ2 s p q = antiQ s q <|> antiQ p q
 
 isReserved :: String -> Parser Bool
 isReserved a = isJust <$> optionMaybe (reserved a)
