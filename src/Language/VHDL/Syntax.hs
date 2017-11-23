@@ -50,11 +50,11 @@ data EntityHeader = EntityHeader
   , formal_port_clause    :: Maybe PortClause
   } deriving (Eq, Show, Typeable, Data)
 
-data GenericClause =
+newtype GenericClause =
   GenericClause GenericList
   deriving (Eq, Show, Typeable, Data)
 
-data PortClause =
+newtype PortClause =
   PortClause PortList
   deriving (Eq, Show, Typeable, Data)
 
@@ -438,7 +438,7 @@ data SubprogramKind
 {-
     signature ::= [ [ type_mark { , type_mark } ] [ RETURN type_mark ] ]
 -}
-data Signature =
+newtype Signature =
   Signature (Maybe [TypeMark], Maybe TypeMark)
   deriving (Eq, Show, Typeable, Data)
 
@@ -578,7 +578,7 @@ data ScalarTypeDefinition
   | ScalarPhys PhysicalTypeDefinition
   deriving (Eq, Show, Typeable, Data)
 
-data RangeConstraint =
+newtype RangeConstraint =
   RangeConstraint Range
   deriving (Eq, Show, Typeable, Data)
 
@@ -611,7 +611,7 @@ data Direction
 
     enumeration_literal ::= identifier | character_literal
 -}
-data EnumerationTypeDefinition =
+newtype EnumerationTypeDefinition =
   EnumerationTypeDefinition [EnumerationLiteral]
   deriving (Eq, Show, Typeable, Data)
 
@@ -729,11 +729,11 @@ data ConstrainedArrayDefinition = ConstrainedArrayDefinition
   , arrc_subtype_indication :: SubtypeIndication
   } deriving (Eq, Show, Typeable, Data)
 
-data IndexSubtypeDefinition =
+newtype IndexSubtypeDefinition =
   IndexSubtypeDefinition TypeMark
   deriving (Eq, Show, Typeable, Data)
 
-data IndexConstraint =
+newtype IndexConstraint =
   IndexConstraint [DiscreteRange]
   deriving (Eq, Show, Typeable, Data)
 
@@ -783,7 +783,7 @@ type ElementSubtypeDefinition = SubtypeIndication
 {-
     access_type_definition ::= ACCESS subtype_indication
 -}
-data AccessTypeDefinition =
+newtype AccessTypeDefinition =
   AccessTypeDefinition SubtypeIndication
   deriving (Eq, Show, Typeable, Data)
 
@@ -792,7 +792,7 @@ data AccessTypeDefinition =
 {-
     incomplete_type_declaration ::= TYPE identifier ;
 -}
-data IncompleteTypeDeclaration =
+newtype IncompleteTypeDeclaration =
   IncompleteTypeDeclaration Identifier
   deriving (Eq, Show, Typeable, Data)
 
@@ -804,7 +804,7 @@ data IncompleteTypeDeclaration =
 {-
     file_type_definition ::= FILE OF type_mark
 -}
-data FileTypeDefinition =
+newtype FileTypeDefinition =
   FileTypeDefinition TypeMark
   deriving (Eq, Show, Typeable, Data)
 
@@ -1099,7 +1099,7 @@ data Mode
 
     interface_element ::= interface_declaration
 -}
-data InterfaceList =
+newtype InterfaceList =
   InterfaceList [InterfaceElement]
   deriving (Eq, Show, Typeable, Data)
 
@@ -1143,7 +1143,7 @@ data AssociationElement
   | AntiAssocEls String
   deriving (Eq, Show, Typeable, Data)
 
-data AssociationList =
+newtype AssociationList =
   AssociationList [AssociationElement]
   deriving (Eq, Show, Typeable, Data)
 
@@ -1426,11 +1426,11 @@ data EntityAspect
     port_map_aspect ::=
       PORT MAP ( port_association_list )
 -}
-data GenericMapAspect =
+newtype GenericMapAspect =
   GenericMapAspect AssociationList
   deriving (Eq, Show, Typeable, Data)
 
-data PortMapAspect =
+newtype PortMapAspect =
   PortMapAspect AssociationList
   deriving (Eq, Show, Typeable, Data)
 
@@ -1857,7 +1857,7 @@ data NumericLiteral
       | element_simple_name
       | OTHERS
 -}
-data Aggregate = Aggregate
+newtype Aggregate = Aggregate
   { agg_element_association :: [ElementAssociation]
   } deriving (Eq, Show, Typeable, Data)
 
@@ -1866,7 +1866,7 @@ data ElementAssociation = ElementAssociation
   , eassoc_expression :: Expression
   } deriving (Eq, Show, Typeable, Data)
 
-data Choices =
+newtype Choices =
   Choices [Choice]
   deriving (Eq, Show, Typeable, Data)
 
@@ -2025,21 +2025,21 @@ data WaitStatement =
                 (Maybe TimeoutClause)
   deriving (Eq, Show, Typeable, Data)
 
-data SensitivityClause =
+newtype SensitivityClause =
   SensitivityClause SensitivityList
   deriving (Eq, Show, Typeable, Data)
 
-data SensitivityList =
+newtype SensitivityList =
   SensitivityList [Name]
   deriving (Eq, Show, Typeable, Data)
 
-data ConditionClause =
+newtype ConditionClause =
   ConditionClause Condition
   deriving (Eq, Show, Typeable, Data)
 
 type Condition = Expression
 
-data TimeoutClause =
+newtype TimeoutClause =
   TimeoutClause Expression
   deriving (Eq, Show, Typeable, Data)
 
@@ -2282,7 +2282,7 @@ data ReturnStatement = ReturnStatement
     null_statement ::=
       [ label : ] NULL ;
 -}
-data NullStatement = NullStatement
+newtype NullStatement = NullStatement
   { null_label :: Maybe Label
   } deriving (Eq, Show, Typeable, Data)
 
@@ -2502,7 +2502,7 @@ data SelectedSignalAssignment = SelectedSignalAssignment
   , ssa_selected_waveforms :: SelectedWaveforms
   } deriving (Eq, Show, Typeable, Data)
 
-data SelectedWaveforms =
+newtype SelectedWaveforms =
   SelectedWaveforms [(Waveform, Choices)]
   deriving (Eq, Show, Typeable, Data)
 
@@ -2593,7 +2593,7 @@ type Label = Identifier
     use_clause ::=
       USE selected_name { , selected_name } ;
 -}
-data UseClause =
+newtype UseClause =
   UseClause [SelectedName]
   deriving (Eq, Show, Typeable, Data)
 
@@ -2626,7 +2626,7 @@ data UseClause =
         architecture_body
       | package_body
 -}
-data DesignFile =
+newtype DesignFile =
   DesignFile [DesignUnit]
   deriving (Eq, Show, Typeable, Data)
 
@@ -2665,11 +2665,11 @@ data SecondaryUnit
 
     logical_name ::= identifier
 -}
-data LibraryClause =
+newtype LibraryClause =
   LibraryClause LogicalNameList
   deriving (Eq, Show, Typeable, Data)
 
-data LogicalNameList =
+newtype LogicalNameList =
   LogicalNameList [LogicalName]
   deriving (Eq, Show, Typeable, Data)
 
@@ -2684,7 +2684,7 @@ type LogicalName = Identifier
         library_clause
       | use_clause
 -}
-data ContextClause =
+newtype ContextClause =
   ContextClause [ContextItem]
   deriving (Eq, Show, Typeable, Data)
 
@@ -2803,7 +2803,7 @@ data BitStringLiteral = BitStringLiteral
   , bit_value        :: BitValue
   } deriving (Eq, Show, Typeable, Data)
 
-data BitValue =
+newtype BitValue =
   BitValue StringLiteral
   deriving (Eq, Show, Typeable, Data)
 
