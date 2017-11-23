@@ -2467,11 +2467,12 @@ procedureCallStatement l =
   trace "procedureCallStatement" $
   ProcedureCallStatement l <$> procedureCall <* semi
 
--- FIXME: replaced name by identifier. I don't _think_ a
--- function name can be anything else
+-- FIXME: Parse function calls correctly. Grammar allows for all names to be
+-- used as function names. We currently restrict to simple names and selected
+-- names to avoid ambiguities with sliced names and indexed names
 procedureCall :: Parser ProcedureCall
 procedureCall =
-  ProcedureCall <$> (NSimple <$> identifier) <*>
+  ProcedureCall <$> (NSelect <$> try selectedName <|> NSimple <$> simpleName) <*>
   optionMaybe (parens actualParameterPart)
 
 -- * 8.7 If statement
