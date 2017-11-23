@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Language.VHDL.Lexer
   ( abstractLiteral
   , angles
@@ -31,16 +33,18 @@ module Language.VHDL.Lexer
   , stringLiteral
   , symbol
   , whiteSpace
+  , basedLiteral
   ) where
 
 import           Control.Arrow              (first)
 import           Control.Monad              (unless)
-import           Data.Char                  (chr, isDigit, toLower)
+import           Data.Char                  (chr, digitToInt, isDigit, toLower)
 import           Data.Data                  (Data)
 import           Data.Functor.Identity      (Identity)
 import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
+import           Numeric                    (readInt)
 import           Text.Parsec
 import           Text.Parsec.Language
 import qualified Text.Parsec.Token          as P
@@ -435,7 +439,7 @@ extendedIdentifier =
 -}
 abstractLiteral :: Parser AbstractLiteral
 abstractLiteral =
-  (ALitDecimal <$> decimalLiteral) <|> (ALitBased <$> basedLiteral)
+  try (ALitBased <$> basedLiteral) <|> (ALitDecimal <$> decimalLiteral)
 
 ------------------------------------------------------------------------------------
 -- ***15.5.2 Decimal literals
@@ -464,10 +468,8 @@ integer =
 -- beginning of an exponent
 exponent' :: Parser Exponent
 exponent' = try $ do
-  c1 <- anyChar
-  unless (c1 == 'E') (fail "")
-  c2 <- lookAhead anyChar
-  case c2 of
+  _ <- char 'E'
+  lookAhead anyChar >>= \case
     '-' -> do
       _ <- anyChar
       ExponentNeg <$> integer
@@ -477,7 +479,7 @@ exponent' = try $ do
     a ->
       if isDigit a
       then ExponentPos <$> integer
-      else fail ""
+      else fail "Exponent not followed by digit"
 
 --------------------------------------------------------------------------------
 -- *** 15.5.3
@@ -493,17 +495,25 @@ exponent' = try $ do
     extended_digit ::= digit | letter
 -}
 basedLiteral :: Parser BasedLiteral
-basedLiteral =
-  BasedLiteral <$> base <*> (symbol "#" *> basedInteger) <*>
-  (dot *> optionMaybe basedInteger) <*>
-  optionMaybe (symbol "#" *> exponent')
+basedLiteral = do
+  b <- base <* symbol "#"
+  unless (2 <= b && b <= 16) (fail "Base must be between 2 and 16")
+  bi1 <- basedInteger b
+  bi2 <- optionMaybe (dot *> basedInteger b)
+  _ <- symbol "#"
+  e <- optionMaybe exponent'
+  return $ BasedLiteral b bi1 bi2 e
 
 base :: Parser Integer
 base = integer
 
 -- TODO: Probably case sensitive
-basedInteger :: Parser StringLiteral
-basedInteger = SLit . concat <$> many1 alphaNum `sepBy1` char '_'
+basedInteger :: Integer -> Parser BasedInteger
+basedInteger b =
+  let b' = fromIntegral b
+  in fromIntegral .
+     fst . head . readInt b' ((< b') . digitToInt) digitToInt . concat <$>
+     many1 alphaNum `sepBy1` char '_'
 
 --------------------------------------------------------------------------------
 -- *** 15.8
