@@ -2103,7 +2103,8 @@ literal :: Parser Literal
 literal =
   choice
     [ LitEnum . EChar <$> charLiteral
-    , LitString <$> stringLiteral
+    -- A String literal followed by an opening parenthesis is a function call
+    , LitString <$> (stringLiteral <* notFollowedBy (symbol "("))
     , LitBitString <$> try bitStringLiteral
     , LitNum <$> try numericLiteral
     , reserved "null" *> pure LitNull
