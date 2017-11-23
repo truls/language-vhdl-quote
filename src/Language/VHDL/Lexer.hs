@@ -295,7 +295,7 @@ dot = P.dot lexer
 charLiteral :: Parser CharacterLiteral
 charLiteral =
   antiQ AntiClit $
-  CLit <$> lexeme (char '\'' *> (char '"' <|> graphicalChar) <* char '\'')
+  CLit <$> lexeme (char '\'' *> (char '"' <|> char '\\' <|> graphicalChar) <* char '\'')
 
 stringLiteral :: Parser StringLiteral
 stringLiteral = antiQ AntiSlit $ SLit <$> stringLiteral'
@@ -422,7 +422,11 @@ extendedIdentifier =
   between
     (char '\\')
     (char '\\' <?> "end of extended identifier")
-    (many1 graphicalChar)
+    (many1 (escapedBackslash <|> graphicalChar))
+  where
+    escapedBackslash = do
+      _ <- try (symbol "\\\\")
+      return '\\'
 
 --------------------------------------------------------------------------------
 -- ** 15.5 Abstract-literal
@@ -560,7 +564,7 @@ strSegment =
 
 -- "" in a string becomes literal "
 strChar :: Parser Char
-strChar = try $ (string "\"\"" *> pure '"') <|> graphicalChar
+strChar = try $ (string "\"\"" *> pure '"') <|> char '\\' <|> graphicalChar
 
 -- escape codes
 asciiCode :: Parser Char
@@ -638,7 +642,7 @@ graphicalChar = choice (map char gchars) <?> "graphical character"
       , 'Y'
       , 'Z'
       , '['
-      , '\\'
+      -- , '\\'
       , ']'
       , '^'
       , '_'

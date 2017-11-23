@@ -2785,9 +2785,7 @@ data BasedLiteral = BasedLiteral
 
 type Base = Integer
 
---type BasedInteger = Integer
--- FIXME:  Figure out what to do here. Just changed to string type for now
-type BasedInteger = StringLiteral
+type BasedInteger = Integer
 
 ------------------------------------------------------------------------------
 -- *** 13.8
