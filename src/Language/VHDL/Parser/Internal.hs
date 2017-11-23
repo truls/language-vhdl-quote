@@ -1782,10 +1782,10 @@ name' p = antiQ AntiName $ firstPart >>= rest
   where
     firstPart :: Parser Name
     -- possible hack: a name is most certainly a name if the initial simple
-    -- name is not followed by '( (qualified expr) or " (bitstring lit)
+    -- name is not followed by '( (qualified expr) or a string delimiter (bitstring lit)
     firstPart =
       (NSimple <$> simpleName) <*
-      notFollowedBy ((symbol "'" >> symbol "('") <|> symbol "\"")
+      notFollowedBy ((symbol "'" >> symbol "('") <|> stringDelimiter)
     rest :: Name -> Parser Name
     rest context =
       trace "rest" $
@@ -2144,8 +2144,9 @@ aggregate =
 elementAssociation :: Parser ElementAssociation
 elementAssociation = ElementAssociation <$> optionMaybe (try (choices <* symbol "=>")) <*> expression
 
+-- VHDL allows for obscure character substitutions (| -> !).
 choices :: Parser Choices
-choices = Choices <$> choice' `sepBy1` symbol "|"
+choices = Choices <$> choice' `sepBy1` (symbol "|" <|> symbol "!")
 
 -- FIXME: Replacing simpleExpression by expression
 -- FIXME: expression <|> simpleName will never reach simpleName -> Reduce

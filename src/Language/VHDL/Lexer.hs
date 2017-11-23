@@ -34,6 +34,7 @@ module Language.VHDL.Lexer
   , symbol
   , whiteSpace
   , basedLiteral
+  , stringDelimiter
   ) where
 
 import           Control.Arrow              (first)
@@ -494,15 +495,18 @@ exponent' = try $ do
 
     extended_digit ::= digit | letter
 -}
+-- TODO: VHDL allows for obscure character substitutions (# -> :). Consider
+-- dropping this
 basedLiteral :: Parser BasedLiteral
-basedLiteral = do
-  b <- base <* symbol "#"
-  unless (2 <= b && b <= 16) (fail "Base must be between 2 and 16")
-  bi1 <- basedInteger b
-  bi2 <- optionMaybe (dot *> basedInteger b)
-  _ <- symbol "#"
-  e <- optionMaybe exponent'
-  return $ BasedLiteral b bi1 bi2 e
+basedLiteral =
+  let sepSym = symbol "#" <|> symbol ":"
+  in do b <- base <* sepSym
+        unless (2 <= b && b <= 16) (fail "Base must be between 2 and 16")
+        bi1 <- basedInteger b
+        bi2 <- optionMaybe (dot *> basedInteger b)
+        _ <- sepSym
+        e <- optionMaybe exponent'
+        return $ BasedLiteral b bi1 bi2 e
 
 base :: Parser Integer
 base = integer
@@ -565,16 +569,23 @@ stringLiteral' = lexeme (strSegment >>= rest) <?> "String lit"
         , pure ctx
         ]
 
--- Parses a segment between " and "
+stringDelimiter :: Parser String
+stringDelimiter = symbol "\"" <|> symbol "%"
+
+-- Parses a segment between " and " or % and % (obscure VHDL char replacement)
 strSegment :: Parser String
-strSegment =
+strSegment = strSegment' '"' <|> strSegment' '%'
+
+strSegment' :: Char -> Parser String
+strSegment' delim =
   lexeme
-    (between (char '"') (char '"' <?> "end of string") (many strChar) <?>
+    (between (char delim) (char delim <?> "end of string") (many (strChar delim)) <?>
      "literal string")
 
--- "" in a string becomes literal "
-strChar :: Parser Char
-strChar = try $ (string "\"\"" *> pure '"') <|> char '\\' <|> graphicalChar
+-- "" in a string becomes literal " if string is between ""
+-- %% becomes % if string is between %%
+strChar :: Char -> Parser Char
+strChar delim = try $ (string [delim, delim] *> pure delim) <|> char '\\' <|> graphicalChar
 
 -- escape codes
 asciiCode :: Parser Char
