@@ -21,6 +21,8 @@ module Language.VHDL.Parser
   , parseAssociationEls
   , parseProcDecl
   , parseProcDecls
+  , parseStringLit
+  , parseCharLit
   , stateParse
   , Result
   )
@@ -28,6 +30,7 @@ where
 
 import           Text.Parsec
 
+import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Internal
 import           Language.VHDL.Parser.Monad
 import           Language.VHDL.Syntax
@@ -107,6 +110,12 @@ parseProcDecl = quoteParse processDeclarativeItem
 
 parseProcDecls :: (String, Int, Int) -> String -> Result ProcessDeclarativePart
 parseProcDecls = quoteParse processDeclarativePart
+
+parseStringLit :: (String, Int, Int) -> String -> Result StringLiteral
+parseStringLit = quoteParse stringLiteral
+
+parseCharLit :: (String, Int, Int) -> String -> Result CharacterLiteral
+parseCharLit = quoteParse charLiteral
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

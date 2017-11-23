@@ -94,6 +94,24 @@ instance ToIdent String where
 instance ToIdent V.Identifier where
   toIdent s = s
 
+class ToSlit a where
+  toSlit :: a -> V.StringLiteral
+
+instance ToSlit String where
+  toSlit = V.SLit
+
+instance ToSlit V.StringLiteral where
+  toSlit a = a
+
+class ToClit a where
+  toClit :: a -> V.CharacterLiteral
+
+instance ToClit Char where
+  toClit = V.CLit
+
+instance ToClit V.CharacterLiteral where
+  toClit a = a
+
 -- FIXME: Get rid of stripPrefix. show may be locale dependent?
 fromFloating
   :: (RealFrac a, Show a)
@@ -123,7 +141,7 @@ qqIdentE (V.AntiIdent i) = Just [|toIdent $(antiVarE i)|]
 qqIdentE _               = Nothing
 
 qqNameE :: V.Name -> Maybe (Q Exp)
-qqNameE (V.AntiName n) = Just [|$(antiVarE n)|]
+qqNameE (V.AntiName n) = Just $ antiVarE n
 qqNameE _              = Nothing
 
 qqExprE :: V.Expression -> Maybe (Q Exp)
@@ -214,6 +232,14 @@ qqProcDeclListE (V.AntiProcDecls d:decls) =
 qqProcDeclListE (decl:decls) =
   Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
 
+qqStringLit :: V.StringLiteral -> Maybe (Q Exp)
+qqStringLit (V.AntiSlit v) = Just $ [|toSlit $(antiVarE v)|]
+qqStringLit _              = Nothing
+
+qqCharLit :: V.CharacterLiteral -> Maybe (Q Exp)
+qqCharLit (V.AntiClit v) = Just $ [|toClit $(antiVarE v)|]
+qqCharLit _              = Nothing
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -234,7 +260,9 @@ qqExp =
   qqBlockDeclE `extQ`
   qqBlockDeclListE `extQ`
   qqProcDeclE `extQ`
-  qqProcDeclListE
+  qqProcDeclListE `extQ`
+  qqStringLit `extQ`
+  qqCharLit
 
 parse :: ((String, Int, Int) -> String -> Result a) -> String -> Q a
 parse p s = do
