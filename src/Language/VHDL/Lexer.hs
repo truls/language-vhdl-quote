@@ -276,8 +276,8 @@ vhdlDef =
   , P.nestedComments = False
   , P.identStart = letter
   , P.identLetter = alphaNum <|> char '_'
-  , P.opLetter = oneOf "*/+-&<=>:"
-  , P.opStart = P.opLetter vhdlDef
+  , P.opLetter = oneOf "*=<>"
+  , P.opStart = oneOf "*/+-&<=>:"
   , P.reservedNames = vhdlReserved
   , P.reservedOpNames = vhdlOps
   , P.caseSensitive = False
