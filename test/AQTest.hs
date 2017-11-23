@@ -94,8 +94,10 @@ assocList :: Assertion
 assocList = let
   unit = "System"
   portMap = map (\x -> [assocel|$ident:x => $ident:x|]) ["foo", "bar"]
-  in [constm|uut: entity work.$ident:unit port map ($assocels:portMap, baz => baz);|] @?=
+  in [constm|uut: entity work.$ident:("System") port map ($assocels:portMap, baz => baz);|] @?=
      [constm|uut: entity work.System port map (foo => foo, bar => bar, baz => baz);|]
+
+
 
 qqtests :: TestTree
 qqtests =
@@ -115,6 +117,33 @@ qqtests =
     , testCase "Association list antiquotation" assocList
     ]
 
+tbAssertStm :: Assertion
+tbAssertStm = (let
+    x = "System_Control_data"
+    in
+      [seqstms|read_csv_field(L, tmp);
+assert are_strings_equal(tmp, $slit:x) report "Field #" & integer'image(fieldno) & " is named: " & truncate(tmp) & $slit:(" but expected " ++ x) severity Failure;
+fieldno := fieldno + 1;|]) @?=
+       [seqstms|read_csv_field(L, tmp);
+assert are_strings_equal(tmp, "System_Control_data") report "Field #" & integer'image(fieldno) & " is named: " & truncate(tmp) & " but expected System_Control_data" severity Failure;
+fieldno := fieldno + 1;|]
+
+tbCheckStm :: Assertion
+tbCheckStm = (let
+   x = "System_Control_data"
+   in
+     [seqstms|read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image($ident:x), tmp) report $slit:("Unexpected value of " ++ x ++ " in cycle ") & integer'image(clockcycle) & ". Actual value was: " & int_image($ident:x) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;|]) @?=
+     [seqstms|read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_Control_data), tmp) report "Unexpected value of System_Control_data in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_Control_data) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;|]
+
+
 designFileTest :: Assertion
 designFileTest = let
   modName = "System_tb"
@@ -125,11 +154,19 @@ designFileTest = let
              , ("System_InDataBus_data", "i32_t")
              , ("System_InDataBus_valid", "i32_t")
              ]
-  signals = map (\(x, y) -> [blockdecl|signal $ident:x: $ident:y;|]) sigNames
+  signal (x, y) = [blockdecl|signal $ident:x: $ident:y;|]
   topUnit = "System"
   ports = map fst sigNames
   portMap = map (\x -> [assocel|$ident:x => $ident:x|]) ports
-  in
+  fieldAssert (x, _) = [seqstms|read_csv_field(L, tmp);
+assert are_strings_equal(tmp, $slit:x) report "Field #" & integer'image(fieldno) & " is named: " & truncate(tmp) & $slit:(" but expected " ++ x) severity Failure;
+fieldno := fieldno + 1;|]
+  valAssert (x, _) = [seqstms|read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image($ident:x), tmp) report $slit:("Unexpected value of " ++ x ++ " in cycle ") & integer'image(clockcycle) & ". Actual value was: " & int_image($ident:x) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;|]
+    in
     [designfile|library ieee;
                use ieee.std_logic_1164.all;
                use ieee.std_logic_unsigned.all;
@@ -145,14 +182,14 @@ end $ident:modName;
 
 architecture RTL of $ident:modName is
 
-$blockdecls:signals
+$blockdecls:(map signal sigNames)
 
 signal clock: std_logic;
 signal stop_clock: boolean;
 signal reset: std_logic;
 
 begin
-  uut: entity work.$ident:topUnit
+uut: entity work.$ident:topUnit
   port map ($assocels:portMap,
 --  port map (
             rst => reset,
@@ -168,6 +205,47 @@ begin
   end loop;
   wait;
 end process;
+
+
+  TraceTester: process
+
+file F: TEXT;
+variable L: LINE;
+variable Status: FILE_OPEN_STATUS;
+constant filename : string := "trace.csv";
+variable clockcycle : integer := 0;
+variable tmp : CSV_LINE_T;
+variable readOK : boolean;
+variable fieldno : integer := 0;
+
+    -- More decls here
+  begin
+    file_open(Status, F, filename, READ_MODE);
+    if Status /= OPEN_OK then
+      report "Unable to open trace file";
+    else
+      readline(F, L);
+      fieldno := 0;
+      $seqstms:(concatMap fieldAssert sigNames)
+
+Reset <= '1';
+wait for 5 ns;
+reset <= '0';
+
+      while not endfile(F) loop
+        readline(F, L);
+        wait until rising_edge(clock);
+        fieldno := 0;
+        $seqstms:(concatMap valAssert sigNames)
+
+        clockcycle := clockcycle + 1;
+      end loop;
+      file_close(F);
+    end if;
+    report "Completed after " & integer'image(clockcycle) & " clockcycles";
+    stop_clock <= true;
+    wait;
+  end process;
 
 
 end architecture;
@@ -264,7 +342,59 @@ fieldno := fieldno + 1;
 assert are_strings_equal(tmp, "System_InDataBus_valid") report "Field #" & integer'image(fieldno) & " is named: " & truncate(tmp) & " but expected System_InDataBus_valid" severity Failure;
 fieldno := fieldno + 1;
 
-end process;
+
+Reset <= '1';
+wait for 5 ns;
+reset <= '0';
+
+      while not endfile(F) loop
+        readline(F, L);
+        wait until rising_edge(clock);
+        fieldno := 0;
+        read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_Control_data), tmp) report "Unexpected value of System_Control_data in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_Control_data) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;
+
+        read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_Control_readout), tmp) report "Unexpected value of System_Control_readout in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_Control_readout) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;
+
+        read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_Control_selector), tmp) report "Unexpected value of System_Control_selector in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_Control_selector) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;
+
+        read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_DataBus_data), tmp) report "Unexpected value of System_DataBus_data in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_DataBus_data) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;
+
+        read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_InDataBus_data), tmp) report "Unexpected value of System_InDataBus_data in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_InDataBus_data) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;
+
+        read_csv_field(L, tmp);
+if not are_strings_equal(tmp, "U") then
+  assert are_strings_equal(int_image(System_InDataBus_valid), tmp) report "Unexpected value of System_InDataBus_valid in cycle " & integer'image(clockcycle) & ". Actual value was: " & int_image(System_InDataBus_valid) & " but expected " & truncate(tmp) severity Error;
+end if;
+fieldno := fieldno + 1;
+
+        clockcycle := clockcycle + 1;
+      end loop;
+      file_close(F);
+    end if;
+    report "Completed after " & integer'image(clockcycle) & " clockcycles";
+    stop_clock <= true;
+    wait;
+  end process;
 
 end architecture;
 |]
@@ -276,7 +406,10 @@ topLvlTests :: TestTree
 topLvlTests =
   testGroup
   "Test toplevel Files"
-  [ testCase "Full testbench generation example" designFileTest ]
+  [ testCase "Full testbench generation example" designFileTest
+  , testCase "TestBench assert block test" tbAssertStm
+  , testCase "TestBench assert value test" tbCheckStm
+  ]
 
 main :: IO ()
 main = defaultMain tests
