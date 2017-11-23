@@ -787,9 +787,15 @@ range =
 -- For parsing definite ranges (i.e. preceded by range kw)
 range' :: Parser Range
 range' =
-  expression >>= \case
-    PrimName (NAttr n@AttributeName {}) -> RAttr <$> pure n
-    e -> RSimple e <$> direction <*> expression
+  choice
+    [ try
+    -- We have no way of parsing specifically parsing an attribute name so here
+    -- we go...
+        ((expression <* notFollowedBy direction) >>= \case
+           PrimName (NAttr n@AttributeName {}) -> RAttr <$> pure n
+           _ -> fail "")
+    , RSimple <$> expression <*> direction <*> expression
+    ]
 
 direction :: Parser Direction
 direction = choice [reserved "to" *> pure To, reserved "downto" *> pure DownTo]
