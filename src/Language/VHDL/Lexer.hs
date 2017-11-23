@@ -625,7 +625,7 @@ graphicalChar = choice (map char gchars) <?> "graphical character"
       , 'Y'
       , 'Z'
       , '['
-      , '\''
+      , '\\'
       , ']'
       , '^'
       , '_'
