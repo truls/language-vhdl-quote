@@ -1372,7 +1372,7 @@ associationElement =
   trace "associationElement" $
   antiQ2 AntiAssocEl AntiAssocEls $
   AssociationElement <$>
-  optionMaybe (try (formalPart <* trace "reservedOp" (reservedOp "=>"))) <*>
+  optionMaybe (try (formalPart <* trace "reservedOp" (symbol "=>"))) <*>
   actualPart
 
 associationList :: Parser AssociationList
