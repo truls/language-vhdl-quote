@@ -61,7 +61,7 @@ optionEndName s = do
   actual <- optionMaybe simpleName
   case actual of
     Just n ->
-      when (n /= expected) $
+      when (identToLower n /= expected) $
       unexpected
         (s ++ " block " ++ ppr expected ++ " cannot be ended by " ++ ppr n)
     Nothing -> return ()
