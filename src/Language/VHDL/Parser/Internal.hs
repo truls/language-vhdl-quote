@@ -1125,7 +1125,7 @@ subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
     go = do
       --name1 <- NSimple <$> simpleName
       --return $ SubtypeIndication Nothing (TMType name1)
-      name1 <- name' constraint
+      name1 <- name
       optionMaybe (try typeMark) >>= \case
         Just ty -> return $ SubtypeIndication (Just name1) ty
         Nothing -> return $ SubtypeIndication Nothing (TMType name1)

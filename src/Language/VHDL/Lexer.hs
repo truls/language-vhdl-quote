@@ -35,7 +35,7 @@ module Language.VHDL.Lexer
 
 import           Control.Arrow              (first)
 import           Control.Monad              (unless)
-import           Data.Char                  (chr, toLower)
+import           Data.Char                  (chr, isDigit, toLower)
 import           Data.Data                  (Data)
 import           Data.Functor.Identity      (Identity)
 import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
@@ -456,11 +456,24 @@ integer =
   where
     number = lexeme $ many1 digit
 
+-- We do this rather convoluted thing to avoid interpreting x = 3 ELSE as the
+-- beginning of an exponent
 exponent' :: Parser Exponent
-exponent' =
-  symbol "E" >>
-  ((ExponentNeg <$> (symbol "-" *> integer)) <|>
-   (ExponentPos <$> (optional (symbol "+") *> integer)))
+exponent' = try $ do
+  c1 <- anyChar
+  unless (c1 == 'E') (fail "")
+  c2 <- lookAhead anyChar
+  case c2 of
+    '-' -> do
+      _ <- anyChar
+      ExponentNeg <$> integer
+    '+' -> do
+      _ <- anyChar
+      ExponentPos <$> integer
+    a ->
+      if isDigit a
+      then ExponentPos <$> integer
+      else fail ""
 
 --------------------------------------------------------------------------------
 -- *** 15.5.3
