@@ -266,7 +266,7 @@ entityDeclarativePart =
       | passive_process_statement
 -}
 entityStatementPart :: Parser EntityStatementPart
-entityStatementPart = many1 entityStatement
+entityStatementPart = many entityStatement
 
 entityStatement :: Parser EntityStatement
 entityStatement =
