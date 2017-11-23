@@ -2,15 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Language.VHDL.Parser.Internal
-  -- ( designFile
-  -- , expression
-  -- , sequentialStatement
-  -- , sequenceOfStatements
-  -- , concurrentStatement
-  -- , concurrentStatements
-  -- , name
-  -- )
-  where
+where
 
 import           Prelude                    hiding (exponent)
 import           Text.Parsec                hiding (label)
@@ -20,7 +12,7 @@ import           Control.Monad              (void, when)
 import           Data.Data                  (Data)
 import qualified Data.Functor.Identity
 import           Data.Maybe                 (fromJust, isJust)
-import           Debug.Trace                (traceShowM)
+--import           Debug.Trace                (traceShowM)
 
 import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Monad
@@ -99,12 +91,6 @@ stmLabelPush l p = do
   when (isJust l) (void $ pushBlockName (fromJust l))
   p l
 
--- stmLabelPush' :: (Maybe Label -> Parser a) -> Parser a
--- stmLabelPush' p = do
---   lab <- optionMaybe $ try (label <* reservedOp ":")
---   stmLabelPush lab p
-
---(\s -> whenIsJust s (\i -> isJust pushBlockName i >> return ()))
 stmLabel :: (Maybe Label -> Parser a) -> Parser a
 stmLabel = stmLabel' (\_ -> return ())
 
@@ -112,20 +98,13 @@ stmLabel' :: (Maybe Label -> Parser ())
           -> (Maybe Label -> Parser a)
           -> Parser a
 stmLabel' f g
-  --lab <- optionMaybe $ (trace "stmLabel") $ try (label <* reservedOp ":")
  = do
   lab <- optionMaybe $ try (label <* reservedOp ":")
   f lab
   g (trace ("Label: " ++ show lab) lab)
 
-lookaheadLabel :: String -> Parser a -> Parser a
-lookaheadLabel s p =
-  try $ lookAhead (optional (label <* reservedOp ":") >> reserved s) >> p
-
 blockName :: Parser Identifier
 blockName = simpleName >>= pushBlockName
-  -- label <- optionMaybe (label <* colon)
-  -- f label
 
 labelRequired :: Maybe Label -> Parser Label
 labelRequired l =
@@ -147,7 +126,6 @@ labelRequired l =
 seeNext :: Int -> Parser ()
 seeNext _ = pure ()
 
---runStateParnse p sn imp
 --------------------------------------------------------------------------------
 --
 --                                   -- 1 --
@@ -427,7 +405,6 @@ blockSpecification :: Parser BlockSpecification
 -- FIXME: This distinction is probably useless
 blockSpecification =
   choice
-    --[ BSGen <$> label <*> pure Nothing -- TODO <*> optionMaybe indexSpeification
     [ try $ BSGen <$> label <*> optionMaybe (parens indexSpecification)
     , BSArch <$> name
     , BSBlock <$> label
@@ -827,8 +804,7 @@ enumerationLiteral =
 {-
     integer_type_definition ::= range_constraint
 -}
-integerTypeDefinition :: Parser RangeConstraint
-integerTypeDefinition = rangeConstraint
+-- No parser explicitly defined
 
 --------------------------------------------------------------------------------
 -- *** 3.1.2.1 Predefined integer types
@@ -877,8 +853,8 @@ physicalLiteral = PhysicalLiteral <$> optionMaybe abstractLiteral <*> name
 {-
     floating_type_definition ::= range_constraint
 -}
-floatingTypeDefinition :: Parser RangeConstraint
-floatingTypeDefinition = rangeConstraint
+
+-- TODO: Undefined
 
 --------------------------------------------------------------------------------
 -- *** 3.1.4.1 Predefined floating point types
@@ -1127,8 +1103,6 @@ subtypeIndication :: Parser SubtypeIndication
 subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
   where
     go = do
-      --name1 <- NSimple <$> simpleName
-      --return $ SubtypeIndication Nothing (TMType name1)
       name1 <- name' constraint
       optionMaybe (try typeMark) >>= \case
         Just ty -> return $ SubtypeIndication (Just name1) ty
@@ -1205,11 +1179,7 @@ signalKind =
 variableDeclaration :: Parser VariableDeclaration
 variableDeclaration =
   trace "variableDeclaration" $
-  VariableDeclaration
-   -- <$> (try (reserved "shared" *> reserved "variable" *> pure True)
-   -- <|> (reserved "variable" *> pure False))
-   <$>
-  try (isReserved "shared" <* reserved "variable") <*>
+  VariableDeclaration <$> try (isReserved "shared" <* reserved "variable") <*>
   (identifierList <* colon) <*>
   subtypeIndication <*>
   optionMaybe (reservedOp ":=" *> expression) <*
@@ -1325,13 +1295,6 @@ interfaceMode =
 
 interfaceList :: Parser InterfaceList
 interfaceList = trace "interfaceList" $ InterfaceList <$> semiSep1 interfaceElement
-
--- These were added to disambiguate the many occurences of interface_list int he grammer
--- genericInterfaceList :: Parser InterfaceList
--- genericInterfaceList = InterfaceList <$> semiSep1 interfaceConstantDeclaration
-
--- portInterfaceList :: Parser InterfaceList
--- portInterfaceList = InterfaceList <$> semiSep1 interfaceSignalDeclaration
 
 interfaceElement :: Parser InterfaceDeclaration
 interfaceElement =
@@ -1708,18 +1671,6 @@ primary_unit_declaration ::= identifier ;
 secondary_unit_declaration ::= identifier = physical_literal ;
 physical_literal ::= [ abstract_literal ] unit_name
 -}
--- physicalLiteral = Parser PhysicalLiteral
--- physicalLiteral = PhysicalLiteral <$>
---                   optionMaybe abstractLiteral <*>
---                   unitName
--- unitName :: Parser UnitName
--- unitName = choice [ symbol "fs" >> pure Fs
---                   , symbol "ps" >> pure Ps
---                   , symbol "ns" >> pure Ns
---                   , symbol "us" >> pure Us
---                   , symbol "ms" >> pure Ms
---                   , symbol "sec" >> pure Sec
---                   ]
 
 --------------------------------------------------------------------------------
 -- * 5.3 Disconnection specification
@@ -1797,7 +1748,7 @@ name' p = antiQ AntiName $ firstPart >>= rest
     rest :: Name -> Parser Name
     rest context =
       trace "rest" $
-      (try $ lookAhead p >> pure context) <|>
+      try (lookAhead p >> pure context) <|>
       choice
         [ dot >> (suffix <?> "selected_name") >>=
           rest . NSelect . SelectedName context
@@ -1806,11 +1757,6 @@ name' p = antiQ AntiName $ firstPart >>= rest
         , (indexedName context <?> "indexed_name") >>= rest . NIndex
         , pure context
         ]
-
-prefix :: Parser Prefix
-prefix =
-  trace "prefix" $
-  choice [PName  <$> name, PFun <$> functionCall]
 
 --------------------------------------------------------------------------------
 -- * 6.2 Simple names
@@ -1884,14 +1830,6 @@ attributeName n =
    (symbol "\'" <* try (notFollowedBy (symbol "(")))) <*>
   attributeDesignator <*>
   optionMaybe (try (parens expression))
-
--- attributeName :: Name -> Parser AttributeName
--- attributeName n =
---   trace ("attributeName " ++ show n) $
---   AttributeName n <$> (optionMaybe (try signature) <* symbol "\'") <*>
---   attributeDesignator <*>
---   optionMaybe (parens expression)
-
 
 -- LRM08 15.10 explicitly defines range and subtype as reserved words that are
 -- also predefined attributes names so we prevent them from reaching the
@@ -2664,9 +2602,6 @@ generationScheme =
 
 label :: Parser Identifier
 label = identifier
-
-newLabel :: Parser (Maybe Identifier)
-newLabel = optionMaybe $ try (label <* colon)
 
 --------------------------------------------------------------------------------
 --

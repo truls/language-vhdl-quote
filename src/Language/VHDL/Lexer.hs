@@ -529,8 +529,7 @@ bit_value ::= graphic_character { [ underline ] graphic_character }
 base_specifier ::= B | O | X | UB | UO | UX | SB | SO | SX | D
 -}
 bitStringLiteral :: Parser BitStringLiteral
-bitStringLiteral = --BitStringLiteral Nothing <$> try baseSpecifier <*> bitValue
-                   BitStringLiteral <$> try (optionMaybe integer) <*> baseSpecifier <*> bitValue
+bitStringLiteral = BitStringLiteral <$> try (optionMaybe integer) <*> baseSpecifier <*> bitValue
 
 -- FIXME: Should we filter out _'s?
 bitValue :: Parser BitValue
