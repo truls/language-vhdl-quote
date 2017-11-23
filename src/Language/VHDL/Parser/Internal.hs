@@ -1506,9 +1506,10 @@ entityClassEntry = EntityClassEntry <$> entityClass <*> isReservedOp "<>"
 -}
 groupDeclaration :: Parser GroupDeclaration
 groupDeclaration =
-  GroupDeclaration <$> (identifier <* colon) <*> name <*>
-  parens groupConstituentList <*
+  GroupDeclaration <$> (identifier <* colon) <*> name' conList <*> conList <*
   semi <?> "group_declaration"
+  where
+    conList = parens groupConstituentList
 
 groupConstituentList :: Parser [GroupConstituent]
 groupConstituentList = commaSep1 groupConstituent
@@ -1774,8 +1775,12 @@ signalList =
       | function_call
 -}
 -- TODO: Maybe explicitly handle base_specifiers (avoid try in expr)
+-- FIXME: This wrapping of name' seems to have hurt performance
 name :: Parser Name
-name = antiQ AntiName $ firstPart >>= rest
+name = name' (fail "")
+
+name' :: Parser a -> Parser Name
+name' p = antiQ AntiName $ firstPart >>= rest
   where
     firstPart :: Parser Name
     -- possible hack: a name is most certainly a name if the initial simple
@@ -1786,6 +1791,7 @@ name = antiQ AntiName $ firstPart >>= rest
     rest :: Name -> Parser Name
     rest context =
       trace "rest" $
+      (try $ lookAhead p >> pure context) <|>
       choice
         [ dot >> (suffix <?> "selected_name") >>=
           rest . NSelect . SelectedName context
