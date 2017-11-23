@@ -1135,8 +1135,9 @@ subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
         Nothing -> return $ SubtypeIndication Nothing (TMType name1)
 
 typeMark :: Parser TypeMark
--- Syntax defines subtype names separately, but we have no way of distinguisthing
-typeMark = TMType <$> name
+-- Since a type_mark refers to the names of subtypes and identifiers, we
+-- restrict the name to either a simpleName or a selectedName
+typeMark = TMType <$> (try (NSelect <$> selectedName) <|> (NSimple <$> simpleName))
 
 constraint :: Parser Constraint
 constraint = choice [CRange <$> rangeConstraint, CIndex <$> indexConstraint]
