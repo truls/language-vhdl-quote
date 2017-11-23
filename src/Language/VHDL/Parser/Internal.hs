@@ -1783,6 +1783,7 @@ signalList =
 name :: Parser Name
 name = name' (fail "")
 
+-- TODO: Function calls as prefixes is probably poorly handled
 name' :: Parser a -> Parser Name
 name' p = antiQ AntiName $ firstPart >>= rest
   where
@@ -1790,7 +1791,7 @@ name' p = antiQ AntiName $ firstPart >>= rest
     -- possible hack: a name is most certainly a name if the initial simple
     -- name is not followed by '( (qualified expr) or a string delimiter (bitstring lit)
     firstPart =
-      (NSimple <$> simpleName) <*
+      ((NSimple <$> simpleName) <|> NOp <$> operatorSymbol) <*
       notFollowedBy ((symbol "'" >> symbol "('") <|> stringDelimiter)
     rest :: Name -> Parser Name
     rest context =
