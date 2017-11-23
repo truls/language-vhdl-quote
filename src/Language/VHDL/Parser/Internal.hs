@@ -2211,8 +2211,8 @@ qualifiedExpression =
   -- TODO: Common parsing of type_mark' with try
   trace "qualifiedExpression" $
   choice
-    [ try $ QualExp <$> typeMark <*> (symbol "'" *> parens expression)
-    , QualAgg <$> typeMark <*> (symbol "'" *> aggregate)
+    [ try $ QualAgg <$> typeMark <*> (symbol "'" *> aggregate)
+    , QualExp <$> typeMark <*> (symbol "'" *> parens expression)
     ]
 
 --------------------------------------------------------------------------------
