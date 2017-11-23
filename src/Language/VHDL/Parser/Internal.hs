@@ -17,6 +17,7 @@ import           Text.Parsec                hiding (label)
 import           Text.Parsec.Expr
 
 import           Control.Monad              (void, when)
+import           Data.Char                  (toLower)
 import           Data.Data                  (Data)
 import qualified Data.Functor.Identity
 import           Data.Maybe                 (fromJust, isJust)
@@ -1887,7 +1888,10 @@ attributeDesignator :: Parser SimpleName
 attributeDesignator =
   choice
     [ Ident <$> try (symbol "range")
+    -- TODO: Still not quite case-insensitive
+    , Ident . map toLower <$> try (symbol "RANGE")
     , Ident <$> try (symbol "subtype")
+    , Ident . map toLower <$> try (symbol "SUBTYPE")
     , simpleName
     ]
 --------------------------------------------------------------------------------
