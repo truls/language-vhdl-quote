@@ -11,7 +11,7 @@ replace_dir() {
 # Create output directories
 find ${test_dirs} -type d | replace_dir | xargs mkdir -p
 
-# Copy exp fiels
+# Copy exp files
 for f in `find ${test_dirs} -name \*.exp`; do
     cp $f $(echo $f | replace_dir)
 done
