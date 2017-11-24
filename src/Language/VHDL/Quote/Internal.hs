@@ -118,7 +118,7 @@ fromFloating
   => a -> V.DecimalLiteral
 fromFloating f =
   let (n, m) = properFraction f
-      fract = (read ((fromJust . stripPrefix "0.") (show m)) :: Integer)
+      fract = (fromJust . stripPrefix "0.") (show m)
   in V.DecimalLiteral n (Just fract) Nothing
 
 instance ToDecLit Double where

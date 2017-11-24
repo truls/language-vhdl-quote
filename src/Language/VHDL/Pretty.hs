@@ -7,8 +7,10 @@ module Language.VHDL.Pretty
 
 import           Data.Data                 (Data)
 
+import           Data.Char                 (intToDigit)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
+import           Numeric                   (showIntAtBase)
 
 import           Text.PrettyPrint          hiding (Mode)
 
@@ -123,7 +125,9 @@ instance Pretty BaseUnitDeclaration where
 
 instance Pretty BasedLiteral where
   pp (BasedLiteral b i f e) =
-    pp b <+> char '#' <+> pp i <+> condL (char '.') f <+> char '#' <+> cond id e
+    pp b <> char '#' <> text (intToBase b i) <> condL' (char '.') (text <$> f) <>
+    char '#' <>
+    cond id e
 
 instance Pretty BasicCharacter where
   pp = error "missing: BasicCharacter" -- todo
@@ -328,7 +332,7 @@ instance Pretty ContextItem where
   pp e@(AntiContextItems i) = ppAnti e i
 
 instance Pretty DecimalLiteral where
-  pp (DecimalLiteral i f e) = pp i <+> condL (char '.') f <+> cond id e
+  pp (DecimalLiteral i f e) = pp i <> condL' (char '.') (text <$> f) <> cond id e
 
 instance Pretty Declaration where
   pp (DType t)          = pp t
@@ -1159,4 +1163,7 @@ ppAnti
   :: (Data a)
   => a -> String -> Doc
 ppAnti s t = char '$' <> text (toQQString s) <> char ':' <> text t
+
+intToBase :: Integer -> Integer -> String
+intToBase b n = showIntAtBase b intToDigit n ""
 --------------------------------------------------------------------------------

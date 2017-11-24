@@ -2754,7 +2754,9 @@ data AbstractLiteral
 -}
 data DecimalLiteral = DecimalLiteral
   { decimal_integral_part   :: Integer
-  , decimal_fractional_part :: Maybe Integer
+  -- FIXME: Representing fractional part as a string to completely preserve the
+  -- number including leading zeros. Do something better
+  , decimal_fractional_part :: Maybe String
   , decimal_exponent        :: Maybe Exponent
   } deriving (Eq, Show, Typeable, Data)
 
@@ -2779,7 +2781,9 @@ data Exponent
 data BasedLiteral = BasedLiteral
   { based_lit_base                  :: Base
   , based_lit_based_integral_part   :: BasedInteger
-  , based_lit_based_fractional_part :: Maybe BasedInteger
+  -- FIXME: Representing fractional part as a string to completely preserve the
+  -- number including leading zeros. Do something better
+  , based_lit_based_fractional_part :: Maybe String
   , based_lit_exponent              :: Maybe Exponent
   } deriving (Eq, Show, Typeable, Data)
 

@@ -456,20 +456,28 @@ exponent ::= E [ + ] integer | E – integer
 -}
 decimalLiteral :: Parser DecimalLiteral
 decimalLiteral =
-  DecimalLiteral <$> integer <*> optionMaybe (dot *> integer) <*>
+  DecimalLiteral <$> integer <*> optionMaybe (dot *> number) <*>
   optionMaybe exponent'
 
 integer :: Parser Integer
 integer =
-  toInteger . (read :: String -> Int) . concat <$> number `sepBy1` symbol "_"
+  toInteger . (read :: String -> Integer) <$> number
+
+number :: Parser String
+number = lexeme $ concat <$> numberSeg `sepBy1` symbol "_"
   where
-    number = lexeme $ many1 digit
+    numberSeg = many1 digit
+
+hexNumber :: Parser String
+hexNumber = lexeme $ concat <$> numberSeg `sepBy1` symbol "_"
+  where
+    numberSeg = many1 hexDigit
 
 -- We do this rather convoluted thing to avoid interpreting x = 3 ELSE as the
 -- beginning of an exponent
 exponent' :: Parser Exponent
 exponent' = try $ do
-  _ <- char 'E'
+  _ <- char 'E' <|> char 'e'
   lookAhead anyChar >>= \case
     '-' -> do
       _ <- anyChar
@@ -503,7 +511,7 @@ basedLiteral =
   in do b <- base <* sepSym
         unless (2 <= b && b <= 16) (fail "Base must be between 2 and 16")
         bi1 <- basedInteger b
-        bi2 <- optionMaybe (dot *> basedInteger b)
+        bi2 <- optionMaybe (dot *> hexNumber)
         _ <- sepSym
         e <- optionMaybe exponent'
         return $ BasedLiteral b bi1 bi2 e
@@ -516,8 +524,7 @@ basedInteger :: Integer -> Parser BasedInteger
 basedInteger b =
   let b' = fromIntegral b
   in fromIntegral .
-     fst . head . readInt b' ((< b') . digitToInt) digitToInt . concat <$>
-     many1 alphaNum `sepBy1` char '_'
+     fst . head . readInt b' ((< b') . digitToInt) digitToInt <$> hexNumber
 
 --------------------------------------------------------------------------------
 -- *** 15.8
