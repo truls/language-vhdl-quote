@@ -180,7 +180,7 @@ portClause = reserved "port" >> PortClause <$> parens portList <* semi
     generic_list ::= generic_interface_list
 -}
 genericList :: Parser InterfaceList
-genericList = interfaceList
+genericList = interfaceList' interfaceConstantDeclaration
 
 --------------------------------------------------------------------------------
 -- *** 1.1.1.2 Ports
@@ -188,7 +188,7 @@ genericList = interfaceList
     port_list ::= port_interface_list
 -}
 portList :: Parser InterfaceList
-portList = interfaceList
+portList = interfaceList' interfaceSignalDeclaration
 
 --------------------------------------------------------------------------------
 -- ** 1.1.2 Entity declarative part
@@ -460,11 +460,12 @@ componentConfiguration =
     operator_symbol ::= string_literal
 -}
 subprogramDeclaration :: SubprogramSpecification -> Parser SubprogramDeclaration
-subprogramDeclaration = trace "subprogramDeclaration" pure
+subprogramDeclaration = trace "subprogramDeclaration" (pure . SubprogramDeclaration)
 
-subprogramDeclaration' ::  Parser SubprogramDeclaration
+subprogramDeclaration' :: Parser SubprogramDeclaration
 subprogramDeclaration' =
-  trace "subprogramDeclaration'" $ subprogramSpecification <* semi
+  trace "subprogramDeclaration'" $
+  SubprogramDeclaration <$> subprogramSpecification <* semi
 
 subprogramSpecification :: Parser SubprogramSpecification
 subprogramSpecification = subprogramProcedure <|> subprogramFunction
@@ -1294,14 +1295,17 @@ interfaceMode =
 -}
 
 interfaceList :: Parser InterfaceList
-interfaceList = trace "interfaceList" $ InterfaceList <$> semiSep1 interfaceElement
+interfaceList = interfaceList' interfaceElement
+
+interfaceList' :: Parser InterfaceDeclaration -> Parser InterfaceList
+interfaceList' p = trace "interfaceList'" $ InterfaceList <$> semiSep1 p
 
 interfaceElement :: Parser InterfaceDeclaration
 interfaceElement =
   choice
     [ interfaceConstantDeclaration
-    , interfaceSignalDeclaration
     , interfaceVariableDeclaration
+    , interfaceSignalDeclaration
     , interfaceFileDeclaration
     ]
 

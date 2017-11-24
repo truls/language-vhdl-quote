@@ -28,6 +28,9 @@ instance Pretty a =>
          Pretty (Maybe a) where
   pp = maybe empty pp
 
+instance Pretty Doc where
+  pp d = d
+
 --------------------------------------------------------------------------------
 -- ** Pretty printing instances
 instance Pretty AbstractLiteral where
@@ -140,7 +143,7 @@ instance Pretty BasicIdentifier where
 
 instance Pretty BindingIndication where
   pp (BindingIndication e g p) =
-    vcat [condR (text "USE") e, cond id g, cond id p]
+    vcat [condL (text "use") e, cond id g, cond id p]
 
 instance Pretty BitStringLiteral where
   pp (BitStringLiteral l b v) = cond id l <> pp b <> pp v
@@ -186,7 +189,7 @@ instance Pretty BlockHeader where
         :: (Pretty a, Pretty b)
         => Maybe (a, Maybe b) -> Doc
       go Nothing        = empty
-      go (Just (a, mb)) = pp a $+$ cond indent mb
+      go (Just (a, mb)) = pp a $+$ cond (indent . (<> semi)) mb
 
 instance Pretty BlockSpecification where
   pp (BSArch n)  = pp n
@@ -200,7 +203,7 @@ instance Pretty BlockStatement where
       header =
         text "block" <+> cond parens g <+> text "is" `hangs` (pp h $$ pp d)
       body = text "begin" `hangs` pp s
-      footer = text "end block" <+> pp l
+      footer = text "end block" <+> pp l <> semi
 
 instance Pretty CaseStatement where
   pp (CaseStatement l e cs) = labels l $ vcat [header, body, footer]
@@ -244,7 +247,7 @@ instance Pretty ComponentDeclaration where
 
 instance Pretty ComponentInstantiationStatement where
   pp (ComponentInstantiationStatement l u g p) =
-    pp l <> colon `hangs` (pp u `hangs` vcat [cond id g, cond id p])
+    pp l <> colon `hangs` (pp u `hangs` vcat [cond id g, cond id p]) <> semi
 
 instance Pretty ComponentSpecification where
   pp (ComponentSpecification ls n) = pp ls <> colon <+> pp n
@@ -254,10 +257,10 @@ instance Pretty CompositeTypeDefinition where
   pp (CTDRecord rt) = pp rt
 
 instance Pretty ConcurrentAssertionStatement where
-  pp (ConcurrentAssertionStatement l p a) = postponed l p a
+  pp (ConcurrentAssertionStatement l p a) = postponed l p a <> semi
 
 instance Pretty ConcurrentProcedureCallStatement where
-  pp (ConcurrentProcedureCallStatement l p a) = postponed l p a
+  pp (ConcurrentProcedureCallStatement l p a) = postponed l p a <> semi
 
 instance Pretty ConcurrentSignalAssignmentStatement where
   pp (CSASCond l p a)   = postponed l p a
@@ -294,7 +297,7 @@ instance Pretty ConfigurationDeclaration where
     vcat
       [ text "configuration" <+> pp i <+> text "of" <+> pp n <+> text "is"
       , indent $ vcat [pp d, pp b]
-      , text "end configuration" <+> pp i
+      , text "end configuration" <+> pp i <> semi
       ]
 
 instance Pretty ConfigurationDeclarativeItem where
@@ -380,7 +383,7 @@ instance Pretty ElementAssociation where
   pp (ElementAssociation c e) = condR (text "=>") c <+> pp e
 
 instance Pretty ElementDeclaration where
-  pp (ElementDeclaration is s) = pp is <> colon <+> pp s <> semi
+  pp (ElementDeclaration is s) = commaSep (map pp is) <> colon <+> pp s <> semi
 
 instance Pretty EntityAspect where
   pp (EAEntity n i) = text "entity" <+> pp n <+> cond parens i
@@ -464,28 +467,30 @@ instance Pretty EnumerationLiteral where
   pp (EChar c) = pp c
 
 instance Pretty EnumerationTypeDefinition where
-  pp (EnumerationTypeDefinition es) = commaSep $ fmap pp es
+  pp (EnumerationTypeDefinition es) = parens $ commaSep $ fmap pp es
 
 instance Pretty ExitStatement where
   pp (ExitStatement l b c) =
     label l <+> text "exit" <+> cond id b <+> condL (text "when") c <> semi
 
 instance Pretty Exponent where
-  pp (ExponentPos i) = char 'e' <+> pp i
-  pp (ExponentNeg i) = char 'e' <+> char '-' <+> pp i
+  pp (ExponentPos i) = char 'e' <> pp i
+  pp (ExponentNeg i) = char 'e' <> char '-' <> pp i
 
 instance Pretty Expression where
-  pp (Unary op e)      = pp op <+> pp e
-  pp (Binary op e1 e2) = pp e1 <+> pp op <+> pp e2
-  pp (PrimName n)      = pp n
-  pp (PrimLit l)       = pp l
-  pp (PrimAgg a)       = pp a
-  pp (PrimFun f)       = pp f
-  pp (PrimQual q)      = pp q
-  pp (PrimTCon t)      = pp t
-  pp (PrimAlloc a)     = pp a
-  pp (PrimExp e)       = text "(" <> pp e <> text ")"
-  pp a@(AntiExpr e)    = ppAnti a e
+  pp (Unary op@Identity e) = pp op <> pp e
+  pp (Unary op@Negation e) = pp op <> pp e
+  pp (Unary op e)          = pp op <+> pp e
+  pp (Binary op e1 e2)     = pp e1 <+> pp op <+> pp e2
+  pp (PrimName n)          = pp n
+  pp (PrimLit l)           = pp l
+  pp (PrimAgg a)           = pp a
+  pp (PrimFun f)           = pp f
+  pp (PrimQual q)          = pp q
+  pp (PrimTCon t)          = pp t
+  pp (PrimAlloc a)         = pp a
+  pp (PrimExp e)           = text "(" <> pp e <> text ")"
+  pp a@(AntiExpr e)        = ppAnti a e
 
 instance Pretty ExtendedDigit where
   pp = error "missing: ExtendedDigit" -- todo
@@ -511,7 +516,7 @@ instance Pretty BinOp where
   pp Ror    = text "ror"
   pp Times  = text "*"
   pp Div    = text "/"
-  pp Mod    = text "mor"
+  pp Mod    = text "mod"
   pp Rem    = text "rem"
   pp Plus   = text "+"
   pp Minus  = text "-"
@@ -576,7 +581,7 @@ instance Pretty GenericClause where
   pp (GenericClause ls) = text "generic" <+> parens (pp ls) <> semi
 
 instance Pretty GenericMapAspect where
-  pp (GenericMapAspect as) = text "generic map" <+> parens (pp as) <> semi
+  pp (GenericMapAspect as) = text "generic map" <+> parens (pp as)
 
 instance Pretty GroupConstituent where
   pp (GCName n) = pp n
@@ -584,11 +589,11 @@ instance Pretty GroupConstituent where
 
 instance Pretty GroupTemplateDeclaration where
   pp (GroupTemplateDeclaration i cs) =
-    text "group" <+> pp i <+> text "is" <+> parens (pp cs) <> semi
+    text "group" <+> pp i <+> text "is" <+> parens (commaSep (map pp cs)) <> semi
 
 instance Pretty GroupDeclaration where
   pp (GroupDeclaration i n cs) =
-    text "group" <+> pp i <> colon <+> pp n <+> parens (pp cs) <> semi
+    text "group" <+> pp i <> colon <+> pp n <+> parens (commaSep (map pp cs)) <> semi
 
 instance Pretty GuardedSignalSpecification where
   pp (GuardedSignalSpecification ss t) = pp ss <> colon <+> pp t
@@ -629,7 +634,7 @@ instance Pretty IndexSpecification where
   pp (ISExp e)   = pp e
 
 instance Pretty IndexSubtypeDefinition where
-  pp (IndexSubtypeDefinition t) = pp t <+> text "range" <> semi
+  pp (IndexSubtypeDefinition t) = pp t <+> text "range" <+> text "<>"
 
 instance Pretty IndexedName where
   pp (IndexedName p es) = pp p <+> parens (commaSep $ map pp es)
@@ -717,7 +722,7 @@ instance Pretty NextStatement where
     label l <+> text "next" <+> cond id b <+> condL (text "when") c <> semi
 
 instance Pretty NullStatement where
-  pp (NullStatement l) = label l <+> text "null"
+  pp (NullStatement l) = label l <+> text "null" <> semi
 
 instance Pretty NumericLiteral where
   pp (NLitAbstract a) = pp a
@@ -758,7 +763,7 @@ instance Pretty PackageDeclaration where
   pp (PackageDeclaration i d) =
     vcat
       [ text "package" <+> pp i <+> text "is"
-      , indent $ blockCat semi d
+      , indent $ block d
       , text "end package" <+> pp i <> semi
       ]
 
@@ -791,7 +796,7 @@ instance Pretty PhysicalTypeDefinition where
     pp c `hangs`
     vcat
       [ text "units"
-      , indent $ vcat [pp p, vcat $ map pp s]
+      , indent $ vcat [pp p <> semi, vcat $ map (\x -> pp x <> semi) s]
       , text "end units" <+> cond id n
       ]
 
@@ -799,7 +804,7 @@ instance Pretty PortClause where
   pp (PortClause ls) = text "port" <+> parens (pp ls) <> semi
 
 instance Pretty PortMapAspect where
-  pp (PortMapAspect as) = text "port map" <+> parens (pp as) <> semi
+  pp (PortMapAspect as) = text "port map" <+> parens (pp as)
 
 instance Pretty Prefix where
   pp (PName n) = pp n
@@ -860,10 +865,10 @@ instance Pretty RecordTypeDefinition where
 
 instance Pretty ReportStatement where
   pp (ReportStatement l e s) =
-    labels l (text "report" <+> pp e `hangs` condL (text "severity") s)
+    labels l (text "report" <+> pp e `hangs` condL (text "severity") s) <> semi
 
 instance Pretty ReturnStatement where
-  pp (ReturnStatement l e) = label l <+> text "return" <+> condR' semi e
+  pp (ReturnStatement l e) = label l <+> text "return" <+> pp' e <> semi
 
 instance Pretty ScalarTypeDefinition where
   pp (ScalarEnum e)  = pp e
@@ -888,10 +893,10 @@ instance Pretty SelectedSignalAssignment where
     pp e <+> text "select" `hangs` pp t <+> text "<=" <+> pp o <+> pp w <> semi
 
 instance Pretty SelectedWaveforms where
-  pp (SelectedWaveforms ws) = vcat sws
+  pp (SelectedWaveforms ws) = vcat (punctuate comma sws)
     where
       sws = map f ws
-      f (w, c) = pp w <+> text "when" <+> pp c <+> comma
+      f (w, c) = pp w <+> text "when" <+> pp c
 
 instance Pretty SensitivityClause where
   pp (SensitivityClause ss) = text "on" <+> pp ss
@@ -922,12 +927,10 @@ instance Pretty SignalAssignmentStatement where
 
 -- FIXME: k param unused
 instance Pretty SignalDeclaration where
-  pp (SignalDeclaration is s _k e) =
+  pp (SignalDeclaration is s k e) =
     text "signal" <+>
     commaSep (fmap pp is) <> colon <+>
-    pp s {-<+> cond id k-}
-     <+>
-    condL (text ":=") e <> semi
+    pp s <+> cond id k <+> condL (text ":=") e <> semi
 
 instance Pretty SignalKind where
   pp Register = text "register"
@@ -982,6 +985,9 @@ instance Pretty SubprogramDeclarativeItem where
 instance Pretty SubprogramKind where
   pp Procedure = text "procedure"
   pp Function  = text "function"
+
+instance Pretty SubprogramDeclaration where
+  pp (SubprogramDeclaration s) = pp s <> semi
 
 instance Pretty SubprogramSpecification where
   pp (SubprogramProcedure d fs) = text "procedure" <+> pp d <+> cond parens fs
@@ -1123,6 +1129,11 @@ condL
   :: Pretty a
   => Doc -> Maybe a -> Doc
 condL s = cond (s <+>)
+
+condL'
+  :: Pretty a
+  => Doc -> Maybe a -> Doc
+condL' s = cond (s <>)
 
 label
   :: Pretty a
