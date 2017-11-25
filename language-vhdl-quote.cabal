@@ -28,7 +28,7 @@ library
                      , Language.VHDL.Syntax
                      , Language.VHDL.Parser
                      , Language.VHDL.Quote
-  ghc-options: -Wall
+  ghc-options:       -Wall
   other-modules:       Language.VHDL.Lexer
                      , Language.VHDL.Parser.Internal
                      , Language.VHDL.Parser.Monad
@@ -61,6 +61,8 @@ executable dumpast
                         , mtl >= 2.2.1
                         , language-vhdl-quote
                         , directory >= 1.3.0.0
+           ghc-options: -Wall
+           default-language: Haskell2010
            default-language: Haskell2010
 
 Test-Suite vests
