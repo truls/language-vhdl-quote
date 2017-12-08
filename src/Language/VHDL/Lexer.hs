@@ -463,15 +463,13 @@ integer :: Parser Integer
 integer =
   toInteger . (read :: String -> Integer) <$> number
 
-number :: Parser String
-number = lexeme $ concat <$> numberSeg `sepBy1` symbol "_"
-  where
-    numberSeg = many1 digit
+number, hexNumber :: Parser String
+number = number' digit
+hexNumber = number' hexDigit
 
-hexNumber :: Parser String
-hexNumber = lexeme $ concat <$> numberSeg `sepBy1` symbol "_"
-  where
-    numberSeg = many1 hexDigit
+number' :: Parser Char -> Parser String
+number' p = lexeme $ concat <$> many1 p `sepBy1` symbol "_"
+
 
 -- We do this rather convoluted thing to avoid interpreting x = 3 ELSE as the
 -- beginning of an exponent
