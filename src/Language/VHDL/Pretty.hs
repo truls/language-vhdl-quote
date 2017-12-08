@@ -166,9 +166,7 @@ instance Pretty BlockSpecification where
 
 instance Pretty BlockStatement where
   ppr (BlockStatement l g h d s) =
-    --ppr l <> colon `hangs` stack [header, body, footer]
     ppr l <> colon <+> stack [header, body, footer]
-
     where
       header =
         text "block" <+>
@@ -248,7 +246,6 @@ instance Pretty ConcurrentStatement where
   ppr a@(AntiConStm s)  = pprAnti a s
   ppr a@(AntiConStms s) = pprAnti a s
 
---instance Pretty Condition where ppr = undefined
 instance Pretty ConditionClause where
   ppr (ConditionClause e) = text "until" <+> ppr e
 
