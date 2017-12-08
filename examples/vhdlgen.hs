@@ -116,4 +116,4 @@ end architecture; |]
 
 main :: IO ()
 main =
-  print (pp designFileTest)
+  putStrLn (pprr designFileTest)

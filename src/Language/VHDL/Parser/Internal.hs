@@ -55,7 +55,7 @@ optionEndName s = do
     Just n ->
       when (identToLower n /= expected) $
       unexpected
-        (s ++ " block " ++ ppr expected ++ " cannot be ended by " ++ ppr n)
+        (s ++ " block " ++ pprr expected ++ " cannot be ended by " ++ pprr n)
     Nothing -> return ()
 
 block :: String -> Parser a -> Parser a

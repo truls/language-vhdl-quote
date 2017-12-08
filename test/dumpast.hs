@@ -1,14 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 module Main where
 
+import           Control.Monad
 import           System.Console.GetOpt
 import           System.Directory
 import           System.Environment
 import           System.Exit
-
-import           Control.Monad
-
-import           Text.PrettyPrint
 import           Text.Show.Pretty
 
 import           Language.VHDL.Parser
@@ -49,7 +46,7 @@ doParse f = do
   ast <- parseFile f >>= \case
     Right ast -> pure ast
     Left e -> print e >> exitFailure
-  return (ast, render $ pp ast)
+  return (ast, pprr ast)
 
 printHelp :: IO ()
 printHelp = putStrLn usage
