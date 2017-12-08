@@ -351,13 +351,11 @@ parseAntiExpr = firstPar
     rest 0 = return []
     rest nest = do
       c <- anyChar
-      case c
-        -- FIXME: Make this more roboust
-            of
-        '\\' -> do
-          c2 <- anyChar
+      case c of
+        '"' -> do
+          s <- hsString
           cs <- rest nest
-          return (c : c2 : cs)
+          return ((c : s) ++ cs)
         '(' -> do
           cs <- rest (nest + 1)
           return (c : cs)
@@ -366,6 +364,19 @@ parseAntiExpr = firstPar
           return (c : cs)
         _ -> do
           cs <- rest nest
+          return (c : cs)
+    hsString = do
+      c <- anyChar
+      case c of
+        '\\'
+          -- FIXME: is this sufficient?
+         -> do
+          c2 <- anyChar
+          cs <- hsString
+          return (c : c2 : cs)
+        '"' -> return [c]
+        _ -> do
+          cs <- hsString
           return (c : cs)
 
 antiQ
