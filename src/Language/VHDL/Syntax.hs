@@ -2825,28 +2825,3 @@ data BaseSpecifier
   | SignedHexBase
   | Decimal
   deriving (Eq, Show, Typeable, Data)
-
-
---------------------------------------------------------------------------------
-
-data BaseUnitDeclaration =
-  BaseUnitDeclaration
-  deriving (Eq, Show, Typeable, Data)
-
-data BasicCharacter =
-  BasicCharacter
-  deriving (Eq, Show, Typeable, Data)
-
-data BasicGraphicCharacter =
-  BasicGraphicCharacter
-  deriving (Eq, Show, Typeable, Data)
-
-data BasicIdentifier =
-  BasicIdentifier
-  deriving (Eq, Show, Typeable, Data)
-
-data ExtendedDigit =
-  ExtendedDigit
-  deriving (Eq, Show, Typeable, Data)
-
---------------------------------------------------------------------------------

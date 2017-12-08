@@ -750,10 +750,6 @@ scalarTypeDefinition =
 rangeConstraint :: Parser RangeConstraint
 rangeConstraint = reserved "range" >> RangeConstraint <$> range'
 
--- range :: Parser Range
--- range = choice [ RAttr <$> attributeName
---                , RSimple <$> simpleExpression <*> direction <*> simpleExpression
---                ]
 -- FIMXE: Replacing simpleExpression by expression
 range :: Parser Range
 range =
@@ -919,8 +915,6 @@ indexConstraint = IndexConstraint <$> parens (commaSep1 discreteRange)
 
 discreteRange :: Parser DiscreteRange
 discreteRange = seeNext 10 >> choice [DRRange <$> try range, DRSub <$> subtypeIndication]
-
--- discreteRange = choice [DRSub <$> try subtypeIndication, DRRange <$> range]
 
 --------------------------------------------------------------------------------
 -- *** 3.2.1.1 Index constraints and discrete ranges
@@ -1441,8 +1435,6 @@ componentDeclaration =
   ComponentDeclaration <$> (blockName <* optional (reserved "is")) <*>
   optionMaybe genericClause <*>
   optionMaybe portClause
-  -- <*> (reserved "end" *> reserved "component"
-  --   *> optionMaybe simpleName <* semi)
 
 --------------------------------------------------------------------------------
 -- * 4.6 Group template declarations
@@ -2242,8 +2234,6 @@ sequentialStatement =
          , SProc <$> procedureCallStatement l
          ])
 
---   where
---     lp = label' <* con
 --------------------------------------------------------------------------------
 -- * 8.1 Wait statement
 {-
