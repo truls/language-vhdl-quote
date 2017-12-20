@@ -925,7 +925,7 @@ instance Pretty SubprogramBody where
       , indent' $ block d
       , text "begin"
       , indent' $ block st
-      , text "end" <> ppr' k <> ppr' de <> semi
+      , text "end" <> ppr' k <> ppr' de <> semi <> line
       ]
 
 instance Pretty SubprogramDeclarativeItem where
@@ -954,7 +954,7 @@ instance Pretty SubprogramSpecification where
   ppr (SubprogramProcedure d fs) = text "procedure" <+> ppr d <+> cond parens fs
   ppr (SubprogramFunction p d fs t) =
     purity <+>
-    stack [text "function" <+> ppr d <+> cond parens fs, text "return" <+> ppr t]
+    text "function" <+> ppr d <+> cond parens fs <+> text "return" <+> ppr t
     where
       purity =
         case p of
