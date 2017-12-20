@@ -11,6 +11,12 @@ category:            Language
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
+extra-source-files:  test/vests/Makefile
+                   , test/vests/*.sh
+                   , test/vests/LICENSE
+                   , test/vests/COPYING
+                   , test/vests/README
+                   , test/vests/suite.tar.xz
 
 source-repository head
   type:        git
