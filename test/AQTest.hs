@@ -1,5 +1,4 @@
-{-# LANGUAGE QuasiQuotes     #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Main where
 
 import           Language.VHDL.Parser
@@ -7,10 +6,10 @@ import           Language.VHDL.Quote
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-p f s = f ("", 0, 0) s
+p f = f ("", 0, 0)
 
 exprTest :: Assertion
-exprTest = (Right [expr|2 + 2|]) @?= (p parseExpr "2 + 2")
+exprTest = Right [expr|2 + 2|] @?= p parseExpr "2 + 2"
 
 exprTest2 :: Assertion
 exprTest2 = let
@@ -42,9 +41,9 @@ ifTest2 =
 
 ifTest3 :: Assertion
 ifTest3 =
-  (let stms = [ (\x -> [seqstm|foo := $expr:x;|])
-              , (\x -> [seqstm|bar := $expr:x;|])
-              , (\x -> [seqstm|baz := $expr:x;|])
+  (let stms = [ \x -> [seqstm|foo := $expr:x;|]
+              , \x -> [seqstm|bar := $expr:x;|]
+              , \x -> [seqstm|baz := $expr:x;|]
               ]
        stmsl = map (\(x,y) -> x y) (zip stms ([1..] :: [Int]))
    in
