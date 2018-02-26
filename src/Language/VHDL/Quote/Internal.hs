@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types        #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
@@ -7,27 +8,28 @@ module Language.VHDL.Quote.Internal
   ( quasiquote
   ) where
 
-import           Control.Monad             ((>=>))
+import           Control.Monad              ((>=>))
 
-import           Data.Data                 (Data (..))
-import           Data.Generics             (extQ)
-import           Data.List                 (stripPrefix)
-import           Data.Maybe                (fromJust)
-import           Data.Typeable             (Typeable)
+import           Data.Data                  (Data (..))
+import           Data.Generics              (extQ)
+import           Data.List                  (stripPrefix)
+import           Data.Maybe                 (fromJust)
+import qualified Data.Text                  as T
+import           Data.Typeable              (Typeable)
 
+import           Language.Haskell.Meta      (parseExp)
 import           Language.Haskell.TH
-import           Language.Haskell.TH.Quote (QuasiQuoter (..), dataToExpQ)
---import Language.Haskell.TH.Syntax
-import           Language.Haskell.Meta     (parseExp)
+import           Language.Haskell.TH.Quote  (QuasiQuoter (..), dataToExpQ)
+import           Language.Haskell.TH.Syntax (lift)
 
-import           Language.VHDL.Parser      (Result)
-import qualified Language.VHDL.Syntax      as V
+import           Language.VHDL.Parser       (Result)
+import qualified Language.VHDL.Syntax       as V
 
 class ToExpr a where
   toExpr :: a -> V.Expression
 
 instance ToExpr String where
-  toExpr a = V.PrimName $ V.NSimple (V.Ident a)
+  toExpr a = V.PrimName $ V.NSimple (V.Ident (T.pack a))
 
 instance ToExpr Int where
   toExpr = V.PrimLit . toLit
@@ -56,7 +58,7 @@ instance ToLit V.DecimalLiteral where
   toLit = V.LitNum . V.NLitAbstract . V.ALitDecimal
 
 instance ToLit String where
-  toLit = V.LitString . V.SLit
+   toLit = V.LitString . V.SLit . T.pack
 
 instance ToLit Float where
   toLit a = toLit $ toDecLit a
@@ -89,7 +91,7 @@ class ToIdent a where
   toIdent :: a -> V.Identifier
 
 instance ToIdent String where
-  toIdent = V.Ident
+  toIdent = V.Ident . T.pack
 
 instance ToIdent V.Identifier where
   toIdent s = s
@@ -97,8 +99,11 @@ instance ToIdent V.Identifier where
 class ToSlit a where
   toSlit :: a -> V.StringLiteral
 
-instance ToSlit String where
+instance ToSlit T.Text where
   toSlit = V.SLit
+
+instance ToSlit String where
+  toSlit = V.SLit . T.pack
 
 instance ToSlit V.StringLiteral where
   toSlit a = a
@@ -240,6 +245,9 @@ qqCharLit :: V.CharacterLiteral -> Maybe (Q Exp)
 qqCharLit (V.AntiClit v) = Just $ [|toClit $(antiVarE v)|]
 qqCharLit _              = Nothing
 
+qqText :: T.Text -> Maybe (Q Exp)
+qqText t = Just $ AppE (VarE 'T.pack) <$> lift (T.unpack t)
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -262,12 +270,13 @@ qqExp =
   qqProcDeclE `extQ`
   qqProcDeclListE `extQ`
   qqStringLit `extQ`
-  qqCharLit
+  qqCharLit `extQ`
+  qqText
 
-parse :: ((String, Int, Int) -> String -> Result a) -> String -> Q a
+parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a
 parse p s = do
   pos <- getPosition
-  case p pos s of
+  case p pos (T.pack s) of
     Left e  -> fail (show e)
     Right a -> return a
   where
@@ -277,7 +286,7 @@ parse p s = do
 
 quasiquote
   :: (Data a)
-  => ((String, Int, Int) -> String -> Result a) -> QuasiQuoter
+  => ((String, Int, Int) -> T.Text -> Result a) -> QuasiQuoter
 quasiquote p =
   QuasiQuoter
   { quoteExp  = parse p >=> dataToExpQ qqExp

@@ -9,13 +9,16 @@ module Language.VHDL.Parser.Monad
   ) where
 
 import           Data.Char            (toLower)
+import           Data.Text            (Text)
+import qualified Data.Text            as T
 import           Language.VHDL.Syntax
 import           Text.Parsec
+import           Text.Parsec.Text     hiding (Parser)
 
 trace :: t -> a -> a
 trace _ = id
 
-type Parser = Parsec String ParseState
+type Parser = Parsec Text ParseState
 
 data ParseState = ParseState
   { blockNames  :: [Identifier]
@@ -26,8 +29,8 @@ data ParseState = ParseState
 identToLower :: Identifier -> Identifier
 identToLower = go
   where
-    go (Ident s)         = Ident (map toLower s)
-    go (ExtendedIdent s) = ExtendedIdent (map toLower s)
+    go (Ident s)         = Ident (T.map toLower s)
+    go (ExtendedIdent s) = ExtendedIdent (T.map toLower s)
     go a                 = a
 
 newParseState :: Bool -> ParseState

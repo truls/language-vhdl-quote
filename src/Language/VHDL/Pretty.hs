@@ -2,10 +2,13 @@
 
 module Language.VHDL.Pretty
   ( pprr
+  , pprrText
   ) where
 
 import           Data.Char                       (intToDigit)
 import           Data.Data                       (Data)
+import qualified Data.Text                       as T
+import           Data.Text.Lazy                  (toStrict)
 import           Numeric                         (showIntAtBase)
 import           Text.PrettyPrint.Mainland
 import           Text.PrettyPrint.Mainland.Class
@@ -565,8 +568,8 @@ instance Pretty GuardedSignalSpecification where
   ppr (GuardedSignalSpecification ss t) = ppr ss <> colon <+> ppr t
 
 instance Pretty Identifier where
-  ppr (Ident i)         = text i
-  ppr (ExtendedIdent i) = char '\\' <> text i <> char '\\'
+  ppr (Ident i)         = ppr i
+  ppr (ExtendedIdent i) = char '\\' <> ppr i <> char '\\'
   ppr a@(AntiIdent i)   = pprAnti a i
 
 instance Pretty IfStatement where
@@ -911,7 +914,7 @@ instance Pretty SliceName where
   ppr (SliceName p r) = ppr p <> parens (ppr r)
 
 instance Pretty StringLiteral where
-  ppr (SLit s) = char '\"' <> text (fixQuotes s) <> char '\"'
+  ppr (SLit s) = char '\"' <> text (fixQuotes (T.unpack s)) <> char '\"'
     where
       fixQuote xs '"' = xs ++ "\"\""
       fixQuote xs x   = xs ++ [x]
@@ -1133,10 +1136,11 @@ postponed
   => Maybe Label -> Bool -> a -> Doc
 postponed l b a = label l <+> when b (text "postponed") <+> ppr a
 
-pprr
-  :: (Pretty a)
-  => a -> String
+pprr :: (Pretty a) => a -> String
 pprr = pretty 80 . ppr
+
+pprrText :: (Pretty a) => a -> T.Text
+pprrText d = toStrict $ prettyLazyText 80 (ppr d)
 
 pprAnti
   :: (Data a)

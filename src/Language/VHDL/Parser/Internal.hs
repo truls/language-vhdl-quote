@@ -1,5 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 
 module Language.VHDL.Parser.Internal
 where
@@ -7,11 +8,14 @@ where
 import           Prelude                    hiding (exponent)
 import           Text.Parsec                hiding (label)
 import           Text.Parsec.Expr
+import           Text.Parsec.Text           ()
 
 import           Control.Monad              (void, when)
 import           Data.Data                  (Data)
 import qualified Data.Functor.Identity
 import           Data.Maybe                 (fromJust, isJust)
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 --import           Debug.Trace                (traceShowM)
 
 import           Language.VHDL.Lexer
@@ -22,7 +26,7 @@ import           Language.VHDL.Syntax
 ---------------------------------------------------------------------------------
 -- Util functions
 ---------------------------------------------------------------------------------
-trace :: t -> a -> a
+trace :: String -> a -> a
 trace _ = id
 
 antiQ2
@@ -46,7 +50,7 @@ optionEndNameLabel l =
     Nothing                -> return ()
 
 -- TODO: Is having e.g. package foo ... end foo instead of end package foo valid?
-optionEndName :: String -> Parser ()
+optionEndName :: Text -> Parser ()
 optionEndName s = do
   expected <- popBlockName
   -- FIXME: Error message points to end of list
@@ -55,13 +59,13 @@ optionEndName s = do
     Just n ->
       when (identToLower n /= expected) $
       unexpected
-        (s ++ " block " ++ pprr expected ++ " cannot be ended by " ++ pprr n)
+        (T.unpack s ++ " block " ++ pprr expected ++ " cannot be ended by " ++ pprr n)
     Nothing -> return ()
 
-block :: String -> Parser a -> Parser a
+block :: Text -> Parser a -> Parser a
 block s p =
-  reserved s >>
-  p <* (reserved "end" *> optional (reserved s)) <* optionEndName s <* semi
+  reserved (T.unpack s) >>
+  p <* (reserved "end" *> optional (reserved (T.unpack s))) <* optionEndName s <* semi
 
 labeledBlock
   :: String
@@ -77,7 +81,7 @@ blockN :: [String] -> Parser a -> Parser a
 blockN s p =
   mapM_ reserved s >>
   p <* (reserved "end" *> optional (mapM_ reserved s)) <*
-  optionEndName (unwords s) <*
+  optionEndName (T.pack (unwords s)) <*
   semi
 
 labelPush :: Maybe Label -> Parser ()
@@ -1911,7 +1915,7 @@ primary =
     , PrimTCon <$> typeConversion
     ]
 
-table :: [[Operator String ParseState Data.Functor.Identity.Identity Expression]]
+table :: [[Operator Text ParseState Data.Functor.Identity.Identity Expression]]
 table =
   [ [Infix (Binary <$> binOpPrec1) AssocLeft, Prefix (Unary <$> unOpPrec1)]
   , [Prefix (Unary <$> unOpPrec2)]

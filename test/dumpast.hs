@@ -2,6 +2,8 @@
 module Main where
 
 import           Control.Monad
+import qualified Data.Text             as T
+import qualified Data.Text.IO          as TIO
 import           System.Console.GetOpt
 import           System.Directory
 import           System.Environment
@@ -41,12 +43,12 @@ usage = usageInfo header options
 argFail :: [String] -> IOError
 argFail errs = userError (concat errs ++ usage)
 
-doParse :: FilePath -> IO (DesignFile, String)
+doParse :: FilePath -> IO (DesignFile, T.Text)
 doParse f = do
   ast <- parseFile f >>= \case
     Right ast -> pure ast
     Left e -> print e >> exitFailure
-  return (ast, pprr ast)
+  return (ast, pprrText ast)
 
 printHelp :: IO ()
 printHelp = putStrLn usage
@@ -73,4 +75,4 @@ main = do
 
   when (PrintPretty `elem` args) $ do
     when verbose $ putStrLn "Pretty printed source"
-    putStrLn str
+    TIO.putStrLn str

@@ -28,6 +28,8 @@ module Language.VHDL.Parser
   )
 where
 
+import           Data.Text
+import qualified Data.Text.IO                  as T
 import           Text.Parsec
 
 import           Language.VHDL.Lexer
@@ -37,84 +39,84 @@ import           Language.VHDL.Syntax
 
 type Result a = Either ParseError a
 
-withStateParse :: ParseState -> Parser a -> SourceName -> String -> Result a
+withStateParse :: ParseState -> Parser a -> SourceName -> Text -> Result a
 withStateParse u p = runP p u
 
-stateParse :: Parser a -> SourceName -> String -> Result a
+stateParse :: Parser a -> SourceName -> Text -> Result a
 stateParse = withStateParse $ newParseState False
 
-quoteParse :: Parser a -> (String, Int, Int) -> String -> Result a
+quoteParse :: Parser a -> (String, Int, Int) -> Text -> Result a
 quoteParse p (f, r, c) = withStateParse (newParseState True) (updatePosition f r c >> p) ""
 
 parseFile :: FilePath -> IO (Result DesignFile)
 parseFile fp = do
-  contents <- readFile fp
+  contents <- T.readFile fp
   return $ parseDesignFile fp contents
 
-parseDesignFile :: FilePath -> String -> Result DesignFile
+parseDesignFile :: FilePath -> Text -> Result DesignFile
 parseDesignFile = stateParse designFile
 
-parseDesignFileQ :: (String, Int, Int) -> String -> Result DesignFile
+parseDesignFileQ :: (String, Int, Int) -> Text -> Result DesignFile
 parseDesignFileQ = quoteParse designFile
 
-parseDesignUnit :: (String, Int, Int) -> String -> Result DesignUnit
+parseDesignUnit :: (String, Int, Int) -> Text -> Result DesignUnit
 parseDesignUnit = quoteParse designUnit
 
-parseLibraryUnit :: (String, Int, Int) -> String -> Result LibraryUnit
+parseLibraryUnit :: (String, Int, Int) -> Text -> Result LibraryUnit
 parseLibraryUnit = quoteParse libraryUnit
 
-parsePrimaryUnit :: (String, Int, Int) -> String -> Result PrimaryUnit
+parsePrimaryUnit :: (String, Int, Int) -> Text -> Result PrimaryUnit
 parsePrimaryUnit = quoteParse primaryUnit
 
-parseContextItem :: (String, Int, Int) -> String -> Result ContextItem
+parseContextItem :: (String, Int, Int) -> Text -> Result ContextItem
 parseContextItem = quoteParse contextItem
 
-parseContextItems :: (String, Int, Int) -> String -> Result ContextClause
+parseContextItems :: (String, Int, Int) -> Text -> Result ContextClause
 parseContextItems = quoteParse contextClause
 
-parseExpr :: (String, Int, Int) -> String -> Result Expression
+parseExpr :: (String, Int, Int) -> Text -> Result Expression
 parseExpr = quoteParse expression
 
-parseSeqStm :: (String, Int, Int) -> String -> Result SequentialStatement
+parseSeqStm :: (String, Int, Int) -> Text -> Result SequentialStatement
 parseSeqStm = quoteParse sequentialStatement
 
-parseSeqStms :: (String, Int, Int) -> String -> Result SequenceOfStatements
+parseSeqStms :: (String, Int, Int) -> Text -> Result SequenceOfStatements
 parseSeqStms = quoteParse sequenceOfStatements
 
-parseConStm :: (String, Int, Int) -> String -> Result ConcurrentStatement
+parseConStm :: (String, Int, Int) -> Text -> Result ConcurrentStatement
 parseConStm = quoteParse concurrentStatement
 
-parseConStms :: (String, Int, Int) -> String -> Result [ConcurrentStatement]
+parseConStms :: (String, Int, Int) -> Text -> Result [ConcurrentStatement]
 parseConStms = quoteParse concurrentStatements
 
-parseWaveform :: (String, Int, Int) -> String -> Result Waveform
+parseWaveform :: (String, Int, Int) -> Text -> Result Waveform
 parseWaveform = quoteParse waveform
 
-parseName :: (String, Int, Int) -> String -> Result Name
+parseName :: (String, Int, Int) -> Text -> Result Name
 parseName = quoteParse name
 
-parseBlockDeclIt :: (String, Int, Int) -> String -> Result BlockDeclarativeItem
+parseBlockDeclIt :: (String, Int, Int) -> Text -> Result BlockDeclarativeItem
 parseBlockDeclIt = quoteParse blockDeclarativeItem
 
-parseBlockDeclIts :: (String, Int, Int) -> String -> Result BlockDeclarativePart
+parseBlockDeclIts :: (String, Int, Int) -> Text -> Result BlockDeclarativePart
 parseBlockDeclIts = quoteParse blockDeclarativePart
 
-parseAssociationEl :: (String, Int, Int) -> String -> Result AssociationElement
+parseAssociationEl :: (String, Int, Int) -> Text -> Result AssociationElement
 parseAssociationEl = quoteParse associationElement
 
-parseAssociationEls :: (String, Int, Int) -> String -> Result AssociationList
+parseAssociationEls :: (String, Int, Int) -> Text -> Result AssociationList
 parseAssociationEls = quoteParse associationList
 
-parseProcDecl :: (String, Int, Int) -> String -> Result ProcessDeclarativeItem
+parseProcDecl :: (String, Int, Int) -> Text -> Result ProcessDeclarativeItem
 parseProcDecl = quoteParse processDeclarativeItem
 
-parseProcDecls :: (String, Int, Int) -> String -> Result ProcessDeclarativePart
+parseProcDecls :: (String, Int, Int) -> Text -> Result ProcessDeclarativePart
 parseProcDecls = quoteParse processDeclarativePart
 
-parseStringLit :: (String, Int, Int) -> String -> Result StringLiteral
+parseStringLit :: (String, Int, Int) -> Text -> Result StringLiteral
 parseStringLit = quoteParse stringLiteral
 
-parseCharLit :: (String, Int, Int) -> String -> Result CharacterLiteral
+parseCharLit :: (String, Int, Int) -> Text -> Result CharacterLiteral
 parseCharLit = quoteParse charLiteral
 
 updatePosition :: String -> Int -> Int -> Parser ()

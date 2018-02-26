@@ -4,6 +4,7 @@
 module Language.VHDL.Syntax where
 
 import           Data.Data     (Data)
+import           Data.Text     (Text)
 import           Data.Typeable (Typeable)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
@@ -2717,8 +2718,8 @@ data ContextItem
 
 -- TODO: sort in sections
 data Identifier
-  = Ident String
-  | ExtendedIdent String
+  = Ident Text
+  | ExtendedIdent Text
   | AntiIdent String
   deriving (Eq, Show, Typeable, Data)
 
@@ -2728,7 +2729,7 @@ data CharacterLiteral
   deriving (Eq, Show, Typeable, Data)
 
 data StringLiteral
-  = SLit String
+  = SLit Text
   | AntiSlit String
   deriving (Eq, Show, Typeable, Data)
 

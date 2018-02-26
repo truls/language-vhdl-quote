@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Language.VHDL.Lexer
   ( abstractLiteral
@@ -42,12 +43,16 @@ import           Control.Monad              (unless)
 import           Data.Char                  (chr, digitToInt, isDigit, toLower)
 import           Data.Data                  (Data)
 import           Data.Functor.Identity      (Identity)
+import           Data.Monoid                ((<>))
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
 import           Numeric                    (readInt)
 import           Text.Parsec
 import           Text.Parsec.Language
+import           Text.Parsec.Text           ()
 import qualified Text.Parsec.Token          as P
 
 vhdlReserved :: [String]
@@ -267,7 +272,7 @@ vhdlOps =
   , "xnor"
   ]
 
-vhdlDef :: LanguageDef st
+vhdlDef :: GenLanguageDef Text u Identity
 vhdlDef =
   emptyDef
   { P.commentStart = ""
@@ -283,7 +288,7 @@ vhdlDef =
   , P.caseSensitive = False
   }
 
-lexer :: P.GenTokenParser String u Identity
+lexer :: P.GenTokenParser Text u Identity
 lexer = P.makeTokenParser vhdlDef
 
 reserved, reservedOp :: String -> Parser ()
@@ -395,7 +400,7 @@ antiQ q p = try (lexeme parseQ) <|> p
           Just _ -> parseAntiExpr
           Nothing -> do
             (Ident i') <- identifier
-            return i'
+            return (T.unpack i') -- TODO: Decide what to do here
       qe <- quotesEnabled
       unless qe $ unexpected "QuasiQuotation syntax not emabled"
       unless (qs == qn) $
@@ -425,17 +430,17 @@ identifier =
    letter ::= upper_case_letter | lower_case_letter
 -}
 
-basicIdentifier :: Parser String
-basicIdentifier = P.identifier lexer
+basicIdentifier :: Parser Text
+basicIdentifier = T.pack <$> P.identifier lexer
 
 -- ** 15.4.3 Extended identifiers
 {-
    extended_identifier ::=
       \ graphic_character { graphic_character } \
 -}
-extendedIdentifier :: Parser String
+extendedIdentifier :: Parser Text
 extendedIdentifier =
-  between
+  T.pack <$> between
     (char '\\')
     (char '\\' <?> "end of extended identifier")
     (many1 (escapedBackslash <|> graphicalChar))
@@ -549,7 +554,7 @@ bitStringLiteral = BitStringLiteral <$> try (optionMaybe integer) <*> baseSpecif
 
 -- FIXME: Should we filter out _'s?
 bitValue :: Parser BitValue
-bitValue = BitValue <$> (SLit <$> (filter ('_' /=) <$> stringLiteral'))
+bitValue = BitValue <$> (SLit <$> (T.filter ('_' /=) <$> stringLiteral'))
 
 baseSpecifier :: Parser BaseSpecifier
 baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
@@ -574,13 +579,13 @@ baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
 -- LRM08 15.7. Parses a string consisting of string segments and escape codes
 -- separated by &
 -- FIXME: Test escape codes
-stringLiteral' :: Parser String
+stringLiteral' :: Parser Text
 stringLiteral' = lexeme (strSegment >>= rest) <?> "String lit"
   where
     rest ctx =
       choice
-        [ try (symbol "&" >> strSegment) >>= (\s -> rest (ctx ++ s))
-        , try (symbol "&" >> asciiCode) >>= (\s -> rest (ctx ++ [s]))
+        [ try (symbol "&" >> strSegment) >>= (\s -> rest (ctx <> s))
+        , try (symbol "&" >> asciiCode) >>= (\s -> rest (ctx <> T.pack [s]))
         , pure ctx
         ]
 
@@ -588,12 +593,12 @@ stringDelimiter :: Parser String
 stringDelimiter = symbol "\"" <|> symbol "%"
 
 -- Parses a segment between " and " or % and % (obscure VHDL char replacement)
-strSegment :: Parser String
+strSegment :: Parser Text
 strSegment = strSegment' '"' <|> strSegment' '%'
 
-strSegment' :: Char -> Parser String
+strSegment' :: Char -> Parser Text
 strSegment' delim =
-  lexeme
+  T.pack <$> lexeme
     (between (char delim) (char delim <?> "end of string") (many (strChar delim)) <?>
      "literal string")
 

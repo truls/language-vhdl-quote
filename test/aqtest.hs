@@ -1,6 +1,9 @@
+-- {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+
 module Main where
 
+import qualified Data.Text            as T
 import           Language.VHDL.Parser
 import           Language.VHDL.Quote
 import           Test.Tasty
@@ -8,8 +11,10 @@ import           Test.Tasty.HUnit
 
 p f = f ("", 0, 0)
 
+parseExprStr p s= parseExpr p (T.pack s)
+
 exprTest :: Assertion
-exprTest = Right [expr|2 + 2|] @?= p parseExpr "2 + 2"
+exprTest = Right [expr|2 + 2|] @?= p parseExprStr "2 + 2"
 
 exprTest2 :: Assertion
 exprTest2 = let
