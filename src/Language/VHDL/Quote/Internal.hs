@@ -245,6 +245,10 @@ qqCharLit :: V.CharacterLiteral -> Maybe (Q Exp)
 qqCharLit (V.AntiClit v) = Just $ [|toClit $(antiVarE v)|]
 qqCharLit _              = Nothing
 
+qqLit :: V.Literal -> Maybe (Q Exp)
+qqLit (V.AntiLit v) = Just $ [|toLit $(antiVarE v)|]
+qqLit _             = Nothing
+
 qqText :: T.Text -> Maybe (Q Exp)
 qqText t = Just $ AppE (VarE 'T.pack) <$> lift (T.unpack t)
 
@@ -271,6 +275,7 @@ qqExp =
   qqProcDeclListE `extQ`
   qqStringLit `extQ`
   qqCharLit `extQ`
+  qqLit `extQ`
   qqText
 
 parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a

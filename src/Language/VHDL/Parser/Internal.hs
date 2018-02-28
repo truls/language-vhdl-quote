@@ -2049,6 +2049,7 @@ makeOpParser = choice . map oneOp
 -- cannot distinguish. Document this!
 literal :: Parser Literal
 literal =
+  antiQ AntiLit $
   choice
     [ LitEnum . EChar <$> charLiteral
     -- A String literal followed by an opening parenthesis is a function call

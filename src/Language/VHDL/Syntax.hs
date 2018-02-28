@@ -1834,6 +1834,7 @@ data Literal
   | LitString StringLiteral
   | LitBitString BitStringLiteral
   | LitNull
+  | AntiLit String
   deriving (Eq, Show, Typeable, Data)
 
 data NumericLiteral

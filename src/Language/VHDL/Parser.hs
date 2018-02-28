@@ -23,6 +23,7 @@ module Language.VHDL.Parser
   , parseProcDecls
   , parseStringLit
   , parseCharLit
+  , parseLiteral
   , stateParse
   , Result
   )
@@ -118,6 +119,9 @@ parseStringLit = quoteParse stringLiteral
 
 parseCharLit :: (String, Int, Int) -> Text -> Result CharacterLiteral
 parseCharLit = quoteParse charLiteral
+
+parseLiteral :: (String, Int, Int) -> Text -> Result Literal
+parseLiteral = quoteParse literal
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

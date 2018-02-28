@@ -19,6 +19,7 @@ module Language.VHDL.Quote.Quoters
   , wave
   , procdecl
   , procdecls
+  , lit
   , slit
   , clit
   ) where
@@ -29,7 +30,7 @@ import           Language.VHDL.Parser
 import           Language.VHDL.Quote.Internal
 
 
-ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls, slit, clit :: QuasiQuoter
+ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls, slit, clit, lit :: QuasiQuoter
 ident = quasiquote parseName
 name = quasiquote parseName
 expr = quasiquote parseExpr
@@ -50,5 +51,6 @@ assocels = quasiquote parseAssociationEls
 wave = quasiquote parseWaveform
 procdecl = quasiquote parseProcDecl
 procdecls = quasiquote parseProcDecls
+lit = quasiquote parseLiteral
 slit = quasiquote parseStringLit
 clit = quasiquote parseCharLit
