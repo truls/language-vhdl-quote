@@ -1244,6 +1244,7 @@ fileLogicalName = expression
 interfaceConstantDeclaration :: Parser InterfaceDeclaration
 interfaceConstantDeclaration =
   try $
+  antiQ2 AntiIfaceDecl AntiIfaceDecls $
   optional (reserved "constant") >>
   InterfaceConstantDeclaration <$>
   (identifierList <* colon <* optional (reserved "in")) <*>
@@ -1253,6 +1254,7 @@ interfaceConstantDeclaration =
 interfaceSignalDeclaration :: Parser InterfaceDeclaration
 interfaceSignalDeclaration =
   try $
+  antiQ2 AntiIfaceDecl AntiIfaceDecls $
   optional (reserved "signal") >>
   InterfaceSignalDeclaration <$> (identifierList <* colon) <*>
   optionMaybe interfaceMode <*>
@@ -1263,6 +1265,7 @@ interfaceSignalDeclaration =
 interfaceVariableDeclaration :: Parser InterfaceDeclaration
 interfaceVariableDeclaration =
   try $
+  antiQ2 AntiIfaceDecl AntiIfaceDecls $
   optional (reserved "variable") >>
   InterfaceVariableDeclaration <$> (identifierList <* colon) <*>
   optionMaybe interfaceMode <*>
