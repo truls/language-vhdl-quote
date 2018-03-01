@@ -57,8 +57,12 @@ instance ToLit V.Literal where
 instance ToLit V.DecimalLiteral where
   toLit = V.LitNum . V.NLitAbstract . V.ALitDecimal
 
+instance ToLit T.Text where
+  toLit = V.LitString . V.SLit
+
 instance ToLit String where
-   toLit = V.LitString . V.SLit . T.pack
+  toLit = toLit . T.pack
+   --toLit = V.LitString . V.SLit . T.pack
 
 instance ToLit Float where
   toLit a = toLit $ toDecLit a
