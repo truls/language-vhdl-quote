@@ -278,6 +278,17 @@ qqCaseAltsE (V.AntiCasealts d:decls) =
 qqCaseAltsE (decl:decls) =
   Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
 
+qqIfaceDeclE :: V.InterfaceDeclaration -> Maybe (Q Exp)
+qqIfaceDeclE (V.AntiIfaceDecl v) = Just $ antiVarE v
+qqIfaceDeclE _                   = Nothing
+
+qqIfaceDeclsE :: V.InterfaceList -> Maybe (Q Exp)
+qqIfaceDeclsE (V.InterfaceList l) = Just [|V.InterfaceList $(go l)|]
+  where
+    go [] = [|[]|]
+    go (V.AntiIfaceDecls v:els) = [|$(antiVarE v) ++ $(dataToExpQ qqExp els)|]
+    go (el:els) = [|$(dataToExpQ qqExp el) : $(dataToExpQ qqExp els)|]
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -306,6 +317,8 @@ qqExp =
   qqElAssocsE `extQ`
   qqCaseAltE `extQ`
   qqCaseAltsE `extQ`
+  qqIfaceDeclE `extQ`
+  qqIfaceDeclsE `extQ`
   qqText
 
 parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a

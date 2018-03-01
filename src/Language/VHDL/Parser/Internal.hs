@@ -1300,6 +1300,7 @@ interfaceList' p = trace "interfaceList'" $ InterfaceList <$> semiSep1 p
 
 interfaceElement :: Parser InterfaceDeclaration
 interfaceElement =
+  antiQ2 AntiIfaceDecl AntiIfaceDecls $
   choice
     [ interfaceConstantDeclaration
     , interfaceVariableDeclaration

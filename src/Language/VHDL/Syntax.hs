@@ -1085,6 +1085,8 @@ data InterfaceDeclaration
                                 ,  ivar_static_expression  :: Maybe Expression}
   | InterfaceFileDeclaration { idecl_identifier_list    :: IdentifierList
                             ,  ifile_subtype_indication :: SubtypeIndication}
+  | AntiIfaceDecl String
+  | AntiIfaceDecls String
   deriving (Eq, Show, Typeable, Data)
 
 data Mode

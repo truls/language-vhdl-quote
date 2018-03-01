@@ -26,6 +26,7 @@ module Language.VHDL.Parser
   , parseLiteral
   , parseElAssoc
   , parseCaseAlt
+  , parseIfaceDecl
   , stateParse
   , Result
   )
@@ -130,6 +131,9 @@ parseElAssoc = quoteParse elementAssociation
 
 parseCaseAlt :: (String, Int, Int) -> Text -> Result CaseStatementAlternative
 parseCaseAlt = quoteParse caseStatementAlternative
+
+parseIfaceDecl :: (String, Int, Int) -> Text -> Result InterfaceDeclaration
+parseIfaceDecl = quoteParse interfaceElement
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do
