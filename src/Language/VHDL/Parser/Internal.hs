@@ -1838,7 +1838,7 @@ attributeDesignator :: Parser SimpleName
 attributeDesignator =
   choice
     [ Ident <$> try (reserved "range" *> pure "range")
-    , Ident <$> try (reserved "subtype" *> pure "range")
+    , Ident <$> try (reserved "subtype" *> pure "subtype")
     , simpleName
     ]
 
