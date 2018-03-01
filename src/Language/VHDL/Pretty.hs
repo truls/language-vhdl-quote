@@ -187,6 +187,8 @@ instance Pretty CaseStatement where
 instance Pretty CaseStatementAlternative where
   ppr (CaseStatementAlternative c ss) =
     stack [text "when" <+> ppr c <+> text "=>", indent' $ stack $ map ppr ss]
+  ppr e@(AntiCasealt s) = pprAnti e s
+  ppr e@(AntiCasealts s) = pprAnti e s
 
 instance Pretty CharacterLiteral where
   ppr (CLit c)       = char '\'' <> char c <> char '\''
@@ -352,6 +354,8 @@ instance Pretty DiscreteRange where
 
 instance Pretty ElementAssociation where
   ppr (ElementAssociation c e) = condR (text "=>") c <+> ppr e
+  ppr a@(AntiElAssoc s)        = pprAnti a s
+  ppr a@(AntiElAssocs s)       = pprAnti a s
 
 instance Pretty ElementDeclaration where
   ppr (ElementDeclaration is s) = commasep (map ppr is) <> colon <+> ppr s <> semi
@@ -632,6 +636,8 @@ instance Pretty InterfaceDeclaration where
     text "in" <+> ppr s <+> condL (text ":=") e
   ppr (InterfaceFileDeclaration is s) =
     text "file" <+> commasep (fmap ppr is) <> colon <+> ppr s
+  ppr a@(AntiIfaceDecl s) = pprAnti a s
+  ppr a@(AntiIfaceDecls s) = pprAnti a s
 
 instance Pretty InterfaceList where
   ppr (InterfaceList es) = stack $ punctuate semi $ map ppr es
@@ -654,6 +660,7 @@ instance Pretty Literal where
   ppr (LitString s)    = ppr s
   ppr (LitBitString b) = ppr b
   ppr LitNull          = text "null"
+  ppr a@(AntiLit s)    = pprAnti a s
 
 instance Pretty LogicalNameList where
   ppr (LogicalNameList ns) = commasep $ fmap ppr ns
@@ -971,6 +978,7 @@ instance Pretty SubtypeDeclaration where
 
 instance Pretty SubtypeIndication where
   ppr (SubtypeIndication n t c) = ppr' n <+> ppr t <> ppr' c
+  ppr a@(AntiSubtyInd s)        = pprAnti a s
 
 instance Pretty Suffix where
   ppr (SSimple n) = ppr n
