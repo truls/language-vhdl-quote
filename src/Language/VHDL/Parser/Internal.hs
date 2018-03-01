@@ -2089,7 +2089,10 @@ aggregate =
   trace "aggregate" $ Aggregate <$> parens (commaSep1 elementAssociation)
 
 elementAssociation :: Parser ElementAssociation
-elementAssociation = ElementAssociation <$> optionMaybe (try (choices <* symbol "=>")) <*> expression
+elementAssociation =
+  antiQ2 AntiElAssoc AntiElAssocs $
+  ElementAssociation <$> optionMaybe (try (choices <* symbol "=>")) <*>
+  expression
 
 -- VHDL allows for obscure character substitutions (| -> !).
 choices :: Parser Choices

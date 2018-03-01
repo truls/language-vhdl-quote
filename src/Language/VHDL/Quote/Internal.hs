@@ -252,6 +252,17 @@ qqLit _             = Nothing
 qqText :: T.Text -> Maybe (Q Exp)
 qqText t = Just $ AppE (VarE 'T.pack) <$> lift (T.unpack t)
 
+qqElAssocE :: V.ElementAssociation -> Maybe (Q Exp)
+qqElAssocE (V.AntiElAssoc v) = Just $ antiVarE v
+qqElAssocE _                 = Nothing
+
+qqElAssocsE :: [V.ElementAssociation] -> Maybe (Q Exp)
+qqElAssocsE [] = Just [|[]|]
+qqElAssocsE (V.AntiElAssocs d:decls) =
+  Just [|$(antiVarE d) ++ $(dataToExpQ qqExp decls)|]
+qqElAssocsE (decl:decls) =
+  Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -276,6 +287,8 @@ qqExp =
   qqStringLit `extQ`
   qqCharLit `extQ`
   qqLit `extQ`
+  qqElAssocE `extQ`
+  qqElAssocsE `extQ`
   qqText
 
 parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a

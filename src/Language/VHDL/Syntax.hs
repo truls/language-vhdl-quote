@@ -1865,10 +1865,12 @@ newtype Aggregate = Aggregate
   { agg_element_association :: [ElementAssociation]
   } deriving (Eq, Show, Typeable, Data)
 
-data ElementAssociation = ElementAssociation
-  { eassoc_choices'   :: Maybe Choices
-  , eassoc_expression :: Expression
-  } deriving (Eq, Show, Typeable, Data)
+data ElementAssociation
+  = ElementAssociation { eassoc_choices'   :: Maybe Choices
+                       , eassoc_expression :: Expression }
+  | AntiElAssoc String
+  | AntiElAssocs String
+  deriving (Eq, Show, Typeable, Data)
 
 newtype Choices =
   Choices [Choice]
