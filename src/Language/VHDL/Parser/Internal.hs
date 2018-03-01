@@ -2475,6 +2475,7 @@ caseStatement lab =
 
 caseStatementAlternative :: Parser CaseStatementAlternative
 caseStatementAlternative =
+  antiQ2 AntiCasealt AntiCasealts $
   reserved "when" >>
   CaseStatementAlternative <$> (choices <* reservedOp "=>") <*>
   sequenceOfStatements

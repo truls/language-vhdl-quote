@@ -267,6 +267,17 @@ qqElAssocsE (V.AntiElAssocs d:decls) =
 qqElAssocsE (decl:decls) =
   Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
 
+qqCaseAltE :: V.CaseStatementAlternative -> Maybe (Q Exp)
+qqCaseAltE (V.AntiCasealt v) = Just $ antiVarE v
+qqCaseAltE _                 = Nothing
+
+qqCaseAltsE :: [V.CaseStatementAlternative] -> Maybe (Q Exp)
+qqCaseAltsE [] = Just [|[]|]
+qqCaseAltsE (V.AntiCasealts d:decls) =
+  Just [|$(antiVarE d) ++ $(dataToExpQ qqExp decls)|]
+qqCaseAltsE (decl:decls) =
+  Just [|$(dataToExpQ qqExp decl) : $(dataToExpQ qqExp decls)|]
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -293,6 +304,8 @@ qqExp =
   qqLit `extQ`
   qqElAssocE `extQ`
   qqElAssocsE `extQ`
+  qqCaseAltE `extQ`
+  qqCaseAltsE `extQ`
   qqText
 
 parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a

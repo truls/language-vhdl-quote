@@ -25,6 +25,7 @@ module Language.VHDL.Parser
   , parseCharLit
   , parseLiteral
   , parseElAssoc
+  , parseCaseAlt
   , stateParse
   , Result
   )
@@ -126,6 +127,9 @@ parseLiteral = quoteParse literal
 
 parseElAssoc :: (String, Int, Int) -> Text -> Result ElementAssociation
 parseElAssoc = quoteParse elementAssociation
+
+parseCaseAlt :: (String, Int, Int) -> Text -> Result CaseStatementAlternative
+parseCaseAlt = quoteParse caseStatementAlternative
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

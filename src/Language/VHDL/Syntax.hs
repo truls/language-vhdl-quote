@@ -2213,6 +2213,8 @@ data CaseStatement = CaseStatement
 data CaseStatementAlternative =
   CaseStatementAlternative Choices
                            SequenceOfStatements
+  | AntiCasealt String
+  | AntiCasealts String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------

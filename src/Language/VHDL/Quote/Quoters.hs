@@ -23,6 +23,7 @@ module Language.VHDL.Quote.Quoters
   , slit
   , clit
   , elassoc
+  , casealt
   ) where
 
 import           Language.Haskell.TH.Quote    (QuasiQuoter)
@@ -31,7 +32,7 @@ import           Language.VHDL.Parser
 import           Language.VHDL.Quote.Internal
 
 
-ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls, slit, clit, lit, elassoc :: QuasiQuoter
+ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls, slit, clit, lit, elassoc, casealt :: QuasiQuoter
 ident = quasiquote parseName
 name = quasiquote parseName
 expr = quasiquote parseExpr
@@ -56,3 +57,4 @@ lit = quasiquote parseLiteral
 slit = quasiquote parseStringLit
 clit = quasiquote parseCharLit
 elassoc = quasiquote parseElAssoc
+casealt = quasiquote parseCaseAlt
