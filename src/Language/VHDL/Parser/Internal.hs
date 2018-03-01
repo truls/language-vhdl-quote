@@ -1099,7 +1099,7 @@ subtypeDeclaration =
 -- a simpleName typeMark followed by a subtypeIndication constraint or a
 -- subtypeIndication containing a sliceName>
 subtypeIndication :: Parser SubtypeIndication
-subtypeIndication = trace "subtypeindication" $ go <*> optionMaybe constraint
+subtypeIndication = antiQ AntiSubtyInd $ trace "subtypeindication" $ go <*> optionMaybe constraint
   where
     go = do
       name1 <- name' constraint

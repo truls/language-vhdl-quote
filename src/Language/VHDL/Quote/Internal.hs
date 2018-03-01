@@ -289,6 +289,10 @@ qqIfaceDeclsE (V.InterfaceList l) = Just [|V.InterfaceList $(go l)|]
     go (V.AntiIfaceDecls v:els) = [|$(antiVarE v) ++ $(dataToExpQ qqExp els)|]
     go (el:els) = [|$(dataToExpQ qqExp el) : $(dataToExpQ qqExp els)|]
 
+qqSubtyIndE :: V.SubtypeIndication -> Maybe (Q Exp)
+qqSubtyIndE (V.AntiSubtyInd v) = Just $ antiVarE v
+qqSubtyIndE _                  = Nothing
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -319,6 +323,7 @@ qqExp =
   qqCaseAltsE `extQ`
   qqIfaceDeclE `extQ`
   qqIfaceDeclsE `extQ`
+  qqSubtyIndE `extQ`
   qqText
 
 parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a

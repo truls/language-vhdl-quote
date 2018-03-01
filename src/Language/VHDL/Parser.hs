@@ -1,13 +1,19 @@
 module Language.VHDL.Parser
-  ( parseFile
+  (
+    -- Utility functions
+    parseFile
+  , stateParse
+  , quoteParse
+  , Result
   , parseDesignFile
+
+    -- Quasiquoter parsing functions
   , parseDesignFileQ
   , parseDesignUnit
   , parseLibraryUnit
   , parsePrimaryUnit
   , parseContextItem
   , parseContextItems
-  , quoteParse
   , parseExpr
   , parseSeqStm
   , parseSeqStms
@@ -27,8 +33,7 @@ module Language.VHDL.Parser
   , parseElAssoc
   , parseCaseAlt
   , parseIfaceDecl
-  , stateParse
-  , Result
+  , parseSubtyInd
   )
 where
 
@@ -134,6 +139,9 @@ parseCaseAlt = quoteParse caseStatementAlternative
 
 parseIfaceDecl :: (String, Int, Int) -> Text -> Result InterfaceDeclaration
 parseIfaceDecl = quoteParse interfaceElement
+
+parseSubtyInd :: (String, Int, Int) -> Text -> Result SubtypeIndication
+parseSubtyInd = quoteParse subtypeIndication
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

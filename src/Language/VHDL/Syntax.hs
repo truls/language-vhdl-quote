@@ -912,11 +912,12 @@ data SubtypeDeclaration = SubtypeDeclaration
   , sd_indication :: SubtypeIndication
   } deriving (Eq, Show, Typeable, Data)
 
-data SubtypeIndication = SubtypeIndication
-  { si_resolution_function_name :: Maybe Name
-  , si_type_mark                :: TypeMark
-  , si_constraint               :: Maybe Constraint
-  } deriving (Eq, Show, Typeable, Data)
+data SubtypeIndication
+  = SubtypeIndication { si_resolution_function_name :: Maybe Name
+                      , si_type_mark                :: TypeMark
+                      , si_constraint               :: Maybe Constraint }
+  | AntiSubtyInd String
+  deriving (Eq, Show, Typeable, Data)
 
 data TypeMark
   = TMType Name

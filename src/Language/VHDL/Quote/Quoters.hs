@@ -25,6 +25,7 @@ module Language.VHDL.Quote.Quoters
   , elassoc
   , casealt
   , ifacedecl
+  , subtyind
   ) where
 
 import           Language.Haskell.TH.Quote    (QuasiQuoter)
@@ -33,7 +34,7 @@ import           Language.VHDL.Parser
 import           Language.VHDL.Quote.Internal
 
 
-ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls, slit, clit, lit, elassoc, casealt, ifacedecl :: QuasiQuoter
+ident, name, expr, seqstm, seqstms, constm, constms, designfile, designunit, libraryunit, primaryunit, contextitem, contextitems, blockdecl, blockdecls, assocel, assocels, wave, procdecl, procdecls, slit, clit, lit, elassoc, casealt, ifacedecl, subtyind :: QuasiQuoter
 ident = quasiquote parseName
 name = quasiquote parseName
 expr = quasiquote parseExpr
@@ -60,3 +61,4 @@ clit = quasiquote parseCharLit
 elassoc = quasiquote parseElAssoc
 casealt = quasiquote parseCaseAlt
 ifacedecl = quasiquote parseIfaceDecl
+subtyind = quasiquote parseSubtyInd
