@@ -196,6 +196,13 @@ qqContextItemE :: V.ContextItem -> Maybe (Q Exp)
 qqContextItemE (V.AntiContextItem v) = Just $ antiVarE v
 qqContextItemE _                     = Nothing
 
+qqContextItemsE :: [V.ContextItem] -> Maybe (Q Exp)
+qqContextItemsE [] = Just [|[]|]
+qqContextItemsE (V.AntiContextItems v:items) =
+  Just [|$(antiVarE v) ++ $(dataToExpQ qqExp items)|]
+qqContextItemsE (item:items) =
+  Just [|$(dataToExpQ qqExp item) : $(dataToExpQ qqExp items)|]
+
 qqContextItemListE :: V.ContextClause -> Maybe (Q Exp)
 qqContextItemListE (V.ContextClause cis) = Just [|V.ContextClause $(go cis)|]
   where
@@ -307,6 +314,7 @@ qqExp =
   qqPrimaryUnitE `extQ`
   qqWaveformE `extQ`
   qqContextItemE `extQ`
+  qqContextItemsE `extQ`
   qqContextItemListE `extQ`
   qqAssocElE `extQ`
   qqAssocElListE `extQ`

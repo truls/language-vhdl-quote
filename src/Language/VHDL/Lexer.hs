@@ -399,6 +399,7 @@ antiQ q p = try (lexeme parseQ) <|> p
         case identOrExpr of
           Just _ -> parseAntiExpr
           Nothing -> do
+            -- FIXME: Using VHDL reserved words are fine here
             (Ident i') <- identifier
             return (T.unpack i') -- TODO: Decide what to do here
       qe <- quotesEnabled
