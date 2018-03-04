@@ -80,8 +80,8 @@ parsePrimaryUnit = quoteParse primaryUnit
 parseContextItem :: (String, Int, Int) -> Text -> Result ContextItem
 parseContextItem = quoteParse contextItem
 
-parseContextItems :: (String, Int, Int) -> Text -> Result ContextClause
-parseContextItems = quoteParse contextClause
+parseContextItems :: (String, Int, Int) -> Text -> Result [ContextItem]
+parseContextItems = quoteParse (many contextItem)
 
 parseExpr :: (String, Int, Int) -> Text -> Result Expression
 parseExpr = quoteParse expression
