@@ -35,7 +35,10 @@ dependencies:
  - mtl >= 2.2.1
  - haskell-src-meta >= 0.8.0.1
  - syb >= 0.7
- - mainland-pretty >= 0.6.1
+ # Reenable once semigroup instances have been added
+ #- mainland-pretty >= 0.6.1
+ # Remove once above import is reenabled
+ - containers
  - text >= 1.2.2.2
  - pretty-show >= 1.6.13
  - tasty >= 0.11.3
