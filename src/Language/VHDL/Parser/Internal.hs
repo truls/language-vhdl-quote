@@ -1741,13 +1741,13 @@ name = name' (fail "")
 
 -- TODO: Function calls as prefixes is probably poorly handled
 name' :: Parser a -> Parser Name
-name' p = antiQ AntiName $ firstPart >>= rest
+name' p = firstPart >>= rest
   where
     firstPart :: Parser Name
     -- possible hack: a name is most certainly a name if the initial simple
     -- name is not followed by '( (qualified expr) or a string delimiter (bitstring lit)
     firstPart =
-      ((NSimple <$> simpleName) <|> NOp <$> operatorSymbol) <*
+      antiQ AntiName ((NSimple <$> simpleName) <|> NOp <$> operatorSymbol) <*
       notFollowedBy ((symbol "'" >> symbol "('") <|> stringDelimiter)
     rest :: Name -> Parser Name
     rest context =
