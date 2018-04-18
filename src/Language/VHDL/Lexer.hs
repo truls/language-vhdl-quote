@@ -398,10 +398,12 @@ antiQ q p = try (lexeme parseQ) <|> p
       i <-
         case identOrExpr of
           Just _ -> parseAntiExpr
-          Nothing -> do
+          Nothing ->
             -- FIXME: Using VHDL reserved words are fine here
-            (Ident i') <- identifier
-            return (T.unpack i') -- TODO: Decide what to do here
+            identifier >>= \case
+              (Ident e) -> pure (T.unpack e)
+              (ExtendedIdent e) -> pure (T.unpack e)
+              (AntiIdent e) -> pure e
       qe <- quotesEnabled
       unless qe $ unexpected "QuasiQuotation syntax not emabled"
       unless (qs == qn) $
