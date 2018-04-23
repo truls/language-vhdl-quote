@@ -300,6 +300,17 @@ qqSubtyIndE :: V.SubtypeIndication -> Maybe (Q Exp)
 qqSubtyIndE (V.AntiSubtyInd v) = Just $ antiVarE v
 qqSubtyIndE _                  = Nothing
 
+qqPackDeclE :: V.PackageDeclarativeItem -> Maybe (Q Exp)
+qqPackDeclE (V.AntiPackDeclIt v) = Just $ antiVarE v
+qqPackDeclE _                    = Nothing
+
+qqPackDeclsE :: V.PackageDeclarativePart -> Maybe (Q Exp)
+qqPackDeclsE [] = Just [|[]|]
+qqPackDeclsE (V.AntiPackDeclIts v:els) =
+  Just [|$(antiVarE v) ++ $(dataToExpQ qqExp els)|]
+qqPackDeclsE (el:els) =
+  Just [|$(dataToExpQ qqExp el) : $(dataToExpQ qqExp els)|]
+
 qqExp
   :: Typeable a
   => a -> Maybe (Q Exp)
@@ -332,6 +343,8 @@ qqExp =
   qqIfaceDeclE `extQ`
   qqIfaceDeclsE `extQ`
   qqSubtyIndE `extQ`
+  qqPackDeclE `extQ`
+  qqPackDeclsE `extQ`
   qqText
 
 parse :: ((String, Int, Int) -> T.Text -> Result a) -> String -> Q a

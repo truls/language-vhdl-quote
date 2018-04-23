@@ -740,22 +740,24 @@ instance Pretty PackageDeclaration where
       ]
 
 instance Pretty PackageDeclarativeItem where
-  ppr (PHDISubprogDecl s) = ppr s
-  ppr (PHDISubprogBody b) = ppr b
-  ppr (PHDIType t)        = ppr t
-  ppr (PHDISubtype s)     = ppr s
-  ppr (PHDIConstant c)    = ppr c
-  ppr (PHDISignal s)      = ppr s
-  ppr (PHDIShared v)      = ppr v
-  ppr (PHDIFile f)        = ppr f
-  ppr (PHDIAlias a)       = ppr a
-  ppr (PHDIComp c)        = ppr c
-  ppr (PHDIAttrDecl a)    = ppr a
-  ppr (PHDIAttrSpec a)    = ppr a
-  ppr (PHDIDiscSpec d)    = ppr d
-  ppr (PHDIUseClause u)   = ppr u
-  ppr (PHDIGroupTemp g)   = ppr g
-  ppr (PHDIGroup g)       = ppr g
+  ppr (PHDISubprogDecl s)   = ppr s
+  ppr (PHDISubprogBody b)   = ppr b
+  ppr (PHDIType t)          = ppr t
+  ppr (PHDISubtype s)       = ppr s
+  ppr (PHDIConstant c)      = ppr c
+  ppr (PHDISignal s)        = ppr s
+  ppr (PHDIShared v)        = ppr v
+  ppr (PHDIFile f)          = ppr f
+  ppr (PHDIAlias a)         = ppr a
+  ppr (PHDIComp c)          = ppr c
+  ppr (PHDIAttrDecl a)      = ppr a
+  ppr (PHDIAttrSpec a)      = ppr a
+  ppr (PHDIDiscSpec d)      = ppr d
+  ppr (PHDIUseClause u)     = ppr u
+  ppr (PHDIGroupTemp g)     = ppr g
+  ppr (PHDIGroup g)         = ppr g
+  ppr a@(AntiPackDeclIt s)  = pprAnti a s
+  ppr a@(AntiPackDeclIts s) = pprAnti a s
 
 instance Pretty ParameterSpecification where
   ppr (ParameterSpecification i r) = ppr i <+> text "in" <+> ppr r

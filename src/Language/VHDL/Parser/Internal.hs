@@ -656,6 +656,7 @@ packageDeclarativePart = many packageDeclarativeItem
 
 packageDeclarativeItem :: Parser PackageDeclarativeItem
 packageDeclarativeItem =
+  antiQ2 AntiPackDeclIt AntiPackDeclIts $
   choice
     [ subprogramDeclOrBody PHDISubprogDecl PHDISubprogBody
     , PHDIType <$> typeDeclaration

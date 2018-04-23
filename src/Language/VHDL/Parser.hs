@@ -34,6 +34,7 @@ module Language.VHDL.Parser
   , parseCaseAlt
   , parseIfaceDecl
   , parseSubtyInd
+  , parsePackDecl
   )
 where
 
@@ -142,6 +143,9 @@ parseIfaceDecl = quoteParse interfaceElement
 
 parseSubtyInd :: (String, Int, Int) -> Text -> Result SubtypeIndication
 parseSubtyInd = quoteParse subtypeIndication
+
+parsePackDecl :: (String, Int, Int) -> Text -> Result PackageDeclarativeItem
+parsePackDecl = quoteParse packageDeclarativeItem
 
 updatePosition :: String -> Int -> Int -> Parser ()
 updatePosition file line col = do

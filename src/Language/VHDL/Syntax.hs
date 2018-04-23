@@ -500,6 +500,8 @@ data PackageDeclarativeItem
   | PHDIUseClause UseClause
   | PHDIGroupTemp GroupTemplateDeclaration
   | PHDIGroup GroupDeclaration
+  | AntiPackDeclIt String
+  | AntiPackDeclIts String
   deriving (Eq, Show, Typeable, Data)
 
 --------------------------------------------------------------------------------
