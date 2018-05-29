@@ -39,4 +39,4 @@ install:
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- travis_wait 40 stack --no-terminal test --haddock --no-haddock-deps
+- travis_wait 120 stack --no-terminal test --haddock --no-haddock-deps
