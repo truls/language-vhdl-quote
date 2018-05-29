@@ -25,6 +25,7 @@ addons:
     packages:
       - libgmp-dev
       - gnat
+      - git
 
 before_install:
 # Download and unpack the stack executable
@@ -38,4 +39,4 @@ install:
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- travis_wait stack --no-terminal test --haddock --no-haddock-deps
+- travis_wait 40 stack --no-terminal test --haddock --no-haddock-deps

@@ -19,15 +19,19 @@ done
 # Rebuild
 stack build
 
+stack_local_root=$(stack path | grep local-install-root |
+                       awk -F: '{ gsub(/^[ \t]+/, "", $2); print $2 }')
+dumpast=${stack_local_root}/bin/dumpast
+
 # Transform vhdl files using our parser
 if [ $# -gt 0 ]; then
     for f in `find ${test_dirs} -type f | grep \.vhd | grep $@`; do
         echo "Transforming file ${f}"
-        stack exec dumpast -- -p $f > $(echo $f | replace_dir)
+        $dumpast -p $f > $(echo $f | replace_dir)
     done
 else
     for f in `find ${test_dirs} -type f | grep \.vhd`; do
         echo "Transforming file ${f}"
-        stack exec dumpast -- -p $f > $(echo $f | replace_dir)
+        $dumpast -p $f > $(echo $f | replace_dir)
     done
 fi

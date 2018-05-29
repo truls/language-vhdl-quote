@@ -3,10 +3,8 @@ extra-package-dbs: []
 packages:
 - '.'
 
-resolver: nightly-2018-05-02
+resolver: nightly-2018-05-29
 
 extra-deps:
   - mainland-pretty-0.7
   - srcloc-0.5.1.2
-
-#allow-newer: true
