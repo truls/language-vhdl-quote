@@ -18,7 +18,6 @@ designFileTest = let
              ]
   signal (x, y) = [blockdecl|signal $ident:x: $ident:y;|]
   topUnit = "System"
-  charOne = '1'
   ports = map fst sigNames
   portMap = map (\x -> [assocel|$ident:x => $ident:x|]) ports
   fieldAssert (x, _) = [seqstms|read_csv_field(L, tmp);
