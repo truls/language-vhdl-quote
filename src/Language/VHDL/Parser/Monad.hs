@@ -12,8 +12,7 @@ import           Data.Char            (toLower)
 import           Data.Text            (Text)
 import qualified Data.Text            as T
 import           Language.VHDL.Syntax
-import           Text.Parsec
-import           Text.Parsec.Text     hiding (Parser)
+import           Text.Parsec          (Parsec, getState, putState, updateState)
 
 trace :: t -> a -> a
 trace _ = id
