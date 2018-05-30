@@ -29,7 +29,11 @@ export -f run_test
 
 # Transform vhdl files using our parser
 if [ $# -gt 0 ]; then
-    find ${test_dirs} -type f | grep \.vhd | grep $@ | parallel run_test
+    #find ${test_dirs} -type f | grep \.vhd | grep $@ | parallel run_test
+    find ${test_dirs} -type f | grep \.vhd | grep $@ | run_test
+
 else
-    find ${test_dirs} -type f | grep \.vhd | parallel run_test
+    #find ${test_dirs} -type f | grep \.vhd | parallel run_test
+    find ${test_dirs} -type f | grep \.vhd | run_test
+
 fi
