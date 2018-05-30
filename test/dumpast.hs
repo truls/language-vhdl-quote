@@ -47,7 +47,7 @@ doParse :: FilePath -> IO (DesignFile, T.Text)
 doParse f = do
   ast <- parseFile f >>= \case
     Right ast -> pure ast
-    Left e -> print e >> exitFailure
+    Left e -> putStrLn e >> exitFailure
   return (ast, pprrText ast)
 
 printHelp :: IO ()
