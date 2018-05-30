@@ -16,9 +16,6 @@ for f in `find ${test_dirs} -name \*.exp`; do
     cp $f $(echo $f | replace_dir)
 done
 
-# Rebuild
-stack build
-
 stack_local_root=$(stack path | grep local-install-root |
                        awk -F: '{ gsub(/^[ \t]+/, "", $2); print $2 }')
 dumpast=${stack_local_root}/bin/dumpast
