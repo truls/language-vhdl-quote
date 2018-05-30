@@ -8,16 +8,18 @@ module Language.VHDL.Parser.Monad
   , identToLower
   ) where
 
+import           Control.Monad.State
 import           Data.Char            (toLower)
-import           Data.Text            (Text)
+--import           Data.Text            (Text)
 import qualified Data.Text            as T
+import           Data.Void
 import           Language.VHDL.Syntax
-import           Text.Parsec          (Parsec, getState, putState, updateState)
+import           Text.Megaparsec
 
 trace :: t -> a -> a
 trace _ = id
 
-type Parser = Parsec Text ParseState
+type Parser = StateT ParseState (Parsec Void T.Text)
 
 data ParseState = ParseState
   { blockNames  :: [Identifier]
@@ -37,15 +39,15 @@ newParseState q = ParseState {blockNames = [], parseQuotes = q}
 
 pushBlockName :: Identifier -> Parser Identifier
 pushBlockName s = do
-  updateState (\st -> st {blockNames = identToLower s : blockNames st})
+  modify (\st -> st {blockNames = identToLower s : blockNames st})
   return $ trace ("Push: " ++ show s) s
 
 popBlockName :: Parser Identifier
 popBlockName = do
-  st <- getState
-  putState $ st {blockNames = tail $ blockNames st}
+  st <- get
+  put $ st {blockNames = tail $ blockNames st}
   let res = head $ blockNames st
   return $ trace ("Pop " ++ show res) res
 
 quotesEnabled :: Parser Bool
-quotesEnabled = parseQuotes <$> getState
+quotesEnabled = parseQuotes <$> get

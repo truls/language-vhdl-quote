@@ -3,7 +3,6 @@
 
 module Language.VHDL.Lexer
   ( abstractLiteral
-  , angles
   , antiQ
   , bitStringLiteral
   , braces
@@ -20,29 +19,24 @@ module Language.VHDL.Lexer
   , identifier
   , integer
   , lexeme
-  , natural
-  , naturalOrFloat
   , octal
-  , operator
   , parens
   , reserved
-  , reservedOp
   , semi
   , semiSep
   , semiSep1
-  , squares
   , stringLiteral
   , symbol
-  , whiteSpace
+  , spaceConsumer
   , basedLiteral
   , stringDelimiter
   ) where
 
 import           Control.Arrow              (first)
-import           Control.Monad              (unless)
-import           Data.Char                  (chr, digitToInt, isDigit, toLower)
+import           Control.Monad              (unless, when)
+import           Data.Char                  (chr, digitToInt, isDigit)
 import           Data.Data                  (Data)
-import           Data.Functor.Identity      (Identity)
+import qualified Data.HashSet               as S
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
@@ -50,13 +44,12 @@ import           Language.VHDL.Parser.Monad (Parser, quotesEnabled)
 import           Language.VHDL.Parser.Util
 import           Language.VHDL.Syntax
 import           Numeric                    (readInt)
-import           Text.Parsec
-import           Text.Parsec.Language
-import           Text.Parsec.Text           ()
-import qualified Text.Parsec.Token          as P
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 
-vhdlReserved :: [String]
-vhdlReserved =
+vhdlReserved :: S.HashSet Text
+vhdlReserved = S.fromList
   [ "abs"
   , "access"
   , "after"
@@ -176,7 +169,6 @@ vhdlReserved =
   , "downto"
   , "else"
   , "elsif"
-  , "end"
   , "entity"
   , "exit"
   , "file"
@@ -252,95 +244,83 @@ vhdlReserved =
   , "xor"
   ]
 
-vhdlOps :: [String]
-vhdlOps =
-  [ "abs"
-  , "not"
-  , "mod"
-  , "rem"
-  , "sll"
-  , "srl"
-  , "sla"
-  , "sra"
-  , "rol"
-  , "ror"
-  , "and"
-  , "or"
-  , "nand"
-  , "nor"
-  , "xor"
-  , "xnor"
-  ]
+spaceConsumer :: Parser ()
+spaceConsumer = L.space space1 (L.skipLineComment "--") empty
+{-# INLINEABLE spaceConsumer #-}
 
-vhdlDef :: GenLanguageDef Text u Identity
-vhdlDef =
-  emptyDef
-  { P.commentStart = ""
-  , P.commentEnd = ""
-  , P.commentLine = "--"
-  , P.nestedComments = False
-  , P.identStart = letter
-  , P.identLetter = alphaNum <|> char '_'
-  , P.opLetter = oneOf "*=<>"
-  , P.opStart = oneOf "*/+-&<=>:"
-  , P.reservedNames = vhdlReserved
-  , P.reservedOpNames = vhdlOps
-  , P.caseSensitive = False
-  }
+reserved' :: S.HashSet T.Text -> T.Text -> Parser T.Text
+reserved' t w =
+  lexeme $
+  try $ do
+    r <- string' w <* notFollowedBy identChar
+    unless (T.toLower r `S.member` t) $
+      fail (T.unpack r <> " is not a reserved word")
+    return r
+{-# INLINEABLE reserved' #-}
 
-lexer :: P.GenTokenParser Text u Identity
-lexer = P.makeTokenParser vhdlDef
-
-reserved, reservedOp :: String -> Parser ()
-reserved = P.reserved lexer
-reservedOp = P.reservedOp lexer
-
-operator, semi, comma, colon, dot :: Parser String
-operator = P.operator lexer
-semi = P.semi lexer
-comma = P.comma lexer
-colon = P.colon lexer
-dot = P.dot lexer
+reserved :: T.Text -> Parser T.Text
+reserved = reserved' vhdlReserved
+{-# INLINEABLE reserved #-}
 
 charLiteral :: Parser CharacterLiteral
 charLiteral =
   antiQ AntiClit $
-  CLit <$> lexeme (char '\'' *> (char '"' <|> char '\\' <|> graphicalChar) <* char '\'')
+  CLit <$>
+  lexeme (char '\'' *> (char '"' <|> char '\\' <|> graphicalChar) <* char '\'')
+{-# INLINEABLE charLiteral #-}
 
 stringLiteral :: Parser StringLiteral
 stringLiteral = antiQ AntiSlit $ SLit <$> stringLiteral'
+{-# INLINEABLE stringLiteral #-}
 
-natural, decimal, hexadecimal, octal :: Parser Integer
-natural = P.natural lexer
-decimal = P.decimal lexer
-hexadecimal = P.hexadecimal lexer
-octal = P.octal lexer
+decimal, hexadecimal, octal :: Parser Integer
+hexadecimal = try (string' "0x") >> L.hexadecimal
+octal = try (string' "0o") >> L.octal
+decimal = L.decimal
+{-# INLINEABLE decimal #-}
+{-# INLINEABLE octal #-}
+{-# INLINEABLE hexadecimal #-}
 
 float :: Parser Double
-float = P.float lexer
+float = lexeme $ L.signed spaceConsumer L.float
+{-# INLINEABLE float #-}
 
-naturalOrFloat :: Parser (Either Integer Double)
-naturalOrFloat = P.naturalOrFloat lexer
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme spaceConsumer
+{-# INLINE lexeme #-}
 
-symbol :: String -> Parser String
-symbol = P.symbol lexer
+symbol :: T.Text -> Parser T.Text
+symbol = L.symbol spaceConsumer
+{-# INLINEABLE symbol #-}
 
-lexeme, parens, braces, angles, brackets, squares :: Parser a -> Parser a
-lexeme = P.lexeme lexer
-parens = P.parens lexer
-braces = P.braces lexer
-angles = P.angles lexer
-brackets = P.brackets lexer
-squares = P.squares lexer
+parens, braces, brackets :: Parser a -> Parser a
+parens    = between (symbol "(") (symbol ")")
+braces    = between (symbol "{") (symbol "}")
+brackets  = between (symbol "[") (symbol "]")
+{-# INLINEABLE parens #-}
+{-# INLINEABLE braces #-}
+{-# INLINEABLE brackets #-}
 
-whiteSpace :: Parser ()
-whiteSpace = P.whiteSpace lexer
+semi, comma, colon, dot :: Parser T.Text
+semi  = symbol ";"
+comma = symbol ","
+colon = symbol ":" <* notFollowedBy (symbol "=")
+dot   = symbol "."
+{-# INLINEABLE semi #-}
+{-# INLINEABLE comma #-}
+{-# INLINEABLE colon #-}
+{-# INLINEABLE dot #-}
 
 semiSep, semiSep1, commaSep, commaSep1 :: Parser a -> Parser [a]
-semiSep = P.semiSep lexer
-semiSep1 = P.semiSep1 lexer
-commaSep = P.commaSep lexer
-commaSep1 = P.commaSep1 lexer
+semiSep = flip sepBy semi
+semiSep1 = flip sepBy1 semi
+commaSep = flip sepBy comma
+commaSep1 = flip sepBy1 comma
+{-# INLINEABLE semiSep #-}
+{-# INLINEABLE commaSep #-}
+{-# INLINEABLE semiSep1 #-}
+{-# INLINEABLE commaSep1 #-}
+
 
 ------------------------------------------------------------------------------------
 -- Antiquote parsing functions
@@ -392,23 +372,25 @@ antiQ q p = try (lexeme parseQ) <|> p
     parseQ = do
       _ <- char '$'
       let qn = toQQString $ q ""
-      qs <- string qn
+      qs <- T.unpack <$> string (T.pack qn)
       _ <- char ':'
-      identOrExpr <- optionMaybe $ lookAhead (char '(')
+      identOrExpr <- optional $ lookAhead (char '(')
       i <-
         case identOrExpr of
           Just _ -> parseAntiExpr
-          Nothing ->
+          Nothing
             -- FIXME: Using VHDL reserved words are fine here
+           ->
             identifier >>= \case
               (Ident e) -> pure (T.unpack e)
               (ExtendedIdent e) -> pure (T.unpack e)
               (AntiIdent e) -> pure e
       qe <- quotesEnabled
-      unless qe $ unexpected "QuasiQuotation syntax not emabled"
+      unless qe $ fail "QuasiQuotation syntax not emabled"
       unless (qs == qn) $
-        unexpected $ "Wrong QuasiQuoter " ++ qn ++ " used in context"
+        fail $ "Wrong QuasiQuoter " <> qn <> " used in context"
       return $ q i
+{-# INLINEABLE antiQ #-}
 
 
 ------------------------------------------------------------------------------------
@@ -423,6 +405,7 @@ identifier =
     AntiIdent
     (ExtendedIdent <$> extendedIdentifier <|>
      Ident <$> basicIdentifier <?> "identifier")
+{-# INLINE identifier #-}
 
 -- ** 15.4.2 Basic identifiers
 {-
@@ -433,8 +416,20 @@ identifier =
    letter ::= upper_case_letter | lower_case_letter
 -}
 
+identChar :: Parser Char
+identChar = alphaNumChar <|> char '_'
+{-# INLINE identChar #-}
+
 basicIdentifier :: Parser Text
-basicIdentifier = T.pack <$> P.identifier lexer
+basicIdentifier =
+  lexeme $ try $ do
+    i <- part <|> string "_" <* notFollowedBy part
+    when (T.toLower i `S.member` vhdlReserved) $
+      fail $ "Keyword " ++ T.unpack i ++ " used as identifier"
+    return i
+  where
+    part = T.pack <$> ((:) <$> letterChar <*> many identChar)
+{-# INLINEABLE basicIdentifier #-}
 
 -- ** 15.4.3 Extended identifiers
 {-
@@ -446,11 +441,12 @@ extendedIdentifier =
   T.pack <$> between
     (char '\\')
     (char '\\' <?> "end of extended identifier")
-    (many1 (escapedBackslash <|> graphicalChar))
+    (some (escapedBackslash <|> graphicalChar))
   where
     escapedBackslash = do
       _ <- try (symbol "\\\\")
       return '\\'
+{-# INLINEABLE extendedIdentifier #-}
 
 --------------------------------------------------------------------------------
 -- ** 15.5 Abstract-literal
@@ -460,6 +456,7 @@ extendedIdentifier =
 abstractLiteral :: Parser AbstractLiteral
 abstractLiteral =
   try (ALitBased <$> basedLiteral) <|> (ALitDecimal <$> decimalLiteral)
+{-# INLINEABLE abstractLiteral #-}
 
 ------------------------------------------------------------------------------------
 -- ***15.5.2 Decimal literals
@@ -475,26 +472,29 @@ exponent ::= E [ + ] integer | E – integer
 -}
 decimalLiteral :: Parser DecimalLiteral
 decimalLiteral =
-  DecimalLiteral <$> integer <*> optionMaybe (dot *> number) <*>
-  optionMaybe exponent'
+  DecimalLiteral <$> integer <*> optional (dot *> number) <*> optional exponent'
+{-# INLINEABLE decimalLiteral #-}
 
 integer :: Parser Integer
 integer =
   toInteger . (read :: String -> Integer) <$> number
+{-# INLINEABLE integer #-}
 
 number, hexNumber :: Parser String
-number = number' digit
-hexNumber = number' hexDigit
+number = number' digitChar
+hexNumber = number' hexDigitChar
+{-# INLINEABLE number #-}
+{-# INLINEABLE hexNumber #-}
 
 number' :: Parser Char -> Parser String
-number' p = lexeme $ concat <$> many1 p `sepBy1` symbol "_"
-
+number' p = lexeme $ concat <$> some p `sepBy1` symbol "_"
+{-# INLINEABLE number' #-}
 
 -- We do this rather convoluted thing to avoid interpreting x = 3 ELSE as the
 -- beginning of an exponent
 exponent' :: Parser Exponent
 exponent' = try $ do
-  _ <- char 'E' <|> char 'e'
+  _ <- char' 'e'
   lookAhead anyChar >>= \case
     '-' -> do
       _ <- anyChar
@@ -506,6 +506,7 @@ exponent' = try $ do
       if isDigit a
       then ExponentPos <$> integer
       else fail "Exponent not followed by digit"
+{-# INLINEABLE exponent' #-}
 
 --------------------------------------------------------------------------------
 -- *** 15.5.3
@@ -528,10 +529,11 @@ basedLiteral =
   in do b <- base <* sepSym
         unless (2 <= b && b <= 16) (fail "Base must be between 2 and 16")
         bi1 <- basedInteger b
-        bi2 <- optionMaybe (dot *> hexNumber)
+        bi2 <- optional (dot *> hexNumber)
         _ <- sepSym
-        e <- optionMaybe exponent'
+        e <- optional exponent'
         return $ BasedLiteral b bi1 bi2 e
+{-# INLINEABLE basedLiteral #-}
 
 base :: Parser Integer
 base = integer
@@ -542,6 +544,7 @@ basedInteger b =
   let b' = fromIntegral b
   in fromIntegral .
      fst . head . readInt b' ((< b') . digitToInt) digitToInt <$> hexNumber
+{-# INLINEABLE basedInteger #-}
 
 --------------------------------------------------------------------------------
 -- *** 15.8
@@ -553,7 +556,8 @@ bit_value ::= graphic_character { [ underline ] graphic_character }
 base_specifier ::= B | O | X | UB | UO | UX | SB | SO | SX | D
 -}
 bitStringLiteral :: Parser BitStringLiteral
-bitStringLiteral = BitStringLiteral <$> try (optionMaybe integer) <*> baseSpecifier <*> bitValue
+bitStringLiteral =
+  BitStringLiteral <$> try (optional integer) <*> baseSpecifier <*> bitValue
 
 -- FIXME: Should we filter out _'s?
 bitValue :: Parser BitValue
@@ -562,18 +566,18 @@ bitValue = BitValue <$> (SLit <$> (T.filter ('_' /=) <$> stringLiteral'))
 baseSpecifier :: Parser BaseSpecifier
 baseSpecifier = choice $ map (\(l, s) -> symbol l *> pure s) specMap
   where
-    specMap = specMap' ++  map (first (toLower <$>)) specMap'
+    specMap = specMap' ++ map (first T.toLower) specMap'
     specMap' =
-      [ ("B",  BinaryBase)
-      , ("O",  OctalBase)
-      , ("X",  HexBase)
+      [ ("B", BinaryBase)
+      , ("O", OctalBase)
+      , ("X", HexBase)
       , ("UB", UnsignedBinaryBase)
       , ("UO", UnsignedOctalBase)
       , ("UX", UnsignedHexBase)
       , ("SB", SignedBinaryBase)
       , ("SO", SignedHoctalBase)
       , ("SX", SignedHexBase)
-      , ("D",  Decimal)
+      , ("D", Decimal)
       ]
 
 
@@ -591,39 +595,52 @@ stringLiteral' = lexeme (strSegment >>= rest) <?> "String lit"
         , try (symbol "&" >> asciiCode) >>= (\s -> rest (ctx <> T.pack [s]))
         , pure ctx
         ]
+{-# INLINEABLE stringLiteral' #-}
 
-stringDelimiter :: Parser String
+stringDelimiter :: Parser Text
 stringDelimiter = symbol "\"" <|> symbol "%"
+{-# INLINEABLE stringDelimiter #-}
 
 -- Parses a segment between " and " or % and % (obscure VHDL char replacement)
 strSegment :: Parser Text
-strSegment = strSegment' '"' <|> strSegment' '%'
+strSegment = strSegment' '%' <|> strSegment' '"'
+{-# INLINEABLE strSegment #-}
 
 strSegment' :: Char -> Parser Text
 strSegment' delim =
-  T.pack <$> lexeme
-    (between (char delim) (char delim <?> "end of string") (many (strChar delim)) <?>
+  T.pack <$>
+  lexeme
+    (between
+       (char delim)
+       (char delim <?> "end of string")
+       (many (strChar delim)) <?>
      "literal string")
+{-# INLINEABLE strSegment' #-}
 
 -- "" in a string becomes literal " if string is between ""
 -- %% becomes % if string is between %%
 strChar :: Char -> Parser Char
-strChar delim = try $ (string [delim, delim] *> pure delim) <|> char '\\' <|> graphicalChar
+strChar delim = try $ (char delim >> char delim) <|> char '\\' <|> graphicalChar
+{-# INLINEABLE strChar #-}
 
 -- escape codes
 asciiCode :: Parser Char
 asciiCode = lexeme charAscii <?> "escape code"
+{-# INLINEABLE asciiCode #-}
 
 -- Parses names of unprintable ASCII chars such as ACK
+
+-- FIXME: This might be slow
 charAscii :: Parser Char
 charAscii = choice (map parseAscii asciiMap)
   where
-    parseAscii :: (String, Char) -> Parser Char
+    parseAscii :: (Text, Char) -> Parser Char
     parseAscii (asc, code) = try (string asc *> pure code)
+{-# INLINEABLE charAscii #-}
 
 -- LRM08 15.2. Values as defined by the CHARACTERS type in the STANDARD package
 graphicalChar :: Parser Char
-graphicalChar = choice (map char gchars) <?> "graphical character"
+graphicalChar = oneOf gchars <?> "graphical character"
   where
     gchars =
       [ ' '
@@ -818,12 +835,13 @@ graphicalChar = choice (map char gchars) <?> "graphical character"
       , 'þ'
       , 'ÿ'
       ]
+{-# INLINE graphicalChar #-}
 
 -- escape code tables
-asciiMap :: [(String, Char)]
+asciiMap :: [(Text, Char)]
 asciiMap = zip (asciiNames ++ ascii2Names) (asciiCodes ++ ascii2Codes)
 
-asciiNames :: [String]
+asciiNames :: [Text]
 asciiNames =
   [ "NUL"
   , "SOH"
@@ -897,7 +915,7 @@ asciiCodes =
   , '\DEL'
   ]
 
-ascii2Names :: [String]
+ascii2Names :: [Text]
 ascii2Names =
   [ "C128"
   , "C129"

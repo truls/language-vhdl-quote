@@ -26,16 +26,23 @@ description:         Please see the README on Github at <https://github.com/trul
 
 ghc-options:
   - -Wall
+  - -Wcompat
+  - -Wnoncanonical-monad-instances
+  - -Wnoncanonical-monadfail-instances
+  - -Wredundant-constraints
+  - -Wincomplete-uni-patterns
   - -O2
+  #- -O0
 
 dependencies:
  - base   >=4 && <5
- - parsec >= 3.1.1
+ - megaparsec >= 6.5.0
  - here >= 1.2.11
  - template-haskell >= 2.11.1.0
  - mtl >= 2.2.1
  - haskell-src-meta >= 0.8.0.1
  - syb >= 0.7
+ - unordered-containers >= 0.2.8.0
  # Remove extra-deps from stack.yaml at som point
  - mainland-pretty >= 0.7
  - text >= 1.2.2.2

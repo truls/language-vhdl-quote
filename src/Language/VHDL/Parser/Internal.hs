@@ -6,17 +6,14 @@ module Language.VHDL.Parser.Internal
 where
 
 import           Prelude                    hiding (exponent)
-import           Text.Parsec                hiding (label)
-import           Text.Parsec.Expr
-import           Text.Parsec.Text           ()
+import           Text.Megaparsec            hiding (label)
+import           Text.Megaparsec.Expr
 
 import           Control.Monad              (void, when)
 import           Data.Data                  (Data)
-import qualified Data.Functor.Identity
 import           Data.Maybe                 (fromJust, isJust)
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
---import           Debug.Trace                (traceShowM)
 
 import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Monad
@@ -34,11 +31,11 @@ antiQ2
   => (String -> a) -> (String -> a) -> Parser a -> Parser a
 antiQ2 s p q = antiQ s q <|> antiQ p q
 
-isReserved :: String -> Parser Bool
-isReserved a = isJust <$> optionMaybe (reserved a)
+isReserved :: Text -> Parser Bool
+isReserved a = isJust <$> optional (reserved a)
 
-isReservedOp :: String -> Parser Bool
-isReservedOp a = isJust <$> optionMaybe (reservedOp a)
+isReservedOp :: Text -> Parser Bool
+isReservedOp a = isJust <$> optional (symbol a)
 
 -- Match block statements with optional label
 optionEndNameLabel :: Maybe Label -> Parser ()
@@ -46,7 +43,7 @@ optionEndNameLabel l =
   case l of
     Just (Ident s)         -> optionEndName s
     Just (ExtendedIdent s) -> optionEndName s
-    Just (AntiIdent _)     -> fail "This houldn't be an anti quotation"
+    Just (AntiIdent _)     -> fail "This shouldn't be an anti quotation"
     Nothing                -> return ()
 
 -- TODO: Is having e.g. package foo ... end foo instead of end package foo valid?
@@ -54,34 +51,37 @@ optionEndName :: Text -> Parser ()
 optionEndName s = do
   expected <- popBlockName
   -- FIXME: Error message points to end of list
-  actual <- optionMaybe simpleName
+  actual <- optional simpleName
   case actual of
     Just n ->
       when (identToLower n /= expected) $
-      unexpected
-        (T.unpack s ++ " block " ++ pprr expected ++ " cannot be ended by " ++ pprr n)
+      fail
+        (T.unpack s ++
+         " block " ++ pprr expected ++ " cannot be ended by " ++ pprr n)
     Nothing -> return ()
 
 block :: Text -> Parser a -> Parser a
 block s p =
-  reserved (T.unpack s) >>
-  p <* (reserved "end" *> optional (reserved (T.unpack s))) <* optionEndName s <* semi
+  reserved s >>
+  p <* (reserved "end" *> optional (reserved s)) <* optionEndName s <* semi
 
 labeledBlock
-  :: String
+  :: Text
   -> Maybe Label
   -> (Maybe Label -> Parser a)
   -> Parser a
 labeledBlock s l p = do
   labelPush l
-  reserved s
-  p l <* (reserved "end" *> optional (reserved s)) <* optionEndNameLabel l <* semi
+  void $ reserved s
+  p l <* (reserved "end" *> optional (reserved s)) <* optionEndNameLabel l <*
+    semi
 
-blockN :: [String] -> Parser a -> Parser a
+-- FIXME: What is going on here?
+blockN :: [Text] -> Parser a -> Parser a
 blockN s p =
   mapM_ reserved s >>
   p <* (reserved "end" *> optional (mapM_ reserved s)) <*
-  optionEndName (T.pack (unwords s)) <*
+  optionEndName (mconcat s) <*
   semi
 
 labelPush :: Maybe Label -> Parser ()
@@ -98,12 +98,9 @@ stmLabelPush l p = do
 stmLabel :: (Maybe Label -> Parser a) -> Parser a
 stmLabel = stmLabel' (\_ -> return ())
 
-stmLabel' :: (Maybe Label -> Parser ())
-          -> (Maybe Label -> Parser a)
-          -> Parser a
-stmLabel' f g
- = do
-  lab <- optionMaybe $ try (label <* reservedOp ":")
+stmLabel' :: (Maybe Label -> Parser ()) -> (Maybe Label -> Parser a) -> Parser a
+stmLabel' f g = do
+  lab <- optional (try (label <* colon))
   f lab
   g (trace ("Label: " ++ show lab) lab)
 
@@ -115,20 +112,6 @@ labelRequired l =
   case l of
     Just l' -> return l'
     Nothing -> fail "A label is required here"
-
---------------------------------------------------------------------------------
--- Debugging
---------------------------------------------------------------------------------
--- seeNext :: Int -> Parser ()
--- seeNext n = do
---   s <- getParserState
---   let out = take n (stateInput s)
---   println out
---   where
---     println = traceShowM
-
-seeNext :: Int -> Parser ()
-seeNext _ = pure ()
 
 --------------------------------------------------------------------------------
 --
@@ -154,7 +137,7 @@ entityDeclaration =
   block "entity" $
   EntityDeclaration <$> (blockName <* reserved "is") <*> entityHeader <*>
   entityDeclarativePart <*>
-  optionMaybe (reserved "begin" *> entityStatementPart)
+  optional (reserved "begin" *> entityStatementPart)
 
 --------------------------------------------------------------------------------
 -- ** 1.1.1 Entity haeder
@@ -169,7 +152,7 @@ entityDeclaration =
 -- TODO: Change AST here so that EntityHeader encodes if its a generic or a port
 entityHeader :: Parser EntityHeader
 entityHeader =
-  EntityHeader <$> optionMaybe genericClause <*> optionMaybe portClause
+  EntityHeader <$> optional genericClause <*> optional portClause
 
 genericClause :: Parser GenericClause
 genericClause =
@@ -409,7 +392,7 @@ blockSpecification :: Parser BlockSpecification
 -- FIXME: This distinction is probably useless
 blockSpecification =
   choice
-    [ try $ BSGen <$> label <*> optionMaybe (parens indexSpecification)
+    [ try $ BSGen <$> label <*> optional (parens indexSpecification)
     , BSArch <$> name
     , BSBlock <$> label
     ]
@@ -436,8 +419,8 @@ componentConfiguration :: Parser ComponentConfiguration
 componentConfiguration =
   reserved "for" >>
   ComponentConfiguration <$> componentSpecification <*>
-  optionMaybe (bindingIndication <* semi) <*>
-  optionMaybe blockConfiguration <*
+  optional (bindingIndication <* semi) <*>
+  optional blockConfiguration <*
   (reserved "end" >> reserved "for" >> semi)
 
 --------------------------------------------------------------------------------
@@ -478,7 +461,7 @@ subprogramProcedure :: Parser SubprogramSpecification
 subprogramProcedure =
   reserved "procedure" >>
   SubprogramProcedure <$> designator <*>
-  optionMaybe (parens formalParameterList)
+  optional (parens formalParameterList)
 
 data Purity
   = Pure
@@ -496,9 +479,9 @@ ispure = flip (==) Pure <$> purity
 
 subprogramFunction :: Parser SubprogramSpecification
 subprogramFunction =
-  SubprogramFunction <$> optionMaybe ispure <*>
+  SubprogramFunction <$> optional ispure <*>
   (reserved "function" >> designator) <*>
-  optionMaybe (parens formalParameterList) <*>
+  optional (parens formalParameterList) <*>
   (reserved "return" >> typeMark)
 
 designator :: Parser Designator
@@ -564,8 +547,8 @@ subprogramBody s =
   trace "subProgramBody" $
   SubprogramBody s <$> (subprogramDeclarativePart <* reserved "begin") <*>
   subprogramStatementPart <*>
-  (reserved "end" *> optionMaybe subprogramKind) <*>
-  (optionMaybe designator <* semi)
+  (reserved "end" *> optional subprogramKind) <*>
+  (optional designator <* semi)
   -- FIXME: Seems odd to put significance to something after the
   -- end statement
 
@@ -613,8 +596,8 @@ signature :: Parser Signature
 signature =
   Signature <$>
   brackets
-    ((,) <$> optionMaybe (commaSep typeMark) <*>
-     optionMaybe (reserved "return" *> typeMark))
+    ((,) <$> optional (commaSep typeMark) <*>
+     optional (reserved "return" *> typeMark))
 
 --------------------------------------------------------------------------------
 -- * 2.5 Package declarations
@@ -832,20 +815,20 @@ physicalTypeDefinition r =
   try (reserved "units") >>
   PhysicalTypeDefinition r <$> primaryUnitDeclaration <*>
   many secondaryUnitDeclaration <*>
-  (reserved "end" *> reserved "units" *> optionMaybe identifier)
+  (reserved "end" *> reserved "units" *> optional identifier)
 
 primaryUnitDeclaration :: Parser Identifier
 primaryUnitDeclaration = identifier <* semi
 
 secondaryUnitDeclaration :: Parser SecondaryUnitDeclaration
 secondaryUnitDeclaration =
-  SecondaryUnitDeclaration <$> (identifier <* reservedOp "=") <*>
+  SecondaryUnitDeclaration <$> (identifier <* symbol "=") <*>
   physicalLiteral <*
   semi
 
 physicalLiteral :: Parser PhysicalLiteral
 -- TODO: Unit names seem be just identifiers rather than names
-physicalLiteral = PhysicalLiteral <$> optionMaybe abstractLiteral <*> name
+physicalLiteral = PhysicalLiteral <$> optional abstractLiteral <*> name
 
 --------------------------------------------------------------------------------
 -- *** 3.1.3.1 Predefined physical types
@@ -913,13 +896,13 @@ constrainedArrayDefinition =
 
 indexSubtypeDefinition :: Parser IndexSubtypeDefinition
 indexSubtypeDefinition =
-  IndexSubtypeDefinition <$> typeMark <* reserved "range" <* reservedOp "<>"
+  IndexSubtypeDefinition <$> typeMark <* reserved "range" <* symbol "<>"
 
 indexConstraint :: Parser IndexConstraint
 indexConstraint = IndexConstraint <$> parens (commaSep1 discreteRange)
 
 discreteRange :: Parser DiscreteRange
-discreteRange = seeNext 10 >> choice [DRRange <$> try range, DRSub <$> subtypeIndication]
+discreteRange = choice [DRRange <$> try range, DRSub <$> subtypeIndication]
 
 --------------------------------------------------------------------------------
 -- *** 3.2.1.1 Index constraints and discrete ranges
@@ -946,8 +929,8 @@ discreteRange = seeNext 10 >> choice [DRRange <$> try range, DRSub <$> subtypeIn
 recordTypeDefinition :: Parser RecordTypeDefinition
 recordTypeDefinition =
   reserved "record" >>
-  RecordTypeDefinition <$> many1 elementDeclaration <*>
-  (reserved "end" *> reserved "record" *> optionMaybe simpleName)
+  RecordTypeDefinition <$> some elementDeclaration <*>
+  (reserved "end" *> reserved "record" *> optional simpleName)
 
 elementDeclaration :: Parser ElementDeclaration
 elementDeclaration =
@@ -1100,11 +1083,11 @@ subtypeDeclaration =
 -- a simpleName typeMark followed by a subtypeIndication constraint or a
 -- subtypeIndication containing a sliceName>
 subtypeIndication :: Parser SubtypeIndication
-subtypeIndication = antiQ AntiSubtyInd $ trace "subtypeindication" $ go <*> optionMaybe constraint
+subtypeIndication = antiQ AntiSubtyInd $ trace "subtypeindication" $ go <*> optional constraint
   where
     go = do
       name1 <- name' constraint
-      optionMaybe (try typeMark) >>= \case
+      optional (try typeMark) >>= \case
         Just ty -> return $ SubtypeIndication (Just name1) ty
         Nothing -> return $ SubtypeIndication Nothing (TMType name1)
 
@@ -1146,7 +1129,7 @@ constantDeclaration :: Parser ConstantDeclaration
 constantDeclaration =
   reserved "constant" >>
   ConstantDeclaration <$> (identifierList <* colon) <*> subtypeIndication <*>
-  optionMaybe (reservedOp ":=" *> expression) <*
+  optional (symbol ":=" *> expression) <*
   semi
 
 --------------------------------------------------------------------------------
@@ -1162,8 +1145,8 @@ signalDeclaration =
   try $
   reserved "signal" >>
   SignalDeclaration <$> (identifierList <* colon) <*> subtypeIndication <*>
-  optionMaybe signalKind <*>
-  optionMaybe (reservedOp ":=" *> expression) <*
+  optional signalKind <*>
+  optional (symbol ":=" *> expression) <*
   semi
 
 signalKind :: Parser SignalKind
@@ -1182,7 +1165,7 @@ variableDeclaration =
   VariableDeclaration <$> try (isReserved "shared" <* reserved "variable") <*>
   (identifierList <* colon) <*>
   subtypeIndication <*>
-  optionMaybe (reservedOp ":=" *> expression) <*
+  optional (symbol ":=" *> expression) <*
   semi
   --------------------------------------------------------------------------------
 
@@ -1200,12 +1183,12 @@ fileDeclaration :: Parser FileDeclaration
 fileDeclaration =
   reserved "file" >>
   FileDeclaration <$> (identifierList <* colon) <*> subtypeIndication <*>
-  optionMaybe fileOpenInformation <*
+  optional fileOpenInformation <*
   semi
 
 fileOpenInformation :: Parser FileOpenInformation
 fileOpenInformation =
-  FileOpenInformation <$> optionMaybe (reserved "open" *> expression) <*>
+  FileOpenInformation <$> optional (reserved "open" *> expression) <*>
   (reserved "is" *> fileLogicalName)
 
 fileLogicalName :: Parser Expression
@@ -1250,7 +1233,7 @@ interfaceConstantDeclaration =
   InterfaceConstantDeclaration <$>
   (identifierList <* colon <* optional (reserved "in")) <*>
   subtypeIndication <*>
-  optionMaybe (reservedOp ":=" *> expression)
+  optional (symbol ":=" *> expression)
 
 interfaceSignalDeclaration :: Parser InterfaceDeclaration
 interfaceSignalDeclaration =
@@ -1258,10 +1241,10 @@ interfaceSignalDeclaration =
   antiQ2 AntiIfaceDecl AntiIfaceDecls $
   optional (reserved "signal") >>
   InterfaceSignalDeclaration <$> (identifierList <* colon) <*>
-  optionMaybe interfaceMode <*>
+  optional interfaceMode <*>
   subtypeIndication <*>
   choice [reserved "bus" *> pure True, pure False] <*>
-  optionMaybe (reservedOp ":=" *> expression)
+  optional (symbol ":=" *> expression)
 
 interfaceVariableDeclaration :: Parser InterfaceDeclaration
 interfaceVariableDeclaration =
@@ -1269,9 +1252,9 @@ interfaceVariableDeclaration =
   antiQ2 AntiIfaceDecl AntiIfaceDecls $
   optional (reserved "variable") >>
   InterfaceVariableDeclaration <$> (identifierList <* colon) <*>
-  optionMaybe interfaceMode <*>
+  optional interfaceMode <*>
   subtypeIndication <*>
-  optionMaybe (reservedOp ":=" *> expression)
+  optional (symbol ":=" *> expression)
 
 interfaceFileDeclaration :: Parser InterfaceDeclaration
 interfaceFileDeclaration =
@@ -1281,9 +1264,9 @@ interfaceFileDeclaration =
 interfaceMode :: Parser Mode
 interfaceMode =
   choice
-    [ reserved "in" *> pure In
+    [ reserved "inout" *> pure InOut
+    , reserved "in" *> pure In
     , reserved "out" *> pure Out
-    , reserved "inout" *> pure InOut
     , reserved "buffer" *> pure Buffer
     , reserved "linkage" *> pure Linkage
     ]
@@ -1348,7 +1331,7 @@ associationElement =
   trace "associationElement" $
   antiQ2 AntiAssocEl AntiAssocEls $
   AssociationElement <$>
-  optionMaybe (try (formalPart <* trace "reservedOp" (symbol "=>"))) <*>
+  optional (try (formalPart <* trace "reservedOp" (symbol "=>"))) <*>
   actualPart
 
 associationList :: Parser AssociationList
@@ -1404,9 +1387,9 @@ aliasDeclaration :: Parser AliasDeclaration
 aliasDeclaration =
   try (reserved "alias") >>
   AliasDeclaration <$> aliasDesignator <*>
-  optionMaybe (colon *> subtypeIndication) <*>
+  optional (colon *> subtypeIndication) <*>
   (reserved "is" *> name) <*>
-  optionMaybe signature <*
+  optional signature <*
   semi
 
 aliasDesignator :: Parser AliasDesignator
@@ -1442,8 +1425,8 @@ componentDeclaration :: Parser ComponentDeclaration
 componentDeclaration =
   block "component" $
   ComponentDeclaration <$> (blockName <* optional (reserved "is")) <*>
-  optionMaybe genericClause <*>
-  optionMaybe portClause
+  optional genericClause <*>
+  optional portClause
 
 --------------------------------------------------------------------------------
 -- * 4.6 Group template declarations
@@ -1573,7 +1556,7 @@ entityNameList =
     ]
 
 entityDesignator :: Parser EntityDesignator
-entityDesignator = EntityDesignator <$> entityTag <*> optionMaybe signature
+entityDesignator = EntityDesignator <$> entityTag <*> optional signature
 
 entityTag :: Parser EntityTag
 entityTag =
@@ -1623,9 +1606,9 @@ instantiationList =
 -}
 bindingIndication :: Parser BindingIndication
 bindingIndication =
-  BindingIndication <$> optionMaybe (reserved "use" *> entityAspect) <*>
-  optionMaybe genericMapAspect <*>
-  optionMaybe portMapAspect
+  BindingIndication <$> optional (reserved "use" *> entityAspect) <*>
+  optional genericMapAspect <*>
+  optional portMapAspect
 
 --------------------------------------------------------------------------------
 -- *** 5.2.1.1 Entity aspect
@@ -1638,7 +1621,7 @@ bindingIndication =
 entityAspect :: Parser EntityAspect
 entityAspect =
   choice
-    [ reserved "entity" >> EAEntity <$> name <*> optionMaybe (parens identifier)
+    [ reserved "entity" >> EAEntity <$> name <*> optional (parens identifier)
     , reserved "configuration" >> EAConfig <$> name
     , reserved "open" *> pure EAOpen
     ]
@@ -1831,10 +1814,10 @@ sliceName m = SliceName m <$> parens discreteRange
 attributeName :: Name -> Parser AttributeName
 attributeName n =
   trace ("attributeName " ++ show n) $
-  (AttributeName n <$> optionMaybe signature <*
+  (AttributeName n <$> optional signature <*
    (symbol "\'" <* try (notFollowedBy (symbol "(")))) <*>
   attributeDesignator <*>
-  optionMaybe (try (parens expression))
+  optional (try (parens expression))
 
 -- LRM08 15.10 explicitly defines range and subtype as reserved words that are
 -- also predefined attributes names so we prevent them from reaching the
@@ -1901,7 +1884,7 @@ condition_operator primary
 expression :: Parser Expression
 expression =
   trace "expression" $
-  seeNext 10 >> buildExpressionParser table primary
+  makeExprParser primary table
 
 -- TODO: typeConversion is indistinguishable from functionCalls and
 -- indexedNames with a single expression. FunctionCalls with only actualPart
@@ -1911,7 +1894,7 @@ primary =
   antiQ AntiExpr $
   choice
     [ PrimAlloc <$> allocator
-    , PrimAgg <$> try aggregate
+    , PrimAgg <$> aggregate
     , PrimExp <$> parens expression
     , PrimQual <$> try qualifiedExpression
     , PrimName <$> try name
@@ -1920,15 +1903,15 @@ primary =
     , PrimTCon <$> typeConversion
     ]
 
-table :: [[Operator Text ParseState Data.Functor.Identity.Identity Expression]]
+table :: [[Operator Parser  Expression]]
 table =
-  [ [Infix (Binary <$> binOpPrec1) AssocLeft, Prefix (Unary <$> unOpPrec1)]
+  [ [InfixL (Binary <$> binOpPrec1), Prefix (Unary <$> unOpPrec1)]
   , [Prefix (Unary <$> unOpPrec2)]
-  , [Infix (Binary <$> binOpPrec3) AssocLeft]
-  , [Infix (Binary <$> binOpPrec4) AssocLeft]
-  , [Infix (Binary <$> binOpPrec5) AssocLeft]
-  , [Infix (Binary <$> binOpPrec6) AssocLeft]
-  , [Infix (Binary <$> binOpPrec7) AssocLeft]
+  , [InfixL (Binary <$> binOpPrec3)]
+  , [InfixL (Binary <$> binOpPrec4)]
+  , [InfixL (Binary <$> binOpPrec5)]
+  , [InfixL (Binary <$> binOpPrec6)]
+  , [InfixL (Binary <$> binOpPrec7)]
   ]
 
 --------------------------------------------------------------------------------
@@ -1952,65 +1935,83 @@ table =
 data OpType = ResOp | ResWord
 
 unOpPrec1 :: Parser UnOp
-unOpPrec1 = makeOpParser [(ResWord, "abs", Abs), (ResWord, "not", Not)]
+unOpPrec1 = choice [binResWord "abs" Abs, binResWord "not" Not]
 
 binOpPrec1 :: Parser BinOp
-binOpPrec1 = makeOpParser [(ResOp, "**", Exp)]
+binOpPrec1 = choice [binOp "**" Exp]
 
 unOpPrec2 :: Parser UnOp
-unOpPrec2 = makeOpParser [(ResOp, "+", Identity), (ResOp, "-", Negation)]
+unOpPrec2 = choice [binOp "+" Identity, binOp "-" Negation]
 
 binOpPrec3 :: Parser BinOp
 binOpPrec3 =
-  makeOpParser
-    [ (ResOp, "*", Times)
-    , (ResOp, "/", Div)
-    , (ResOp, "mod", Mod)
-    , (ResOp, "rem", Rem)
+  choice
+    [ binOp "*" Times
+    , binOpGuard "/" "=" Div
+    , binResWord "mod" Mod
+    , binResWord "rem" Rem
     ]
 
 binOpPrec4 :: Parser BinOp
-binOpPrec4 =
-  makeOpParser [(ResOp, "+", Plus), (ResOp, "-", Minus), (ResOp, "&", Concat)]
+binOpPrec4 = choice [binOp "+" Plus, binOp "-" Minus, binOp "&" Concat]
 
 binOpPrec5 :: Parser BinOp
 binOpPrec5 =
-  makeOpParser
-    [ (ResWord, "sll", Sll)
-    , (ResWord, "srl", Srl)
-    , (ResWord, "sla", Sla)
-    , (ResWord, "sra", Sra)
-    , (ResWord, "rol", Rol)
-    , (ResWord, "ror", Ror)
+  choice
+    [ binResWord "sll" Sll
+    , binResWord "srl" Srl
+    , binResWord "sla" Sla
+    , binResWord "sra" Sra
+    , binResWord "rol" Rol
+    , binResWord "ror" Ror
     ]
 
 binOpPrec6 :: Parser BinOp
 binOpPrec6 =
-  makeOpParser
-    [ (ResOp, "=", Eq)
-    , (ResOp, "/=", Neq)
-    , (ResOp, "<", Lt)
-    , (ResOp, "<=", Lte)
-    , (ResOp, ">", Gt)
-    , (ResOp, ">=", Gte)
+  choice
+    [ binOpGuard "=" ">" Eq
+    , binOp "/=" Neq
+    , binOpGuard' "<" ["=", ">"] Lt
+    , binOp "<=" Lte
+    , binOpGuard ">" "=" Gt
+    , binOp ">=" Gte
     ]
 
 binOpPrec7 :: Parser BinOp
 binOpPrec7 =
-  makeOpParser
-    [ (ResWord, "and", And)
-    , (ResWord, "or", Or)
-    , (ResWord, "nand", Nand)
-    , (ResWord, "nor", Nor)
-    , (ResWord, "xor", Xor)
-    , (ResWord, "xnor", Xnor)
+  choice
+    [ binResWord "and" And
+    , binResWord "or" Or
+    , binResWord "nand" Nand
+    , binResWord "nor" Nor
+    , binResWord "xor" Xor
+    , binResWord "xnor" Xnor
     ]
 
-makeOpParser :: [(OpType, String, a)] -> Parser a
+binResWord :: Text -> a -> Parser a
+binResWord op t = reserved op *> pure t
+
+binOp :: Text ->  a -> Parser a
+binOp op t = symbol op *> pure t
+
+binOpGuard :: Text -> Text -> a -> Parser a
+binOpGuard op nop = binOpGuard' op [nop]
+
+binOpGuard' :: Text -> [Text] -> a -> Parser a
+binOpGuard' op nop t =
+  try (symbol op <* notFollowedBy (choice (map symbol nop))) *> pure t
+
+makeOpParser :: [(OpType, Text, a)] -> Parser a
 makeOpParser = choice . map oneOp
   where
-    oneOp (ResOp, op, t)   = reservedOp op *> pure t
-    oneOp (ResWord, op, t) = reserved op   *> pure t
+    oneOp (ResOp, op, t)   = symbol op *> pure t
+    oneOp (ResWord, op, t) = reserved op *> pure t
+
+-- makeOpParser :: [(OpType, Text, a)] -> Parser a
+-- makeOpParser = choice . map oneOp
+--   where
+--     oneOp (ResOp, op, t)   = reservedOp op *> pure t
+--     oneOp (ResWord, op, t) = reserved op   *> pure t
 
 --------------------------------------------------------------------------------
 
@@ -2096,7 +2097,7 @@ aggregate =
 elementAssociation :: Parser ElementAssociation
 elementAssociation =
   antiQ2 AntiElAssoc AntiElAssocs $
-  ElementAssociation <$> optionMaybe (try (choices <* symbol "=>")) <*>
+  ElementAssociation <$> optional (try (choices <* symbol "=>")) <*>
   expression
 
 -- VHDL allows for obscure character substitutions (| -> !).
@@ -2107,6 +2108,8 @@ choices = Choices <$> choice' `sepBy1` (symbol "|" <|> symbol "!")
 -- FIXME: expression <|> simpleName will never reach simpleName -> Reduce
 -- expressions only containing a simpleName and replace with a parser parsing
 -- common subexpression first
+-- FIXME: Why does descreteRange have to be before expression for choices' not
+-- to fail on "add to load"
 choice' :: Parser Choice
 choice' =
   choice
@@ -2133,7 +2136,8 @@ choice' =
 -- TODO: Consider removing this parser and instead parsing functionCalls as
 -- names. We have no way of disambiguating
 functionCall :: Parser FunctionCall
-functionCall = try $ FunctionCall <$> functionName <*> optionMaybe (parens actualParameterPart)
+functionCall =
+  try $ FunctionCall <$> functionName <*> optional (parens actualParameterPart)
 
 -- TODO: This may be a too restrictive definition of what a function name can be
 functionName :: Parser FunctionName
@@ -2267,9 +2271,9 @@ waitStatement :: Maybe Label -> Parser WaitStatement
 waitStatement l =
   trace "waitStatemen" try $
   reserved "wait" >>
-  WaitStatement l <$> optionMaybe sensitivityClause <*>
-  optionMaybe conditionClause <*>
-  optionMaybe timeoutClause <*
+  WaitStatement l <$> optional sensitivityClause <*>
+  optional conditionClause <*>
+  optional timeoutClause <*
   semi
 
 sensitivityClause :: Parser SensitivityClause
@@ -2309,8 +2313,8 @@ assertionStatement l =
 assertion :: Parser Assertion
 assertion =
   Assertion <$> try (reserved "assert" *> condition) <*>
-  optionMaybe (reserved "report" *> expression) <*>
-  optionMaybe (reserved "severity" *> expression) <?> "Assertion"
+  optional (reserved "report" *> expression) <*>
+  optional (reserved "severity" *> expression) <?> "Assertion"
 
 --------------------------------------------------------------------------------
 -- * 8.3 Report statement
@@ -2325,7 +2329,7 @@ reportStatement l =
   trace "reportStatement" $
   reserved "report" >>
   ReportStatement l <$> expression <*>
-  optionMaybe (reserved "severity" *> expression) <*
+  optional (reserved "severity" *> expression) <*
   semi
 
 --------------------------------------------------------------------------------
@@ -2350,8 +2354,8 @@ signalAssignmentStatement :: Maybe Label
                           -> Parser SignalAssignmentStatement
 signalAssignmentStatement l =
   trace "signalAssignmentStatement" $
-  SignalAssignmentStatement l <$> try (target <* reservedOp "<=") <*>
-  optionMaybe delayMechanism <*>
+  SignalAssignmentStatement l <$> try (target <* symbol "<=") <*>
+  optional delayMechanism <*>
   waveform <*
   semi
 
@@ -2359,7 +2363,7 @@ delayMechanism :: Parser DelayMechanism
 delayMechanism =
   choice
     [ reserved "transport" *> pure DMechTransport
-    , DMechInertial <$> optionMaybe (reserved "reject" *> expression) <*
+    , DMechInertial <$> optional (reserved "reject" *> expression) <*
       reserved "inertial"
     ]
 
@@ -2387,9 +2391,9 @@ waveformElement :: Parser WaveformElement
 waveformElement =
   choice
     [ WaveENull <$>
-      (reserved "null" *> optionMaybe (reserved "after" *> expression))
+      (reserved "null" *> optional (reserved "after" *> expression))
     , WaveEExp <$> expression <*>
-      optionMaybe (reserved "after" *> expression)
+      optional (reserved "after" *> expression)
     ]
 
 --------------------------------------------------------------------------------
@@ -2401,7 +2405,7 @@ waveformElement =
 variableAssignmentStatement :: Maybe Label -> Parser VariableAssignmentStatement
 variableAssignmentStatement l =
   trace "variableAssignmentStatement" $
-  VariableAssignmentStatement l <$> try (target <* reservedOp ":=") <*>
+  VariableAssignmentStatement l <$> try (target <* symbol ":=") <*>
   (expression <* semi)
 
 --------------------------------------------------------------------------------
@@ -2427,7 +2431,7 @@ procedureCallStatement l =
 procedureCall :: Parser ProcedureCall
 procedureCall =
   ProcedureCall <$> (NSelect <$> try selectedName <|> NSimple <$> simpleName) <*>
-  optionMaybe (parens actualParameterPart)
+  optional (parens actualParameterPart)
 
 -- * 8.7 If statement
 {-
@@ -2444,7 +2448,8 @@ procedureCall =
 ifStatement :: Maybe Label -> Parser IfStatement
 ifStatement lab =
   trace "ifStatement" $
-  stmLabelPush lab
+  stmLabelPush
+    lab
     (\l ->
        IfStatement l <$>
        ((,) <$> (reserved "if" *> condition <* reserved "then") <*>
@@ -2452,7 +2457,7 @@ ifStatement lab =
        many
          ((,) <$> (reserved "elsif" *> condition <* reserved "then") <*>
           sequenceOfStatements) <*>
-       optionMaybe (reserved "else" *> sequenceOfStatements) <*
+       optional (reserved "else" *> sequenceOfStatements) <*
        (reserved "end" >> reserved "if" >> optionEndNameLabel l >> semi))
 
 --------------------------------------------------------------------------------
@@ -2476,14 +2481,13 @@ caseStatement lab =
     lab
     (\l ->
        CaseStatement l <$> (expression <* reserved "is") <*>
-       many1 caseStatementAlternative)
+       some caseStatementAlternative)
 
 caseStatementAlternative :: Parser CaseStatementAlternative
 caseStatementAlternative =
   antiQ2 AntiCasealt AntiCasealts $
   reserved "when" >>
-  CaseStatementAlternative <$> (choices <* reservedOp "=>") <*>
-  sequenceOfStatements
+  CaseStatementAlternative <$> (choices <* symbol "=>") <*> sequenceOfStatements
 
 --------------------------------------------------------------------------------
 -- * 8.9 Loop statement
@@ -2506,7 +2510,7 @@ loopStatement :: Maybe Label -> Parser LoopStatement
 loopStatement lab =
   stmLabelPush lab
     (\l ->
-       LoopStatement l <$> (optionMaybe iterationScheme <* reserved "loop") <*>
+       LoopStatement l <$> (optional iterationScheme <* reserved "loop") <*>
        sequenceOfStatements <*
        (reserved "end" >> reserved "loop" >> optionEndNameLabel l >> semi))
 
@@ -2531,8 +2535,8 @@ parameterSpecification =
 nextStatement :: Maybe Label -> Parser NextStatement
 nextStatement l =
   reserved "next" >>
-  NextStatement l <$> optionMaybe label <*>
-  optionMaybe (reserved "when" *> condition) <*
+  NextStatement l <$> optional label <*>
+  optional (reserved "when" *> condition) <*
   semi
 
 --------------------------------------------------------------------------------
@@ -2545,8 +2549,8 @@ nextStatement l =
 exitStatement :: Maybe Label -> Parser ExitStatement
 exitStatement l =
   reserved "exit" >>
-  ExitStatement l <$> optionMaybe label <*>
-  optionMaybe (reserved "when" >> condition) <*
+  ExitStatement l <$> optional label <*>
+  optional (reserved "when" >> condition) <*
   semi
 
 -- * 8.12 Return statement
@@ -2557,7 +2561,7 @@ exitStatement l =
 returnStatement :: Maybe Label -> Parser ReturnStatement
 returnStatement l =
        reserved "return" >>
-       ReturnStatement l <$> optionMaybe expression <* semi
+       ReturnStatement l <$> optional expression <* semi
 
 --------------------------------------------------------------------------------
 -- * 8.13 Null statement
@@ -2597,7 +2601,7 @@ generateStatement lab =
     (\l ->
        GenerateStatement <$> labelRequired l <*>
        (generationScheme <* reserved "generate") <*>
-       try (optionMaybe (many blockDeclarativeItem <* reserved "begin")) <*>
+       try (optional (many blockDeclarativeItem <* reserved "begin")) <*>
        concurrentStatements <*
        (reserved "end" >> reserved "generate" >> optionEndNameLabel l >> semi))
 
@@ -2678,7 +2682,7 @@ blockStatement lab =
     "block"
     lab
     (\l ->
-       BlockStatement <$> labelRequired l <*> optionMaybe (parens expression) <*
+       BlockStatement <$> labelRequired l <*> optional (parens expression) <*
        optional (reserved "is") <*>
        blockHeader <*>
        blockDeclarativePart <*
@@ -2687,10 +2691,10 @@ blockStatement lab =
 
 blockHeader :: Parser BlockHeader
 blockHeader = do
-  genClause <- try (optionMaybe genericClause)
-  genMap <- try (optionMaybe (genericMapAspect <* semi))
-  thisPortClause <- try (optionMaybe portClause)
-  portMap <- try (optionMaybe (portMapAspect <* semi))
+  genClause <- try (optional genericClause)
+  genMap <- try (optional (genericMapAspect <* semi))
+  thisPortClause <- try (optional portClause)
+  portMap <- try (optional (portMapAspect <* semi))
   let genPart = maybe Nothing (\g -> Just (g, genMap)) genClause
   let portPart = maybe Nothing (\p -> Just (p, portMap)) thisPortClause
   return $ BlockHeader genPart portPart
@@ -2739,11 +2743,11 @@ processStatement lab =
     (\l -> do
        postponed <- try (isReserved "postponed" <* reserved "process")
        ProcessStatement l postponed <$>
-         (optionMaybe (parens sensitivityList) <* optional (reserved "is")) <*>
+         (optional (parens sensitivityList) <* optional (reserved "is")) <*>
          processDeclarativePart <*>
          (reserved "begin" *> processStatementPart) <*
          reserved "end" <*
-         when postponed (try (reserved "postponed")) <*
+         when postponed (void $ reserved "postponed") <*
          reserved "process" <*
          optionEndNameLabel l <*
          semi) <?>
@@ -2812,7 +2816,7 @@ concurrentSignalAssignmentStatement l =
     ]
 
 options :: Parser Options
-options = Options <$> isReserved "guarded" <*> optionMaybe delayMechanism
+options = Options <$> isReserved "guarded" <*> optional delayMechanism
 
 --------------------------------------------------------------------------------
 -- ** 9.5.1 Conditional signal assignments
@@ -2826,7 +2830,7 @@ options = Options <$> isReserved "guarded" <*> optionMaybe delayMechanism
 -}
 conditionalSignalAssignment :: Parser ConditionalSignalAssignment
 conditionalSignalAssignment =
-  ConditionalSignalAssignment <$> try (target <* reservedOp "<=") <*> options <*>
+  ConditionalSignalAssignment <$> try (target <* symbol "<=") <*> options <*>
   conditionalWaveforms <*
   semi
 
@@ -2835,7 +2839,7 @@ conditionalWaveforms = ConditionalWaveforms <$> many (try cwOptional) <*> cwWave
   where
     cwOptional =
       (,) <$> (waveform <* reserved "when") <*> (condition <* reserved "else")
-    cwWave = (,) <$> waveform <*> optionMaybe (reserved "when" *> condition)
+    cwWave = (,) <$> waveform <*> optional (reserved "when" *> condition)
 
 --------------------------------------------------------------------------------
 -- ** 9.5.2 Selected signal assignments
@@ -2853,7 +2857,7 @@ selectedSignalAssignment =
   try $
   reserved "with" >>
   SelectedSignalAssignment <$> (expression <* reserved "select") <*>
-  (target <* reservedOp "<=") <*>
+  (target <* symbol "<=") <*>
   options <*>
   selectedWaveforms <*
   semi
@@ -2880,8 +2884,8 @@ selectedWaveforms =
 componentInstantiationStatement :: Maybe Label -> Parser ComponentInstantiationStatement
 componentInstantiationStatement l =
   ComponentInstantiationStatement <$> labelRequired l <*> instantiatedUnit <*>
-  optionMaybe genericMapAspect <*>
-  optionMaybe portMapAspect <*
+  optional genericMapAspect <*>
+  optional portMapAspect <*
   semi
 
 instantiatedUnit :: Parser InstantiatedUnit
@@ -2889,7 +2893,7 @@ instantiatedUnit =
   choice
     [ IUConfig <$> try (reserved "configuration" *> name)
     , IUEntity <$> try (reserved "entity" *> name) <*>
-      optionMaybe (parens identifier)
+      optional (parens identifier)
     , optional (reserved "component") >> IUComponent <$> name
     ]
 
@@ -2930,7 +2934,7 @@ useClause = reserved "use" >> UseClause <$> selectedName `sepBy1` comma <* semi
       | package_body
 -}
 designFile :: Parser DesignFile
-designFile = DesignFile <$> (whiteSpace *> many1 designUnit)
+designFile = DesignFile <$> (spaceConsumer *> some designUnit)
 
 designUnit :: Parser DesignUnit
 designUnit = antiQ AntiDesignUnit $ DesignUnit <$> contextClause <*> libraryUnit

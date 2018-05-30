@@ -9,9 +9,9 @@ import           Language.VHDL.Quote
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-p f = f ("", 0, 0)
+p f = f ("", 1, 1)
 
-parseExprStr p s= parseExpr p (T.pack s)
+parseExprStr p s = parseExpr p (T.pack s)
 
 exprTest :: Assertion
 exprTest = Right [expr|2 + 2|] @?= p parseExprStr "2 + 2"

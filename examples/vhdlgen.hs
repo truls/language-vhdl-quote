@@ -1,4 +1,6 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+
 -- Example use cases for VHDL quasi-quote generation
 module Main where
 
@@ -8,16 +10,16 @@ import           Language.VHDL.Syntax
 
 designFileTest :: DesignFile
 designFileTest = let
-  modName = "System_tb"
+  modName = "System_tb" :: String
   sigNames = [ ("System_Control_data", "i32_t")
              , ("System_Control_readout", "i32_t")
              , ("System_Control_selector", "i32_t")
              , ("System_DataBus_data", "i32_t")
              , ("System_InDataBus_data", "i32_t")
              , ("System_InDataBus_valid", "i32_t")
-             ]
+             ] :: [(String, String)]
   signal (x, y) = [blockdecl|signal $ident:x: $ident:y;|]
-  topUnit = "System"
+  topUnit = "System" :: String
   ports = map fst sigNames
   portMap = map (\x -> [assocel|$ident:x => $ident:x|]) ports
   fieldAssert (x, _) = [seqstms|read_csv_field(L, tmp);
@@ -59,6 +61,13 @@ uut: entity work.$ident:topUnit
 
   clk: process
 begin
+                color := resize(((((((image_input_R * to_unsigned(299,
+                                                                  10))) + ((image_input_G * to_unsigned(587,
+                                                                                                        10)))) + ((image_input_B * to_unsigned(114,
+                                                                                                                                               10))))) / to_unsigned(1000,
+                                                                                                                                                                     10)),
+                                color'length);
+
   while not stop_clock loop
     clock <= '1'; -- TODO: test clit antiquote
     wait for 5 ns;

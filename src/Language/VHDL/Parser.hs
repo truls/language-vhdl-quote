@@ -38,25 +38,31 @@ module Language.VHDL.Parser
   )
 where
 
+import           Control.Monad.State           (evalStateT)
+import           Data.List.NonEmpty            as N
 import           Data.Text
 import qualified Data.Text.IO                  as T
-import           Text.Parsec
+import           Text.Megaparsec
 
 import           Language.VHDL.Lexer
 import           Language.VHDL.Parser.Internal
 import           Language.VHDL.Parser.Monad
 import           Language.VHDL.Syntax
 
-type Result a = Either ParseError a
+type Result a = Either String a
 
-withStateParse :: ParseState -> Parser a -> SourceName -> Text -> Result a
-withStateParse u p = runP p u
+withStateParse :: ParseState -> Parser a -> String -> Text -> Result a
+withStateParse u p f c =
+  case runParser (evalStateT p u) f c of
+    Left err -> Left $ parseErrorPretty err
+    Right r  -> Right r
 
-stateParse :: Parser a -> SourceName -> Text -> Result a
+stateParse :: Parser a -> String -> Text -> Result a
 stateParse = withStateParse $ newParseState False
 
 quoteParse :: Parser a -> (String, Int, Int) -> Text -> Result a
-quoteParse p (f, r, c) = withStateParse (newParseState True) (updatePosition f r c >> p) ""
+quoteParse p (f, r, c) =
+  withStateParse (newParseState True) (updatePosition f r c >> p) ""
 
 parseFile :: FilePath -> IO (Result DesignFile)
 parseFile fp = do
@@ -148,9 +154,6 @@ parsePackDecl :: (String, Int, Int) -> Text -> Result PackageDeclarativeItem
 parsePackDecl = quoteParse packageDeclarativeItem
 
 updatePosition :: String -> Int -> Int -> Parser ()
-updatePosition file line col = do
-   pos <- getPosition
-   setPosition $
-     flip setSourceName file $
-     flip setSourceLine line $
-     setSourceColumn pos col
+updatePosition file line col =
+  let pos = SourcePos file (mkPos line) (mkPos col)
+  in updateParserState (\s -> s {statePos = N.fromList [pos]})
