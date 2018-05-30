@@ -19,7 +19,7 @@ vhdl-93: suite.tar.xz
 
 ghdl/ghdl_mcode: $(GHDL_ARCHIVE)
 	cd ghdl; ./configure
-	cd ghdl; make
+	cd ghdl; make -j2
 
 clean:
 	rm -rf ghdl

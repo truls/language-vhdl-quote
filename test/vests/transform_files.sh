@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 
@@ -7,6 +7,7 @@ test_dirs="vhdl-93/ashenden/compliant vhdl-93/billowitch/compliant vhdl-93/clift
 replace_dir() {
     sed 's/vhdl-93/vhdl-93-transformed/g'
 }
+export -f replace_dir
 
 # Create output directories
 find ${test_dirs} -type d | replace_dir | xargs mkdir -p
@@ -19,16 +20,16 @@ done
 stack_local_root=$(stack path | grep local-install-root |
                        awk -F: '{ gsub(/^[ \t]+/, "", $2); print $2 }')
 dumpast=${stack_local_root}/bin/dumpast
+export dumpast
+run_test() {
+    echo "Transforming file ${1}"
+    $dumpast -p $1 > $(echo $1 | replace_dir)
+}
+export -f run_test
 
 # Transform vhdl files using our parser
 if [ $# -gt 0 ]; then
-    for f in `find ${test_dirs} -type f | grep \.vhd | grep $@`; do
-        echo "Transforming file ${f}"
-        $dumpast -p $f > $(echo $f | replace_dir)
-    done
+    find ${test_dirs} -type f | grep \.vhd | grep $@ | parallel run_test
 else
-    for f in `find ${test_dirs} -type f | grep \.vhd`; do
-        echo "Transforming file ${f}"
-        $dumpast -p $f > $(echo $f | replace_dir)
-    done
+    find ${test_dirs} -type f | grep \.vhd | parallel run_test
 fi
