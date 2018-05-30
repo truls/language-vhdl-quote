@@ -42,8 +42,9 @@ instance Pretty Aggregate where
 
 instance Pretty AliasDeclaration where
   ppr (AliasDeclaration a sub n sig) =
+    hang' $
     text "alias" <+>
-    ppr a <+> cond (colon <+>) sub <+> text "is" <+> ppr n <> ppr' sig <> semi
+    ppr a <+> cond (colon <+>) sub <+> text "is" <+/> ppr n <> ppr' sig <> semi
 
 instance Pretty AliasDesignator where
   ppr (ADIdentifier i) = ppr i
@@ -58,7 +59,8 @@ instance Pretty ArchitectureBody where
   ppr (ArchitectureBody i n d s) =
     stack [header, indent' (vppr d), text "begin", indent' (vppr s), footer]
     where
-      header = text "architecture" <+> ppr i <+> text "of" <+> ppr n <+> text "is"
+      header =
+        text "architecture" <+> ppr i <+> text "of" <+> ppr n <+> text "is"
       footer = text "end architecture" <+> ppr i <> semi
 
 instance Pretty ArrayTypeDefinition where
@@ -68,7 +70,7 @@ instance Pretty ArrayTypeDefinition where
 instance Pretty Assertion where
   ppr (Assertion c r s) = stack [text "assert" <+> ppr c, report, severity]
     where
-      report = indent' $ cond (text "report" <+>) r
+      report = indent' $ hang' $ cond (text "report" <+>) r
       severity = indent' $ cond (text "severity" <+>) s
 
 instance Pretty AssertionStatement where
@@ -80,7 +82,10 @@ instance Pretty AssociationElement where
   ppr e@(AntiAssocEls s)       = pprAnti e s
 
 instance Pretty AssociationList where
-  ppr (AssociationList as) = commasep $ map ppr as
+  ppr (AssociationList as) = commasepBreak $ map ppr as
+
+funCallAssocList :: AssociationList -> Doc
+funCallAssocList (AssociationList as) = commasep $ map ppr as
 
 instance Pretty AttributeDeclaration where
   ppr (AttributeDeclaration i t) =
@@ -92,8 +97,9 @@ instance Pretty AttributeName where
 
 instance Pretty AttributeSpecification where
   ppr (AttributeSpecification d s e) =
+    hang' $
     text "attribute" <+>
-    ppr d <+> text "of" <+> ppr s <+> text "is" <+> ppr e <> semi
+    ppr d <+> text "of" <+/> ppr s <+> text "is" <+/> ppr e <> semi
 
 instance Pretty BaseSpecifier where
   ppr BinaryBase         = text "B"
@@ -221,7 +227,7 @@ instance Pretty ComponentDeclaration where
 
 instance Pretty ComponentInstantiationStatement where
   ppr (ComponentInstantiationStatement l u g p) =
-    ppr l <> colon `hangs` (ppr u `hangs` stack [ppr g, ppr p]) <> semi
+    ppr l <> colon <+> (ppr u `hangs` stack [ppr g, ppr p]) <> semi
 
 instance Pretty ComponentSpecification where
   ppr (ComponentSpecification ls n) = ppr ls <> colon <+> ppr n
@@ -256,7 +262,7 @@ instance Pretty ConditionClause where
 
 instance Pretty ConditionalSignalAssignment where
   ppr (ConditionalSignalAssignment t o w) =
-    ppr t <+> text "<=" <+> ppr o <+> ppr w <> semi
+    hang' $ ppr t <+> text "<=" <+/> ppr o <+> ppr w <> semi
 
 instance Pretty ConditionalWaveforms where
   ppr (ConditionalWaveforms ws (w, c)) =
@@ -287,8 +293,8 @@ instance Pretty ConfigurationSpecification where
 
 instance Pretty ConstantDeclaration where
   ppr (ConstantDeclaration is s e) =
-    text "constant" <+>
-    commasep (fmap ppr is) <> colon <+> ppr s <+> condL (text ":=") e <> semi
+    hang' $ text "constant" <+>
+    commasep (fmap ppr is) <> colon <+/> ppr s <+> condL (text ":=") e <> semi
 
 instance Pretty ConstrainedArrayDefinition where
   ppr (ConstrainedArrayDefinition i s) =
@@ -457,7 +463,7 @@ instance Pretty Expression where
   ppr (Unary op@Identity e) = ppr op <> ppr e
   ppr (Unary op@Negation e) = ppr op <> ppr e
   ppr (Unary op e)          = ppr op <+> ppr e
-  ppr (Binary op e1 e2)     = ppr e1 <+> ppr op <+> ppr e2
+  ppr (Binary op e1 e2)     = ppr e1 <+> ppr op <+/> ppr e2
   ppr (PrimName n)          = ppr n
   ppr (PrimLit l)           = ppr l
   ppr (PrimAgg a)           = ppr a
@@ -504,8 +510,8 @@ instance Pretty UnOp where
 
 instance Pretty FileDeclaration where
   ppr (FileDeclaration is s o) =
-    text "file" <+>
-    commasep (fmap ppr is) <> colon <+> ppr s <> ppr' o <> semi
+    hang' $ text "file" <+>
+    commasep (fmap ppr is) <> colon <+/> ppr s <> ppr' o <> semi
 
 instance Pretty FileOpenInformation where
   ppr (FileOpenInformation e n) = condL (text "open") e <+> text "is" <+> ppr n
@@ -525,10 +531,10 @@ instance Pretty FormalPart where
 
 instance Pretty FullTypeDeclaration where
   ppr (FullTypeDeclaration i t) =
-    text "type" <+> ppr i <+> text "is" <+> ppr t <> semi
+    hang' $ text "type" <+> ppr i <+> text "is" <+/> ppr t <> semi
 
 instance Pretty FunctionCall where
-  ppr (FunctionCall n p) = ppr n <> ppr (parens . ppr <$> p)
+  ppr (FunctionCall n p) = ppr n <> ppr (parens . funCallAssocList <$> p)
 
 instance Pretty FunctionName where
   ppr (FNSelected n) = ppr n
@@ -562,11 +568,13 @@ instance Pretty GroupConstituent where
 
 instance Pretty GroupTemplateDeclaration where
   ppr (GroupTemplateDeclaration i cs) =
-    text "group" <+> ppr i <+> text "is" <+> parens (commasep (map ppr cs)) <> semi
+    text "group" <+>
+    ppr i <+> text "is" <+> parens (commasep (map ppr cs)) <> semi
 
 instance Pretty GroupDeclaration where
   ppr (GroupDeclaration i n cs) =
-    text "group" <+> ppr i <> colon <+> ppr n <+> parens (commasep (map ppr cs)) <> semi
+    text "group" <+>
+    ppr i <> colon <+> ppr n <+> parens (commasep (map ppr cs)) <> semi
 
 instance Pretty GuardedSignalSpecification where
   ppr (GuardedSignalSpecification ss t) = ppr ss <> colon <+> ppr t
@@ -640,7 +648,7 @@ instance Pretty InterfaceDeclaration where
   ppr a@(AntiIfaceDecls s) = pprAnti a s
 
 instance Pretty InterfaceList where
-  ppr (InterfaceList es) = stack $ punctuate semi $ map ppr es
+  ppr (InterfaceList es) = stack $ map hang' $ punctuate semi $ map ppr es
 
 instance Pretty IterationScheme where
   ppr (IterWhile c) = text "while" <+> ppr c
@@ -791,7 +799,7 @@ instance Pretty PrimaryUnit where
   ppr a@(AntiPrimaryUnit p) = pprAnti a p
 
 instance Pretty ProcedureCall where
-  ppr (ProcedureCall n ap) = ppr n <> cond parens ap
+  ppr (ProcedureCall n ap) = ppr n <> ppr (parens . funCallAssocList <$> ap)
 
 instance Pretty ProcedureCallStatement where
   ppr (ProcedureCallStatement l p) = label l <+> ppr p <> semi
@@ -839,7 +847,9 @@ instance Pretty RecordTypeDefinition where
 
 instance Pretty ReportStatement where
   ppr (ReportStatement l e s) =
-    labels l (text "report" <+> ppr e <> condL (indent' $ text "severity") s) <> semi
+    hang'
+      (labels l (text "report" <+> ppr e <> condL (indent' $ text "severity") s) <>
+       semi)
 
 instance Pretty ReturnStatement where
   ppr (ReturnStatement l e) = label l <+> text "return" <> ppr' e <> semi
@@ -864,7 +874,8 @@ instance Pretty SelectedName where
 instance Pretty SelectedSignalAssignment where
   ppr (SelectedSignalAssignment e t o w) =
     text "with" <+>
-    ppr e <+> text "select" `hangs` ppr t <+> text "<=" <+> ppr o <+> ppr w <> semi
+    ppr e <+>
+    text "select" `hangs` ppr t <+> text "<=" <+/> ppr o <+> ppr w <> semi
 
 instance Pretty SelectedWaveforms where
   ppr (SelectedWaveforms ws) = stack (punctuate comma sws)
@@ -897,7 +908,8 @@ instance Pretty SequentialStatement where
 
 instance Pretty SignalAssignmentStatement where
   ppr (SignalAssignmentStatement l t d w) =
-    label l <+> ppr t <+> text "<=" <> ppr' d <> space <> ppr w <> semi
+    hang' $
+    label l <+> ppr t <+> text "<=" <> ppr' d <> softline <> ppr w <> semi
 
 instance Pretty SignalDeclaration where
   ppr (SignalDeclaration is s k e) =
@@ -976,7 +988,7 @@ instance Pretty SubprogramSpecification where
 
 instance Pretty SubtypeDeclaration where
   ppr (SubtypeDeclaration i s) =
-    text "subtype" <+> ppr i <+> text "is" <+> ppr s <> semi
+    hang' $ text "subtype" <+> ppr i <+> text "is" <+/> ppr s <> semi
 
 instance Pretty SubtypeIndication where
   ppr (SubtypeIndication n t c) = ppr' n <+> ppr t <> ppr' c
@@ -1021,13 +1033,15 @@ instance Pretty UseClause where
 
 instance Pretty VariableAssignmentStatement where
   ppr (VariableAssignmentStatement l t e) =
-    label l <+> ppr t <+> text ":=" <+> ppr e <> semi
+    hang' $ label l <+> ppr t <+> text ":=" <+/> ppr e <> semi
 
 instance Pretty VariableDeclaration where
   ppr (VariableDeclaration s is sub e) =
+    hang' $
     when s (text "shared") <+>
     text "variable" <+>
-    commasep (fmap ppr is) <> colon <+> ppr sub <> condL (space <> text ":=") e <> semi
+    commasep (fmap ppr is) <> colon <+/>
+    ppr sub <> condL (space <> text ":=") e <> semi
 
 instance Pretty WaitStatement where
   ppr (WaitStatement l sc cc tc) =
@@ -1050,7 +1064,7 @@ instance Pretty WaveformElement where
 -- text sep.
 
 pipeSep :: [Doc] -> Doc
-pipeSep = stack . punctuate (char '|')
+pipeSep = align . sep . punctuate (space <> char '|')
 
 --------------------------------------------------------------------------------
 -- indentation
@@ -1088,7 +1102,7 @@ cond f = maybe empty (f . ppr)
 condR
   :: Pretty a
   => Doc -> Maybe a -> Doc
-condR s = cond (<+> s)
+condR s = cond (<+/> s)
 
 -- No space variant of condR
 condR'
@@ -1099,7 +1113,7 @@ condR' s = cond (<> s)
 condL
   :: Pretty a
   => Doc -> Maybe a -> Doc
-condL s = cond (s <+>)
+condL s = cond (s <+/>)
 
 condL'
   :: Pretty a
@@ -1162,4 +1176,7 @@ intToBase b n = showIntAtBase b intToDigit n ""
 
 pprlStack :: (Pretty a) => [a] -> Doc
 pprlStack d = stack $ map ppr d
+
+commasepBreak :: [Doc] -> Doc
+commasepBreak = align . stack . punctuate comma
 --------------------------------------------------------------------------------
