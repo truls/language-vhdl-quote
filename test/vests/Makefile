@@ -28,8 +28,9 @@ clean:
 	rm -r vhdl-93
 
 # TODO: Do this with makefiles instead
-transform_files: vhdl-93
-	./transform_files.sh
+# transform_files: vhdl-94
+# 	./transform_files.sh
 
-test: transform_files ghdl/ghdl_mcode
+#test: transform_files ghdl/ghdl_mcode
+test: ghdl/ghdl_mcode
 	./testsuite.sh
