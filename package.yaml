@@ -43,7 +43,6 @@ dependencies:
  - haskell-src-meta >= 0.8.0.1
  - syb >= 0.7
  - unordered-containers >= 0.2.8.0
- # Remove extra-deps from stack.yaml at som point
  - mainland-pretty >= 0.7
  - text >= 1.2.2.2
  - pretty-show >= 1.6.13
